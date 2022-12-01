@@ -29,7 +29,7 @@ gono_plot <- ggplot(gono_df) +
   ylab("a, Biting rate") 
 gono_plot
 
-# Gonotrophic cycle:
+# Fecundity:
 fec_f <- function(temp){Briere_func(0.00482,8.02,36.65,temp)}
 vec <- seq(10,40,0.11)
 fec <- sapply(vec, fec_f)
@@ -42,7 +42,7 @@ fec_plot <- ggplot(fec_df) +
   ylab("f, Fecundity rate") 
 fec_plot
 
-# Survival probability:
+# Survival probability Larva:
 surv_f <- function(temp){Quad_func(-0.00361,9.04,39.33,temp)}
 vec <- seq(1,50,0.11)
 surv <- sapply(vec, surv_f)
@@ -83,3 +83,5 @@ adult_plot
 
 library("cowplot")
 plot_grid(gono_plot,fec_plot,surv_plot,devep_plot,adult_plot)
+
+
