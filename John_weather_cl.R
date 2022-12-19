@@ -37,9 +37,9 @@ SPAIN_CRS = 25830
 # home/usuaris/j.palmer/research/ddata/cartography/2aa58725/Estaciones_Automaticas.shp
 # home/usuaris/j.palmer/research/ddata/cartography/8892d9c9/Estaciones_Pluviometricas.shp
 
-spain_perimeter = st_read("~/INVASIBILITY_THRESHOLD/data/recintos_autonomicas_inspire_peninbal_etrs89.shp") %>% st_transform(SPAIN_CRS) %>% summarize() 
+spain_perimeter = st_read("home/usuaris/m.pardo/INVASIBILITY_THRESHOLD/data/recintos_autonomicas_inspire_peninbal_etrs89.shp") %>% st_transform(SPAIN_CRS) %>% summarize() 
 
-station_points = st_read("~/INVASIBILITY_THRESHOLD/data/Estaciones_Completas.shp") %>% bind_rows(st_read("~/INVASIBILITY_THRESHOLD/data/Estaciones_Termometricas.shp")) %>% bind_rows(st_read("~/INVASIBILITY_THRESHOLD/data/Estaciones_Automaticas.shp")) %>% bind_rows(st_read("~/INVASIBILITY_THRESHOLD/data/Estaciones_Pluviometricas.shp")) %>% st_transform(SPAIN_CRS)
+station_points = st_read("home/usuaris/m.pardo/INVASIBILITY_THRESHOLD/data/Estaciones_Completas.shp") %>% bind_rows(st_read("home/usuaris/m.pardo/INVASIBILITY_THRESHOLD/data/Estaciones_Termometricas.shp")) %>% bind_rows(st_read("home/usuaris/m.pardo/INVASIBILITY_THRESHOLD/data/Estaciones_Automaticas.shp")) %>% bind_rows(st_read("home/usuaris/m.pardo/INVASIBILITY_THRESHOLD/data/Estaciones_Pluviometricas.shp")) %>% st_transform(SPAIN_CRS)
 
 
 h <- new_handle()
@@ -78,9 +78,9 @@ distinct_station_points = station_points %>% group_by(INDICATIVO) %>% summarize(
 
 weather_daily_sf = distinct_station_points %>% left_join(weather_daily, by=c("INDICATIVO"="indicativo")) %>% filter(!is.na(mwi) & !is.na(fecha))
 
-write_rds(weather_daily, "data/proc/aemet_weather_daily_deep_history.Rds")
+write_rds(weather_daily, "home/usuaris/m.pardo/INVASIBILITY_THRESHOLD/data/aemet_weather_daily_deep_history.Rds")
 
-write_rds(weather_daily_sf, "data/proc/aemet_weather_daily_deep_history_sf.Rds")
+write_rds(weather_daily_sf, "home/usuaris/m.pardo/INVASIBILITY_THRESHOLD/data/aemet_weather_daily_deep_history_sf.Rds")
 
 
 # for making voronoi cells for each day as a way of dealing with missing station data.
