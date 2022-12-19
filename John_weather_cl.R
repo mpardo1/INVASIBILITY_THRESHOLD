@@ -37,15 +37,15 @@ SPAIN_CRS = 25830
 # home/usuaris/j.palmer/research/ddata/cartography/2aa58725/Estaciones_Automaticas.shp
 # home/usuaris/j.palmer/research/ddata/cartography/8892d9c9/Estaciones_Pluviometricas.shp
 
-spain_perimeter = st_read("home/usuaris/m.pardo/INVASIBILITY_THRESHOLD/data/recintos_autonomicas_inspire_peninbal_etrs89.shp") %>% st_transform(SPAIN_CRS) %>% summarize() 
+spain_perimeter = st_read("/home/usuaris/m.pardo/INVASIBILITY_THRESHOLD/data/recintos_autonomicas_inspire_peninbal_etrs89.shp") %>% st_transform(SPAIN_CRS) %>% summarize() 
 
-station_points = st_read("home/usuaris/m.pardo/INVASIBILITY_THRESHOLD/data/Estaciones_Completas.shp") %>% bind_rows(st_read("home/usuaris/m.pardo/INVASIBILITY_THRESHOLD/data/Estaciones_Termometricas.shp")) %>% bind_rows(st_read("home/usuaris/m.pardo/INVASIBILITY_THRESHOLD/data/Estaciones_Automaticas.shp")) %>% bind_rows(st_read("home/usuaris/m.pardo/INVASIBILITY_THRESHOLD/data/Estaciones_Pluviometricas.shp")) %>% st_transform(SPAIN_CRS)
+station_points = st_read("/home/usuaris/m.pardo/INVASIBILITY_THRESHOLD/data/Estaciones_Completas.shp") %>% bind_rows(st_read("/home/usuaris/m.pardo/INVASIBILITY_THRESHOLD/data/Estaciones_Termometricas.shp")) %>% bind_rows(st_read("/home/usuaris/m.pardo/INVASIBILITY_THRESHOLD/data/Estaciones_Automaticas.shp")) %>% bind_rows(st_read("/home/usuaris/m.pardo/INVASIBILITY_THRESHOLD/data/Estaciones_Pluviometricas.shp")) %>% st_transform(SPAIN_CRS)
 
 
 h <- new_handle()
 handle_setheaders(h, 'api_key' = 'eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJqb2huLnBhbG1lckB1cGYuZWR1IiwianRpIjoiYWRjYTliNGItNmZkMC00MTlkLWI1MzMtNjRlNzQwMGY2MDAxIiwiaXNzIjoiQUVNRVQiLCJpYXQiOjE2MTA0NTk4MTUsInVzZXJJZCI6ImFkY2E5YjRiLTZmZDAtNDE5ZC1iNTMzLTY0ZTc0MDBmNjAwMSIsInJvbGUiOiIifQ.JtTlq8QIaAEdte8Mn3JrgzGvkwrtboEpswfEK6Lb1Hc')
 
-all_dates = seq.Date(from = as_date("2004-01-01"), to=today(), by = "day")
+all_dates = seq.Date(from = as_date("2004-01-01"), to=as_date("2022-07-23"), by = "day")
 
 ncores = 1
 
