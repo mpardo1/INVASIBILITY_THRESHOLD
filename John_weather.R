@@ -45,7 +45,8 @@ station_points = st_read("~/INVASIBILITY_THRESHOLD/data/Estaciones_Completas.shp
 h <- new_handle()
 handle_setheaders(h, 'api_key' = 'eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJqb2huLnBhbG1lckB1cGYuZWR1IiwianRpIjoiYWRjYTliNGItNmZkMC00MTlkLWI1MzMtNjRlNzQwMGY2MDAxIiwiaXNzIjoiQUVNRVQiLCJpYXQiOjE2MTA0NTk4MTUsInVzZXJJZCI6ImFkY2E5YjRiLTZmZDAtNDE5ZC1iNTMzLTY0ZTc0MDBmNjAwMSIsInJvbGUiOiIifQ.JtTlq8QIaAEdte8Mn3JrgzGvkwrtboEpswfEK6Lb1Hc')
 
-all_dates = seq.Date(from = as_date("2004-01-01"), to=today(), by = "day")
+all_dates = seq.Date(from = as_date("2004-01-01"), to=as_date("2022-07-23"), by = "day")
+# all_dates = seq.Date(from = as_date("2004-01-01"), to=today(), by = "day")
 
 ncores = 1
 
@@ -96,3 +97,4 @@ write_rds(weather_daily_sf, "data/proc/aemet_weather_daily_deep_history_sf.Rds")
 #   return(result)
 # }, mc.cores=ncores))
 # 
+
