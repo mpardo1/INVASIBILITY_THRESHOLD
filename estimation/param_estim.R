@@ -16,33 +16,39 @@ setwd(Path)
 system("R CMD SHLIB model.c")
 dyn.load("model.so")
 
+dim = 100
 gam1 = 0.0250265
 gam2 = 0.146925
-gam3 = 0.482396
 trueSD = 1
 
 # We create a vector with the constant parameters.
-parms = c(gam1,gam2,gam3)
+parms = list(dim+1,c(gam1,gam2))
 # We set the initial conditions to zero.
-Y  <- matrix(0, nrow = 1, ncol=2000)
-Path = "~/INVASIBILITY_THRESHOLD/estimation/Downloads_2378.data"
-down <- data.frame(t(read.table(Path, header=FALSE)))
-colnames(down) <- c("time", "down")
+Y  <- matrix(rnorm(dim,0,1), nrow = 1, ncol=dim)
+# Path = "~/INVASIBILITY_THRESHOLD/estimation/Downloads_2378.data"
+# down <- data.frame(t(read.table(Path, header=FALSE)))
+# colnames(down) <- c("time", "down")
 
 # List with the data frames of the forcings, sort as the c code.
-forcs_mat <- list(data.matrix(down))
+# forcs_mat <- list(data.matrix(down))
 
-min_t <- min(down$time)
-max_t <- max(down$time)
+# min_t <- min(down$time)
+# max_t <- max(down$time)
+
+min_t <- 0
+max_t <- 10
 times <- seq(min_t,max_t, 1)
 out <- ode(Y, times, func = "derivs",
-           parms = parms, dllname = "model_2000eq",
-           initfunc = "initmod", nout = 1,
-           outnames = "Sum", initforc = "forcc",
-           forcings = down, 
-           fcontrol = list(method = "constant")) 
+           parms = parms, dllname = "model",
+           initfunc = "initmod", nout = 1) 
 
-
+# out <- ode(Y, times, func = "derivs",
+#            parms = parms, dllname = "model",
+#            initfunc = "initmod", nout = 1,
+#            outnames = "Sum", initforc = "forcc",
+#            forcings = down, 
+#            fcontrol = list(method = "constant")) 
+# 
 ode_o <- data.frame(out)
 ode_o$Sum <- NULL
 head(ode_o)
