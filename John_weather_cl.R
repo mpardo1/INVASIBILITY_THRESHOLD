@@ -82,7 +82,7 @@ ncores = 1
 # 
 # write_rds(weather_daily_sf, paste0("home/usuaris/m.pardo/INVASIBILITY_THRESHOLD/data/aemet_weather_daily_deep_history_sf_",Sys.Date(),".Rds"))
 
-Path <- "home/usuaris/m.pardo/INVASIBILITY_THRESHOLD/OUTPUT/aemet_weather_daily_deep_history.Rds"
+Path <- "/home/usuaris/m.pardo/INVASIBILITY_THRESHOLD/OUTPUT/aemet_weather_daily_deep_history.Rds"
 weather_daily <- readRDS(Path)
 
 # for making voronoi cells for each day as a way of dealing with missing station data.
