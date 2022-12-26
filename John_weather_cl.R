@@ -78,21 +78,23 @@ distinct_station_points = station_points %>% group_by(INDICATIVO) %>% summarize(
 
 weather_daily_sf = distinct_station_points %>% left_join(weather_daily, by=c("INDICATIVO"="indicativo")) %>% filter(!is.na(mwi) & !is.na(fecha))
 
-write_rds(weather_daily, "home/usuaris/m.pardo/INVASIBILITY_THRESHOLD/data/aemet_weather_daily_deep_history.Rds")
+write_rds(weather_daily, paste0("home/usuaris/m.pardo/INVASIBILITY_THRESHOLD/data/aemet_weather_daily_deep_history_",Sys.Date(),".Rds"))
 
-write_rds(weather_daily_sf, "home/usuaris/m.pardo/INVASIBILITY_THRESHOLD/data/aemet_weather_daily_deep_history_sf.Rds")
+write_rds(weather_daily_sf, paste0("home/usuaris/m.pardo/INVASIBILITY_THRESHOLD/data/aemet_weather_daily_deep_history_sf_",Sys.Date(),".Rds"))
 
 
 # for making voronoi cells for each day as a way of dealing with missing station data.
-# weather_daily_sf = bind_rows(mclapply(all_dates, function(this_date){
-#   print(this_date)
-#   flush.console()
-#   wdia = weather_daily %>% filter(fecha == this_date)
-#   these_stations = wdia %>% pull(indicativo) %>% unique()
-#   these_station_points = station_points %>% filter(INDICATIVO %in% these_stations) 
-#   vor = these_station_points %>% st_geometry() %>% st_union() %>% st_voronoi(envelope = st_geometry(spain_perimeter)) %>% st_collection_extract(type = "POLYGON") %>% st_as_sf() %>% st_intersection(spain_perimeter) %>% st_join(these_station_points)
-#   result = vor %>% left_join(wdia, by=c("INDICATIVO"="indicativo")) %>% select(fecha, mwi, geometry) 
-# # ggplot(result) + geom_sf(aes(fill=mwi)) + scale_fill_distiller(palette="Spectral")
-#   return(result)
-# }, mc.cores=ncores))
+weather_daily_sf1 = bind_rows(mclapply(all_dates, function(this_date){
+  print(this_date)
+  flush.console()
+  tmed = weather_daily %>% filter(fecha == this_date)
+  wdia = weather_daily %>% filter(fecha == this_date)
+  these_stations = wdia %>% pull(indicativo) %>% unique()
+  these_station_points = station_points %>% filter(INDICATIVO %in% these_stations)
+  vor = these_station_points %>% st_geometry() %>% st_union() %>% st_voronoi(envelope = st_geometry(spain_perimeter)) %>% st_collection_extract(type = "POLYGON") %>% st_as_sf() %>% st_intersection(spain_perimeter) %>% st_join(these_station_points)
+  result = vor %>% left_join(wdia, by=c("INDICATIVO"="indicativo")) %>% select(fecha, mwi, geometry)
+# ggplot(result) + geom_sf(aes(fill=mwi)) + scale_fill_distiller(palette="Spectral")
+  return(result)
+}, mc.cores=ncores))
 # 
+write_rds(weather_daily_sf1, paste0("home/usuaris/m.pardo/INVASIBILITY_THRESHOLD/data/aemet_weather_daily_deep_history_1",Sys.Date(),".Rds"))
