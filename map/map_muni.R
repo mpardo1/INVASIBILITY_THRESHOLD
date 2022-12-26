@@ -5,6 +5,8 @@ library(sf)
 # Read temperature John File.
 Path <- "/home/marta/Documentos/PHD/2022/INVASIBILY/OUTPUT/aemet_weather_daily_deep_history_sf.Rds"
 df <- readRDS(Path)
+Path <- "/home/marta/Documentos/PHD/2022/INVASIBILY/OUTPUT/aemet_weather_daily_deep_history.Rds"
+df <- readRDS(Path)
 
 # Spain map municipalities
 esp_can <- esp_get_munic_siane(moveCAN = TRUE)
