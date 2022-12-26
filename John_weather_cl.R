@@ -99,4 +99,4 @@ weather_daily_sf1 = bind_rows(mclapply(all_dates, function(this_date){
   return(result)
 }, mc.cores=ncores))
 # 
-write_rds(weather_daily_sf1, paste0("home/usuaris/m.pardo/INVASIBILITY_THRESHOLD/data/aemet_weather_daily_deep_history_1",Sys.Date(),".Rds"))
+write_rds(weather_daily_sf1, paste0("/home/usuaris/m.pardo/INVASIBILITY_THRESHOLD/data/aemet_weather_daily_deep_history_1",Sys.Date(),".Rds"))
