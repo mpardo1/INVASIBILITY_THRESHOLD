@@ -63,7 +63,7 @@ weather_daily = bind_rows(lapply(1:length(all_dates), function(i){
 
   req = curl_fetch_memory(wurl)
 
-  wdia  = fromJSON(rawToChar(req$content)) %>% as_tibble() %>% select(fecha, indicativo, velmedia, tmed) %>% mutate(
+  wdia  = fromJSON(rawToChar(req$content)) %>% as_tibble() %>% select(fecha, indicativo, velmedia, tmed, tmin, tmax, prec) %>% mutate(
     velmedia = as.numeric(str_replace(velmedia, ",", ".")),
     tmed = as.numeric(str_replace(tmed, ",", ".")),
     tmin = as.numeric(str_replace(tmin, ",", ".")),
