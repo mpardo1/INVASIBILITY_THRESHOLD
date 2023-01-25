@@ -52,6 +52,7 @@ state <- c(0.1,0)
 out <- ode(y = state, times = time, func = Hanski, 
            parms = parameters, signal = signal)
 plot(out)
+out <- as.data.frame(out[,c(2,3)])
 end_time <- Sys.time()
 print(paste("time:", end_time-start_time))
 
@@ -59,8 +60,8 @@ print(paste("time:", end_time-start_time))
 ### Likelihood Function
 ll_ode <- function(x, # vector con los parámetros
                    forcings, # forzamientos para el solver de la ode
-                   y, # datos
-                   devs){ #desviaciones estándar para calcular la loglikelihood
+                   y ){ # datos
+                   
   va = 0.1
   if(x[1] < 0 | x[2] < 0 | x[3] < 0 | x[4] < 0 | x[5] < 0){
     res = -86829146000
@@ -81,11 +82,11 @@ ll_ode <- function(x, # vector con los parámetros
     
     z <- ode(y = state, times = time, func = Hanski, 
                     parms = parameters, signal = signal) #Aquí corre el ODE
-    z <- as.data.frame(z)
+    z <- as.data.frame(z[,c(1:3)])
     z <- z[-1, ]
     
     res <- 0
-    for(i in c(1:dim)){
+    for(i in c(1:(dim-1))){
       res <- res +  sum(dnorm(y[,i+1], mean = z[,i+1], sd = va, log = T))
     }
   }
@@ -93,9 +94,15 @@ ll_ode <- function(x, # vector con los parámetros
 }
 
 # sims <- 2 #Número de combinaciones paramétricas a explorar
-seeds <- matrix( runif(900,0,1), ncol = 300, nrow = 5)
-sols <- NA #Pre-aloco el número de combinaciones paramétricas en 2 unidades de LL de la mejor
+seeds <- matrix( 0, ncol = 300, nrow = 5)
+seeds[1,] <- runif(300,0,1)
+seeds[2,] <- runif(300,0,1)
+seeds[3,] <- runif(300,0,1)
+seeds[4,] <- runif(300,90,150)
+seeds[5,] <- runif(300,0,1)
 
+sols <- NA #Pre-aloco el número de combinaciones paramétricas en 2 unidades de LL de la mejor
+best <- -999999999 #LL inicial a mejorar
 set.seed(476468713)
 
 condition <- T 
@@ -119,7 +126,7 @@ while(condition){
     start_time1 <- Sys.time()
     
     fit <- optim(par = seeds[, k], fn = ll_ode, forcings = signal, y = out, 
-                 devs = devs, control = list(fnscale = -1, maxit = 500, parscale = seeds[, k]))
+                 control = list(fnscale = -1, maxit = 500, parscale = seeds[, k]))
   
     
     if((k %% 1000) == 0) {
@@ -138,7 +145,7 @@ while(condition){
   
   rm(parall) #Para evitar fugas de memoria
   
-  filename <- paste0("~/MAD_MODEL/SUR_MODEL/OUTPUT/NM/param_MAD_MODEL_1core_900it_fulldata",Sys.Date(), "_",round, ".RData") #Salva cada ronda de optimizaciones, por si acaso
+  filename <- paste0("~/INVASIBILITY_THRESHOLD/output/param_HANSKI_1core_900it_fulldata",Sys.Date(), "_",round, ".RData") #Salva cada ronda de optimizaciones, por si acaso
   save(lhs, file = filename)
   
   # Ahora, recuperamos la loglikelihood de cada combinación de parámetros
@@ -166,7 +173,7 @@ while(condition){
   }
   
   n <- 1
-  parmat <- matrix(NA, nrow = length(index), ncol = 3)
+  parmat <- matrix(NA, nrow = length(index), ncol = 5)
   for(i in index){
     parmat[n, ] <- lhs[[i]]$par
     n <- n + 1
