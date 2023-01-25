@@ -1,6 +1,7 @@
 rm(list = ls())
 start_time <- Sys.time()
 library("deSolve")
+library("parallel")
 
 # Hanski model:
 Hanski <- function(time, y, parameters, signal){
@@ -52,7 +53,7 @@ state <- c(0.1,0)
 out <- ode(y = state, times = time, func = Hanski, 
            parms = parameters, signal = signal)
 plot(out)
-out <- as.data.frame(out[,c(2,3)])
+out <- as.data.frame(out[,c(1:(dim+1))])
 end_time <- Sys.time()
 print(paste("time:", end_time-start_time))
 
@@ -62,17 +63,15 @@ ll_ode <- function(x, # vector con los parámetros
                    forcings, # forzamientos para el solver de la ode
                    y ){ # datos
                    
-  va = 0.1
   if(x[1] < 0 | x[2] < 0 | x[3] < 0 | x[4] < 0 | x[5] < 0){
     res = -86829146000
   }else{
-    pars <- c(c = x[1], # Colonization constant
-              b = x[2], # Extinction constant
-              xi = x[3], # Spread constant
-              alp = x[4], # Spread constant
-              va = x[5]) # Variance
+    c = x[1] # Colonization constant
+    b = x[2] # Extinction constant
+    xi = x[3] # Spread constant
+    alp = x[4] # Spread constant
+    va = x[5] # Variance
     
-    state <- c(0.1,0) #Vector inicial para ODE
     signal <- forcings
     parameters <- list(dim = dim,  b=b, c = c,
                        xi = xi, alp = alp,
@@ -83,8 +82,7 @@ ll_ode <- function(x, # vector con los parámetros
     z <- ode(y = state, times = time, func = Hanski, 
                     parms = parameters, signal = signal) #Aquí corre el ODE
     z <- as.data.frame(z[,c(1:3)])
-    z <- z[-1, ]
-    
+      
     res <- 0
     for(i in c(1:(dim-1))){
       res <- res +  sum(dnorm(y[,i+1], mean = z[,i+1], sd = va, log = T))
@@ -145,7 +143,7 @@ while(condition){
   
   rm(parall) #Para evitar fugas de memoria
   
-  filename <- paste0("~/INVASIBILITY_THRESHOLD/output/param_HANSKI_1core_900it_fulldata",Sys.Date(), "_",round, ".RData") #Salva cada ronda de optimizaciones, por si acaso
+  filename <- paste0("~/INVASIBILITY_THRESHOLD/output/Estimation/param_HANSKI_1core_900it_fulldata",Sys.Date(), "_",round, ".RData") #Salva cada ronda de optimizaciones, por si acaso
   save(lhs, file = filename)
   
   # Ahora, recuperamos la loglikelihood de cada combinación de parámetros
