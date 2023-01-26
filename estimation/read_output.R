@@ -13,7 +13,7 @@ theme_set(ggplot2::theme_bw() +
 
 
 
-Path <- "~/INVASIBILITY_THRESHOLD/output/"
+Path <- "~/INVASIBILITY_THRESHOLD/output/Estimation/"
 listfile <- list.files(Path)
 l <- length(listfile)
 df_out <- data.frame(c = numeric(),b= numeric(),xi= numeric(),
@@ -21,6 +21,15 @@ df_out <- data.frame(c = numeric(),b= numeric(),xi= numeric(),
 for(j in c(1:l)){
   load(paste0(Path,listfile[[j]]))
   for (i in c(1:300)) {
-    df_out[i*j,] <- c(lhs[[i]]$par, lhs[[i]]$value, lhs[[i]]$convergence)
+    if(length(lhs[[i]]) == 5){
+      df_out[i*j,] <- c(lhs[[i]]$par, lhs[[i]]$value, lhs[[i]]$convergence)
+    }else{
+      df_out[i*j,] <- c(0,0,0,0,0,0,0)
+    }
+    
   }
 }
+
+df_conv <- df_out[which(df_out$conv == 0),]
+df_conv$diff <- abs(df_conv$c - 0.1) +  abs(df_conv$b - 0.2) +
+  abs(df_conv$xi - 0.5) +  abs(df_conv$alp - 100) 
