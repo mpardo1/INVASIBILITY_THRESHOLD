@@ -81,9 +81,9 @@ distinct_station_points = station_points %>% group_by(INDICATIVO) %>% summarize(
 
 weather_daily_sf = distinct_station_points %>% left_join(weather_daily, by=c("INDICATIVO"="indicativo")) %>% filter(!is.na(mwi) & !is.na(fecha))
 
-write_rds(weather_daily, paste0("home/usuaris/m.pardo/INVASIBILITY_THRESHOLD/data/aemet_weather_daily_deep_history_",Sys.Date(),".Rds"))
+write_rds(weather_daily, paste0("/home/usuaris/m.pardo/INVASIBILITY_THRESHOLD/data/aemet_weather_daily_deep_history_",Sys.Date(),".Rds"))
 
-write_rds(weather_daily_sf, paste0("home/usuaris/m.pardo/INVASIBILITY_THRESHOLD/data/aemet_weather_daily_deep_history_sf_",Sys.Date(),".Rds"))
+write_rds(weather_daily_sf, paste0("/home/usuaris/m.pardo/INVASIBILITY_THRESHOLD/data/aemet_weather_daily_deep_history_sf_",Sys.Date(),".Rds"))
 
 # Path <- "/home/usuaris/m.pardo/INVASIBILITY_THRESHOLD/OUTPUT/aemet_weather_daily_deep_history.Rds"
 # weather_daily <- readRDS(Path)
