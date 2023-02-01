@@ -1,3 +1,4 @@
+rm(list=ls())
 library("mapSpain")
 library(tidyverse)
 library(sf)
@@ -10,17 +11,17 @@ df <- readRDS(Path)
 
 # Spain map municipalities
 esp_can <- esp_get_munic_siane(moveCAN = TRUE)
-esp_can$R0 <- runif(length(esp_can$codauto),0,5)
+esp_can$R0_test <- runif(length(esp_can$codauto),0,5)
 can_box <- esp_get_can_box()
 
 ggplot(esp_can) +
-  geom_sf(aes(fill = R0), size = 0.1) +
+  geom_sf(aes(fill = R0_test), size = 0.1) +
   geom_sf(data = can_box) + theme_bw()
 
 # Path <- "/home/marta/INVASIBILITY_THRESHOLD/data/recintos_autonomicas_inspire_peninbal_etrs89.shp"
 # df_muni <- read_sf(Path)
-Path <- "/home/marta/Documentos/PHD/2022/INVASIBILY/Municipios_Data/Municipios_IGN.shp"
-df_muni <- read_sf(Path)
+# Path <- "/home/marta/Documentos/PHD/2022/INVASIBILY/Municipios_Data/Municipios_IGN.shp"
+# df_muni <- read_sf(Path)
 
 #------------------------FUNCTIONS---------------------------#
 # Main functions 
@@ -57,5 +58,32 @@ R0_func <- function(Te){
   return(R0)
 }
 
-Path <- "~/INVASIBILITY_THRESHOLD/data/aemet_weather_daily_deep_history_sf_2023-01-31.Rds"
-weather <- readRDS(Path)
+# Read the weather data for a specific month and year for all municipalities
+Path <- "~/INVASIBILITY_THRESHOLD/output/weather/aemet_weather_daily_deep_history_sf_2023-02-01.Rds"
+weather <- as.data.frame(readRDS(Path))
+weather$R0_tmin <- sapply(weather$tmin, R0_func)
+weather$R0_tmed <- sapply(weather$tmed, R0_func)
+weather$R0_tmax <- sapply(weather$tmax, R0_func)
+# Merge the municipalities shapefile with the weather data:
+weather_municip_R0 <- merge(x=esp_can, y=weather,
+                          by.x="name",by.y="NAMEUNIT", all.x=TRUE, all.y = TRUE)
+
+# Plot Map
+library(viridis)
+R0_tmin_plot <- ggplot(weather_municip_R0) +
+  geom_sf(aes(fill = R0_tmin), size = 0.01) + scale_fill_viridis() +
+  geom_sf(data = can_box) + theme_bw() + ggtitle("Min temperature")
+
+R0_tmed_plot <- ggplot(weather_municip_R0) +
+  geom_sf(aes(fill = R0_tmed), size = 0.01) + scale_fill_viridis() +
+  geom_sf(data = can_box) + theme_bw() + ggtitle("Average temperature")
+
+R0_tmax_plot <- ggplot(weather_municip_R0) +
+  geom_sf(aes(fill = R0_tmax), size = 0.01) + scale_fill_viridis() +
+  geom_sf(data = can_box) + theme_bw() + ggtitle("Max temperature")
+
+library("cowplot")
+plot_3 <- plot_grid(R0_tmin_plot, R0_tmed_plot,R0_tmax_plot, ncol = 3,common.legend = TRUE)
+
+
+          

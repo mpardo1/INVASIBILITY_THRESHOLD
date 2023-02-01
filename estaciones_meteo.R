@@ -8,6 +8,7 @@ esta_meteo <- st_read(
 st_geometry_type(esta_meteo)
 st_bbox(esta_meteo)
 
+can_stations =
 esp_can <- esp_get_munic_siane(moveCAN = FALSE)
 
 ggplot(esp_can) +
