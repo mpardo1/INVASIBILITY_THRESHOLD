@@ -2,12 +2,7 @@ rm(list=ls())
 library("mapSpain")
 library(tidyverse)
 library(sf)
-
-# Read temperature John File.
-Path <- "/home/marta/Documentos/PHD/2022/INVASIBILY/OUTPUT/aemet_weather_daily_deep_history_sf.Rds"
-df <- readRDS(Path)
-Path <- "/home/marta/Documentos/PHD/2022/INVASIBILY/OUTPUT/aemet_weather_daily_deep_history.Rds"
-df <- readRDS(Path)
+library(pollen)
 
 # Spain map municipalities
 esp_can <- esp_get_munic_siane(moveCAN = TRUE)
@@ -61,12 +56,18 @@ R0_func <- function(Te){
 # Read the weather data for a specific month and year for all municipalities
 Path <- "~/INVASIBILITY_THRESHOLD/output/weather/aemet_weather_daily_deep_history_sf_2023-02-01.Rds"
 weather <- as.data.frame(readRDS(Path))
+weather <- weather %>%
+  mutate(gdd = gdd(tmax = tmax, tmin = tmin, tbase = 10,
+                   tbase_max = 30)) %>%
+  mutate(daily_acc_gdd = c(NA, diff(gdd)))
+
 weather$R0_tmin <- sapply(weather$tmin, R0_func)
 weather$R0_tmed <- sapply(weather$tmed, R0_func)
 weather$R0_tmax <- sapply(weather$tmax, R0_func)
 # Merge the municipalities shapefile with the weather data:
 weather_municip_R0 <- merge(x=esp_can, y=weather,
                           by.x="name",by.y="NAMEUNIT", all.x=TRUE, all.y = TRUE)
+
 
 # Plot Map
 library(viridis)
@@ -82,8 +83,16 @@ R0_tmax_plot <- ggplot(weather_municip_R0) +
   geom_sf(aes(fill = R0_tmax), size = 0.01) + scale_fill_viridis() +
   geom_sf(data = can_box) + theme_bw() + ggtitle("Max temperature")
 
-library("cowplot")
-plot_3 <- plot_grid(R0_tmin_plot, R0_tmed_plot,R0_tmax_plot, ncol = 3,common.legend = TRUE)
+library("ggpubr")
+plot_3 <- ggarrange(R0_tmin_plot + 
+                      scale_fill_discrete(name = "R0"),
+                    R0_tmed_plot,
+                    common.legend = TRUE,
+                    legend = "bottom", ncol = 2)
 
+plot <- ggarrange(plot_3,
+          R0_tmax_plot,
+          common.legend = TRUE, legend = "none", heights = c(1,0.8), ncol = 1)
 
+plot + annotate("text", x = 0, y = 0.8, label = "August 2021")
           
