@@ -24,7 +24,7 @@ library(janitor)
 library(RcppRoll)
 library(parallel)
 library(data.table)
-library(groupdata2)
+# library(groupdata2)
 
 # SETTING DATES ####
 yesterday =today() - 1
