@@ -95,4 +95,40 @@ plot <- ggarrange(plot_3,
           common.legend = TRUE, legend = "none", heights = c(1,0.8), ncol = 1)
 
 plot + annotate("text", x = 0, y = 0.8, label = "August 2021")
-          
+        
+Path <- "~/INVASIBILITY_THRESHOLD/output/weather/Monthly/"
+list_file <- list.files(Path)
+
+plot_map <- function(path){
+  
+  month_num <- substr(path,22,24)
+  if(substr(month_num,2,2) == "_"){
+    month_num <- substr(month_num,1,1)
+  }
+  
+  weather <- as.data.frame(readRDS(paste0("~/INVASIBILITY_THRESHOLD/output/weather/Monthly/",path)))
+  weather$R0_tmin <- sapply(weather$tmin, R0_func)
+  weather$R0_tmed <- sapply(weather$tmed, R0_func)
+  weather$R0_tmax <- sapply(weather$tmax, R0_func)
+  
+  # Merge the municipalities shapefile with the weather data:
+  weather_municip_R0 <- merge(x=esp_can, y=weather,
+                              by.x="name",by.y="NAMEUNIT", all.x=TRUE, all.y = TRUE)
+  
+  # Create plots:
+  R0_tmin_plot <- ggplot(weather_municip_R0) +
+    geom_sf(aes(fill = R0_tmin), size = 0.01) + scale_fill_viridis(name = "R0(T)", limits = c(0, 40)) +
+    geom_sf(data = can_box) + theme_bw() + ggtitle(paste("Min temperature,", "month:", month_num))
+  
+  R0_tmed_plot <- ggplot(weather_municip_R0) +
+    geom_sf(aes(fill = R0_tmed), size = 0.01) + scale_fill_viridis(name = "R0(T)", limits = c(0, 40)) +
+    geom_sf(data = can_box) + theme_bw() + ggtitle(paste("Avg temperature,", "month:", month_num))
+  
+  R0_tmax_plot <- ggplot(weather_municip_R0) +
+    geom_sf(aes(fill = R0_tmax), size = 0.01) + scale_fill_viridis(name = "R0(T)", limits = c(0, 40)) +
+    geom_sf(data = can_box) + theme_bw() + ggtitle(paste("Max temperature,", "month:", month_num))
+  
+  return(list(R0_tmin_plot,R0_tmed_plot,R0_tmax_plot))
+}
+
+list_plot <- lapply(list_file, plot_map)

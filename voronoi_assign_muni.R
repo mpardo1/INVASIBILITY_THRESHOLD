@@ -58,49 +58,7 @@ station_points = st_read("~/INVASIBILITY_THRESHOLD/data/Estaciones_Completas.shp
   bind_rows(st_read("~/INVASIBILITY_THRESHOLD/data/Estaciones_Pluviometricas.shp")) %>% 
   st_transform(SPAIN_CRS)
 
-# h <- new_handle()
-# handle_setheaders(h, 'api_key' = 'eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJqb2huLnBhbG1lckB1cGYuZWR1IiwianRpIjoiYWRjYTliNGItNmZkMC00MTlkLWI1MzMtNjRlNzQwMGY2MDAxIiwiaXNzIjoiQUVNRVQiLCJpYXQiOjE2MTA0NTk4MTUsInVzZXJJZCI6ImFkY2E5YjRiLTZmZDAtNDE5ZC1iNTMzLTY0ZTc0MDBmNjAwMSIsInJvbGUiOiIifQ.JtTlq8QIaAEdte8Mn3JrgzGvkwrtboEpswfEK6Lb1Hc')
-# 
-# all_dates = seq.Date(from = as_date("2004-01-01"), to=as_date("2022-07-23"), by = "day")
-# 
-# ncores = 1
-# 
-# i = length(all_dates)-7
-# weather_daily = bind_rows(lapply(1:length(all_dates), function(i){
-# 
-#   start_date = all_dates[i]
-#   print(start_date)
-#   flush.console()
-#   if(i %% 10 == 0) Sys.sleep(30)
-# 
-#   req = curl_fetch_memory(paste0('https://opendata.aemet.es/opendata/api/valores/climatologicos/diarios/datos/fechaini/', start_date, 'T00%3A00%3A00UTC/fechafin/', start_date, 'T23%3A59%3A59UTC/todasestaciones'), handle=h)
-# 
-#   wurl = fromJSON(rawToChar(req$content))$datos
-# 
-#   req = curl_fetch_memory(wurl)
-# 
-#   wdia  = fromJSON(rawToChar(req$content)) %>% as_tibble() %>% select(fecha, indicativo, velmedia, tmed, tmin, tmax, prec) %>% mutate(
-#     velmedia = as.numeric(str_replace(velmedia, ",", ".")),
-#     tmed = as.numeric(str_replace(tmed, ",", ".")),
-#     tmin = as.numeric(str_replace(tmin, ",", ".")),
-#     tmax = as.numeric(str_replace(tmax, ",", ".")),
-#     prec = as.numeric(str_replace(prec, ",", ".")),
-#     FW = as.integer(velmedia <= (6*3.6)*1000/(60*60)),
-#     FT = case_when(tmed<=15~0, tmed>30~0, (tmed>15 & tmed <=20)~ (.2*tmed)-3, (tmed>20 & tmed<=25)~1, (tmed>25 & tmed <= 30)~ (-.2*tmed)+6),
-#     mwi = FW*FT
-#   ) %>% select(fecha, indicativo, mwi, tmed, tmin, tmax, prec) %>% filter(!is.na(mwi))
-# 
-#   return(wdia)
-# }))
-# 
-# distinct_station_points = station_points %>% group_by(INDICATIVO) %>% summarize()
-# 
-# weather_daily_sf = distinct_station_points %>% left_join(weather_daily, by=c("INDICATIVO"="indicativo")) %>% filter(!is.na(mwi) & !is.na(fecha))
-# 
-# write_rds(weather_daily, paste0("~/INVASIBILITY_THRESHOLD/output/weather/aemet_weather_daily_deep_history_",Sys.Date(),".Rds"))
-# 
-# write_rds(weather_daily_sf, paste0("~/INVASIBILITY_THRESHOLD/output/weather/aemet_weather_daily_deep_history_sf_",Sys.Date(),".Rds"))
-
+# File with weather data:
 Path <- "~/INVASIBILITY_THRESHOLD/output/weather/aemet_weather_daily_deep_history_sf_2023-01-30.Rds"
 weather_daily <- readRDS(Path)
 
@@ -122,116 +80,95 @@ weather_daily_filt_mean <- weather_daily_filt_mean[order(weather_daily_filt_mean
                                                          weather_daily_filt_mean$month,
                                                          weather_daily_filt_mean$INDICATIVO),]
 
-# List of list with meteo station that are depending on the month.
-part_df <- split(weather_daily_filt_mean, list(weather_daily_filt_mean$month, weather_daily_filt_mean$year))
-list_meteo_station <- lapply(part_df, "[", 1)
-list_INDI <- unique(list_meteo_station)
+# # List of list with meteo station that are depending on the month.
+# part_df <- split(weather_daily_filt_mean, list(weather_daily_filt_mean$month, weather_daily_filt_mean$year))
+# list_meteo_station <- lapply(part_df, "[", 1)
+# list_INDI <- unique(list_meteo_station)
 
-# Filter an specific month:
-month_e <- "06"
-year_e <- "21"
-weather_daily_filt_mean <- weather_daily_filt_mean[which(weather_daily_filt_mean$month == month_e & weather_daily_filt_mean$year == year_e),]
-station_meteo <- unique(weather_daily_filt_mean %>%  group_by(INDICATIVO) %>% 
-                          summarise(geometry = geometry))
-
-rm(weather_daily)
+# Delete non use data frame to free space.
+rm(weather_daily, weather_daily_filt)
+len <- length(unique(with(weather_daily_filt_mean, paste0(year, month))))
 #---------------------------------------------------------------------------#
+
 #----------------------ASSOCIATION METEO STATION MUNICIPALITIES-----------------------------#
-#### Associate municipalities to meteo stations
-### All files in John Palmer cluster directory 
-# setwd("~/SpainTiger")
-# source("scripts/functions.r")
-# source("scripts/parameters.r")
-# 
-# cell_res <- 1000
-# cell_mask <- 0.025
-# SPAIN_CRS = 25830
-# ua <- read_rds("data/proc/spain_ua_multipolygon.Rds")
-# st_crs(ua) <- 25830
-# spain_map <- read_rds("data/proc/spain_map.Rds")
-# spain_perimeter <- read_rds("data/proc/spain_perimeter.Rds")
-# st_crs(spain_perimeter) <- 4258
-# 
-# # Voronoi cells for weather stations ####
-# station_points <- station_points[which(station_points$INDICATIVO %in% station_meteo$INDICATIVO),]
-# spain_perimeter = st_read("~/INVASIBILITY_THRESHOLD/data/recintos_autonomicas_inspire_peninbal_etrs89.shp") %>% 
-#   bind_rows(st_read("~/INVASIBILITY_THRESHOLD/data/recintos_autonomicas_inspire_canarias_wgs84.shp")) %>% 
-#   st_transform(SPAIN_CRS) %>% summarize() 
-# 
-# vor = station_points %>% st_geometry() %>% st_union() %>%
-#   st_voronoi(envelope = st_geometry(spain_perimeter)) %>%
-#   st_collection_extract(type = "POLYGON") %>% st_as_sf() %>%
-#   st_intersection(spain_perimeter) %>% st_join(station_points)
-# 
-# ggplot(vor) + 
-#   geom_sf()
+setwd("~/SpainTiger")
+source("scripts/functions.r")
+source("scripts/parameters.r")
 
-# Loading Models ####
-# spain_muni_map = st_read("data/cartography/SIGLIM_Publico_INSPIRE/SHP_ETRS89/recintos_municipales_inspire_peninbal_etrs89/recintos_municipales_inspire_peninbal_etrs89.shp") %>%
-#   bind_rows(st_read("~/INVASIBILITY_THRESHOLD/data/recintos_municipales_inspire_canarias_wgs84/recintos_municipales_inspire_canarias_wgs84.shp")) 
-# st_crs(spain_muni_map) = 4258
-# spain_muni_map = spain_muni_map %>% st_transform(st_crs(ua))
-# 
-# # muni_points = spain_muni_map %>% select(geometry) %>% st_centroid() # creating muni centroids so that the munis end up with at least 1 sampled point
-# this_perimeter_25830 <- spain_perimeter %>% st_transform(st_crs(ua)) %>% st_union()
-# these_points = st_make_grid(st_bbox(this_perimeter_25830)+100000*c(-1,-1,1,1),
-#                             cellsize = c(cell_res,cell_res), what = "polygons",
-#                             square = TRUE) %>% st_sf %>%
-#   st_join(spain_muni_map %>% 
-#             dplyr::select(NAMEUNIT, NATCODE, CODNUT1, CODNUT2, CODNUT3),
-#           join = st_intersects, left=FALSE) %>% 
-#   st_cast("POINT") %>% st_as_sf() %>% 
-#   st_join(vor %>% dplyr::select(INDICATIVO) %>% 
-#             rename(indicativo = INDICATIVO), join = st_intersects, left=FALSE) 
-# 
-# write_rds(these_points, paste0("~/INVASIBILITY_THRESHOLD/data/station_municipalities.Rds"))
+cell_res <- 1000
+cell_mask <- 0.025
+SPAIN_CRS = 25830
+ua <- read_rds("data/proc/spain_ua_multipolygon.Rds")
+st_crs(ua) <- 25830
+spain_perimeter <- read_rds("data/proc/spain_perimeter.Rds")
+st_crs(spain_perimeter) <- 4258
 
-Path <- "~/INVASIBILITY_THRESHOLD/data/station_municipalities.Rds"
-these_points <- readRDS(Path)
+len <- length(unique(with(weather_daily_filt_mean, paste0(year, month))))
+# Since there are not data for all stations every month, we should compute the voronoi for each month
+# Highly cost computationally.
 
-these_points <- unique(these_points[,c(1,6)])
-these_points_filt <- unique(as.data.frame(these_points)[,c(1,2)])
-# ggplot(these_points) + geom_sf() + geom_sf(data=this_perimeter_25830, color="red", fill=NA)
-# length(unique(these_points$NATCODE))
-# these_points_muni_xy25830_df = unlist(st_geometry(these_points)) %>%
-#   matrix(ncol=2,byrow=TRUE) %>% as_tibble(.name_repair="universal") %>%
-#   setNames(c("crs25830_x","crs25830_y")) %>% as_tibble()
-# 
-# these_points_muni_lonlat = these_points %>% st_transform(crs=4326)
-# 
-# these_points_muni_lonlat_df = unlist(st_geometry(these_points_muni_lonlat)) %>%
-#   matrix(ncol=2,byrow=TRUE) %>% as_tibble(.name_repair="universal") %>% 
-#   setNames(c("lon","lat")) %>% as_tibble()
-# these_points_muni = these_points %>% 
-#   mutate(lon = these_points_muni_lonlat_df$lon, lat = these_points_muni_lonlat_df$lat, 
-#          crs25830_x = these_points_muni_xy25830_df$crs25830_x, 
-#          crs25830_y = these_points_muni_xy25830_df$crs25830_y)
-# 
-# write_rds(these_points_muni_lc, paste0("data/prediction_points_spain/prediction_points_lc_sf_df_all_spain_", cell_res, ".Rds"))
-# 
-# # Filter weather stations by municipality:
-# Path <- "~/SpainTiger/data/prediction_points_spain/prediction_points_lc_sf_df_all_spain_1000.Rds"
-# these_points_muni_lc <- readRDS(Path)
-# these_points_muni_lc <- these_points_muni_lc[, c(2,7)]
-# these_points_muni_lc$geometry <- NULL
-# these_points_muni_lc <- unique(these_points_muni_lc)
+# Function that input the weather_file data with the station and the variables and output the same weather file
+# with the municipalities name
+rel_meteostat_muni <- function(weather_daily_f){
+  init_time <- Sys.time()
+  station_points <- station_points[which(station_points$INDICATIVO %in% unique(weather_daily_f$INDICATIVO)),]
+  spain_perimeter = st_read("~/INVASIBILITY_THRESHOLD/data/recintos_autonomicas_inspire_peninbal_etrs89.shp") %>%
+    bind_rows(st_read("~/INVASIBILITY_THRESHOLD/data/recintos_autonomicas_inspire_canarias_wgs84.shp")) %>%
+    st_transform(SPAIN_CRS) %>% summarize()
+  
+  
+  # Voronoi cells for weather stations ####
+  vor = station_points %>% st_geometry() %>% st_union() %>%
+    st_voronoi(envelope = st_geometry(spain_perimeter)) %>%
+    st_collection_extract(type = "POLYGON") %>% st_as_sf() %>%
+    st_intersection(spain_perimeter) %>% st_join(station_points)
+  
+  # ggplot(vor) +
+  #   geom_sf()
+  
+  # John Codes: ####
+  spain_muni_map = st_read("data/cartography/SIGLIM_Publico_INSPIRE/SHP_ETRS89/recintos_municipales_inspire_peninbal_etrs89/recintos_municipales_inspire_peninbal_etrs89.shp") %>%
+    bind_rows(st_read("~/INVASIBILITY_THRESHOLD/data/recintos_municipales_inspire_canarias_wgs84/recintos_municipales_inspire_canarias_wgs84.shp"))
+  st_crs(spain_muni_map) = 4258
+  spain_muni_map = spain_muni_map %>% st_transform(st_crs(ua))
+  this_perimeter_25830 <- spain_perimeter %>% st_transform(st_crs(ua)) %>% st_union()
+  these_points = st_make_grid(st_bbox(this_perimeter_25830)+100000*c(-1,-1,1,1),
+                              cellsize = c(cell_res,cell_res), what = "polygons",
+                              square = TRUE) %>% st_sf %>%
+    st_join(spain_muni_map %>%
+              dplyr::select(NAMEUNIT, NATCODE, CODNUT1, CODNUT2, CODNUT3),
+            join = st_intersects, left=FALSE) %>%
+    st_cast("POINT") %>% st_as_sf() %>%
+    st_join(vor %>% dplyr::select(INDICATIVO) %>%
+              rename(indicativo = INDICATIVO), join = st_intersects, left=FALSE)
+  
+  these_points <- unique(these_points[,c(1,6,7)])
+  these_points$geometry <- NULL
+  these_points <- unique(these_points)
+  
+  weather_municip <- merge(x=weather_daily_f, y=these_points, 
+                           by.x="INDICATIVO", by.y="indicativo", all.x=TRUE, all.y = TRUE)
+  
+  weather_municip <-  weather_municip %>%  group_by(NAMEUNIT, month, year) %>% 
+    summarise(tmin = min(tmin), tmax = max(tmax), tmed = mean(tmed),
+              precmed = mean(precmed), rep = sum(num_weather), n = n())
+  
+  rm(these_points,spain_muni_map, vor,spain_perimeter)
+  print(paste0("Time expended in the function:", Sys.time() -  init_time )) 
+  return(weather_municip)
+}
 
-
-# Join data frame municipalities names (these_points_muni_lc) with weather data from 
-# meteo stations (weather_daily_filt_mean)
-these_points_filt
-weather_municip <- merge(x=weather_daily_filt_mean, y=these_points_filt, 
-                         by.x="INDICATIVO", by.y="indicativo", all.x=TRUE, all.y = TRUE)
-
-# If there is more than one meteo station related with one municipality, average the temperatures
-# for the mean temp, and get the minimum (maximum) for the stations for the mintemp (maxtemp)
-weather_municip <-  weather_municip %>%  group_by(NAMEUNIT, month, year) %>% 
-  summarise(tmin = min(tmin), tmax = max(tmax), tmed = mean(tmed),
-            precmed = mean(precmed), rep = sum(num_weather), n = n())
-
-# Sort the data frame in order to take a look easily
-weather_municip <- weather_municip[order(weather_municip$NAMEUNIT,
-                                         weather_municip$year,
-                                         weather_municip$month),]
-write_rds(weather_municip, paste0("~/INVASIBILITY_THRESHOLD/output/weather/aemet_weather_daily_deep_history_sf_",Sys.Date(),".Rds"))
+### Loop over all months and years:
+min_year <- as.numeric(min(weather_daily_filt_mean$year))
+max_year <- as.numeric(max(weather_daily_filt_mean$year))
+while(min_year < (max_year + 1)){
+  for(i in c(1:12)){
+    weather_daily_f <- weather_daily_filt_mean[which(as.numeric(weather_daily_filt_mean$month) == i &
+                                                       as.numeric(weather_daily_filt_mean$year) == min_year),]
+    df_weather <- rel_meteostat_muni(weather_daily_f)
+    write_rds(df_weather, paste0("~/INVASIBILITY_THRESHOLD/output/weather/aemet_weather_monthly_",i,"_",min_year,".Rds"))
+    rm(weather_daily_f,df_weather)  
+  }
+  min_year = min_year + 1
+}
 
