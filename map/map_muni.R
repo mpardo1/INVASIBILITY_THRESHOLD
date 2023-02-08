@@ -3,6 +3,13 @@ library("mapSpain")
 library(tidyverse)
 library(sf)
 library(pollen)
+library(raster)
+library(ggplot2)
+library(sf)
+library(dplyr)
+library(lubridate)
+library(gganimate)
+library(rmapshaper)
 
 # Spain map municipalities
 esp_can <- esp_get_munic_siane(moveCAN = TRUE)
@@ -101,10 +108,11 @@ list_file <- list.files(Path)
 
 plot_map <- function(path){
   
-  month_num <- substr(path,22,24)
-  if(substr(month_num,2,2) == "_"){
-    month_num <- substr(month_num,1,1)
-  }
+  if(substr(path,24,24) == "_"){
+        month_num <- as.numeric(substr(path,23,23))
+      }else{
+        month_num <- as.numeric(substr(path,23,24))
+      }
   
   weather <- as.data.frame(readRDS(paste0("~/INVASIBILITY_THRESHOLD/output/weather/Monthly/",path)))
   weather$R0_tmin <- sapply(weather$tmin, R0_func)
@@ -115,20 +123,87 @@ plot_map <- function(path){
   weather_municip_R0 <- merge(x=esp_can, y=weather,
                               by.x="name",by.y="NAMEUNIT", all.x=TRUE, all.y = TRUE)
   
+  Path_plots <- "~/INVASIBILITY_THRESHOLD/output/weather/"
   # Create plots:
+  png(paste0(paste0(Path_plots,"plots/min",'/', as.character(month_num), '.png')), 
+      width=6, height=6, unit="in", res=175, pointsize=10)
+  
   R0_tmin_plot <- ggplot(weather_municip_R0) +
     geom_sf(aes(fill = R0_tmin), size = 0.01) + scale_fill_viridis(name = "R0(T)", limits = c(0, 40)) +
     geom_sf(data = can_box) + theme_bw() + ggtitle(paste("Min temperature,", "month:", month_num))
+  dev.off()
+  
+  png(paste0(paste0(Path_plots,"plots/avg",'/', as.character(month_num), '.png')), 
+      width=6, height=6, unit="in", res=175, pointsize=10)
   
   R0_tmed_plot <- ggplot(weather_municip_R0) +
     geom_sf(aes(fill = R0_tmed), size = 0.01) + scale_fill_viridis(name = "R0(T)", limits = c(0, 40)) +
     geom_sf(data = can_box) + theme_bw() + ggtitle(paste("Avg temperature,", "month:", month_num))
+  dev.off()
+  
+  png(paste0(paste0(Path_plots,"plots/max",'/', as.character(month_num), '.png')), 
+      width=6, height=6, unit="in", res=175, pointsize=10)
   
   R0_tmax_plot <- ggplot(weather_municip_R0) +
     geom_sf(aes(fill = R0_tmax), size = 0.01) + scale_fill_viridis(name = "R0(T)", limits = c(0, 40)) +
     geom_sf(data = can_box) + theme_bw() + ggtitle(paste("Max temperature,", "month:", month_num))
+  dev.off()
   
   return(list(R0_tmin_plot,R0_tmed_plot,R0_tmax_plot))
 }
 
-list_plot <- lapply(list_file, plot_map)
+
+plot_map <- function(path){
+
+  if(substr(path,24,24) == "_"){
+    month_num <- as.numeric(substr(path,23,23))
+  }else{
+    month_num <- as.numeric(substr(path,23,24))
+  }
+
+  weather <- as.data.frame(readRDS(paste0("~/INVASIBILITY_THRESHOLD/output/weather/Monthly/",path)))
+  weather$R0_tmin <- sapply(weather$tmin, R0_func)
+  weather$R0_tmed <- sapply(weather$tmed, R0_func)
+  weather$R0_tmax <- sapply(weather$tmax, R0_func)
+  
+  colnames(esp_can) <- c(colnames(esp_can)[1:5], "NAMEUNIT",colnames(esp_can)[7:length(colnames(esp_can))])
+  # Merge the municipalities shapefile with the weather data:
+  weather_municip_R01 <-  esp_can %>% 
+    left_join(weather)
+    
+    # merge(x=esp_can, y=weather,
+    #                            by.x="name",by.y="NAMEUNIT", all.x=TRUE, all.y = TRUE)
+
+  weather_municip_R01$month_n <- month_num
+  if(exists('weather_municip_R0') && is.data.frame(get('weather_municip_R0'))){
+    weather_municip_R0 <- rbind(weather_municip_R0,weather_municip_R01)
+  }else{
+    weather_municip_R0 <- weather_municip_R01
+  }
+
+  return(weather_municip_R0)
+}
+
+rm(weather_municip_R0)
+df_plot <- lapply(list_file, plot_map)
+df_plot <- do.call(rbind.data.frame, df_plot)
+
+# Create plots:
+df_plot <- df_plot[,c(6,9,17,18,19,21)]
+df_plot %>% 
+  ggplot() +
+  geom_sf(aes(fill = R0_tmin)) +
+  scale_fill_viridis_c() +
+  theme_void() +
+  coord_sf(datum = NA) +
+  labs(title = "Month: {current_frame}") +
+  transition_manual(month_n)
+
+ggplot(df_plot) +
+  geom_sf(aes(fill = R0_tmed), size = 0.01) + 
+  scale_fill_viridis(name = "R0(T)", limits = c(0, 40)) +
+  geom_sf(data = can_box) + coord_sf(datum = NA) +
+  theme(plot.margin = margin(0.2, 0.2, 0.2, 0.2, "cm")) + 
+  theme_void() +
+  labs(title = "Month: {current_frame}") +
+  transition_manual(month_n)
