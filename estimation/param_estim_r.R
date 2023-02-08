@@ -123,7 +123,7 @@ while(condition){
     print(paste("k:",k))
     start_time1 <- Sys.time()
     
-    fit <- optim(par = seeds[, k], fn = ll_ode, forcings = signal, y = out, 
+    fit <- optim(par = seeds[, k], fn = ll_ode, forcings = signal, y = out , 
                  control = list(fnscale = -1, maxit = 500, parscale = seeds[, k]))
   
     

@@ -61,7 +61,7 @@ TFD_plot <- ggplot(TFD_df) +
   ylab("TFD, Fecundity rate") 
 TFD_plot
 
-# Survival probability Larva:
+# Survival probability Egg-Adult:
 pEA_f <- function(temp){Quad_func(0.00361,9.04,39.33,temp)}
 vec <- seq(min_temp,max_temp,time_step)
 pEA <- sapply(vec, pEA_f)
