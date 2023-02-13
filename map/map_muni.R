@@ -109,7 +109,7 @@ plot + annotate("text", x = 0, y = 0.8, label = "August 2021")
 ## Function to read all output weather file compute R0 and create a list of df.  
 plot_map <- function(path){
 
-  weather <- as.data.frame(readRDS(paste0("~/INVASIBILITY_THRESHOLD/output/weather/Monthly/",path)))
+  weather <- as.data.frame(readRDS(paste0("~/INVASIBILITY_THRESHOLD/output/weather/Monthly/weather/",path)))
   weather$R0_tmin <- sapply(weather$tmin, R0_func_alb)
   weather$R0_tmed <- sapply(weather$tmed, R0_func_alb)
   weather$R0_tmax <- sapply(weather$tmax, R0_func_alb)
@@ -127,7 +127,7 @@ plot_map <- function(path){
   return(weather_municip_R0)
 }
 
-Path <- "~/INVASIBILITY_THRESHOLD/output/weather/Monthly/"
+Path <- "~/INVASIBILITY_THRESHOLD/output/weather/Monthly/weather/"
 list_file <- list.files(Path)
 list_file_filt <- list_file[which(str_sub(list_file, -6,-5) == "10")]
 df_plot <- lapply(list_file_filt, plot_map)
@@ -144,7 +144,7 @@ ggplot(df_plot) +
   labs(title = "Month: {current_frame}") +
   transition_manual(month)
 
-anim_save("~/Documentos/PHD/2023/INVASIBILITY/Plots/animation_alb.gif",
+anim_save("~/Documentos/PHD/2023/INVASIBILITY/Plots/animation_alb_2010.gif",
           animation = last_animation())
 
 df_plot$bool <- ifelse(df_plot$R0_tmed >= 1, 1,0)
@@ -160,11 +160,16 @@ plot_sum_albo <- ggplot(df_plot_bool) +
   theme_bw() 
 
 plot_sum_albo
-ggsave("~/Documentos/PHD/2023/INVASIBILITY/Plots/num_months_alb.png")
-
+ggsave("~/Documentos/PHD/2023/INVASIBILITY/Plots/num_months_alb_2010.png")
 
 # Time series in CCAA R0:
+df_plot_ccaa <- df_plot %>% group_by(ine.ccaa.name, month, year) %>% 
+  summarise( avg_R0 = mean(R0_tmed), n = n())
+df_plot_ccaa$date <- as.Date(paste0("01/",df_plot_ccaa$month,"/20",df_plot_ccaa$year))
 
+ggplot(df_plot_ccaa) + 
+  geom_line(aes(date, avg_R0, color = ine.ccaa.name )) + 
+  theme_bw()
 #### -------------------------- Aegypti ------------------------- ####
 ## Thermal responses Aedes Aegypti from Mordecai 2017:
 a_f_aeg <- function(temp){Briere_func(0.000202,13.35,40.08,temp)} # Biting rate
