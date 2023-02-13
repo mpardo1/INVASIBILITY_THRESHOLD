@@ -127,8 +127,10 @@ rel_meteostat_muni <- function(weather_daily_f){
   #   geom_sf()
   
   # John Codes: ####
-  spain_muni_map = st_read("data/cartography/SIGLIM_Publico_INSPIRE/SHP_ETRS89/recintos_municipales_inspire_peninbal_etrs89/recintos_municipales_inspire_peninbal_etrs89.shp") %>%
+  spain_muni_map = st_read("~/INVASIBILITY_THRESHOLD/muni_data/recintos_municipales_inspire_peninbal_etrs89/recintos_municipales_inspire_peninbal_etrs89.shp") %>%
     bind_rows(st_read("~/INVASIBILITY_THRESHOLD/data/recintos_municipales_inspire_canarias_wgs84/recintos_municipales_inspire_canarias_wgs84.shp"))
+  
+  # Cambia el sistema de coordenadas.
   st_crs(spain_muni_map) = 4258
   spain_muni_map = spain_muni_map %>% st_transform(st_crs(ua))
   this_perimeter_25830 <- spain_perimeter %>% st_transform(st_crs(ua)) %>% st_union()
