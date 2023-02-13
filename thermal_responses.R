@@ -24,95 +24,98 @@ Quad_func <- function(cte, tmin, tmax, temp){
   return(outp)
 }
 
-R0_func <- function(Te){
-  a <- a_f(Te)
-  f <- TFD_f(Te)
-  deltaa <- 1/lf_f(Te)
-  probla <- pEA_f(Te)
-  R0 <- sqrt(f*(a/deltaa)*probla)
-  return(R0)
-}
-
+########-------------------Albopictus-----------------------########
 # Thermal responses #
 min_temp = 10
 max_temp = 40
 time_step <- 0.001
-# Biting rate:
-a_f <- function(temp){Briere_func(0.000193,10.25,38.32,temp)}
-vec <- seq(min_temp,max_temp,time_step)
-a  <- sapply(vec, a_f )
-a_df <- data.frame( x = vec, a = a )
 
-a_plot <- ggplot(a_df) + 
+# Biting rate:
+a_f_albo <- function(temp){Briere_func(0.000193,10.25,38.32,temp)}
+vec <- seq(min_temp,max_temp,time_step)
+a_albo  <- sapply(vec, a_f_albo )
+a_df_albo <- data.frame( x = vec, a = a_albo )
+
+a_plot_albo <- ggplot(a_df_albo) + 
   geom_line(aes(x, a), color ="blue") +
   xlab("Temperature (Cº)") +
   ylab("a, Biting rate") 
-a_plot
+a_plot_albo
 
 # Fecundity:
-TFD_f <- function(temp){Briere_func(0.0488,8.02,35.65,temp)}
+TFD_f_albo <- function(temp){Briere_func(0.0488,8.02,35.65,temp)}
 vec <- seq(min_temp,max_temp,time_step)
-TFD <- sapply(vec, TFD_f)
-TFD_df <- data.frame( x = vec, TFD = TFD)
+TFD_albo <- sapply(vec, TFD_f_albo)
+TFD_df_albo <- data.frame( x = vec, TFD = TFD_albo)
 
-TFD_plot <- ggplot(TFD_df) + 
+TFD_plot_albo <- ggplot(TFD_df_albo) + 
   geom_line(aes(x, TFD), color ="blue")  +
   xlab("Temperature (Cº)") +
   ylab("TFD, Fecundity rate") 
-TFD_plot
+TFD_plot_albo
 
 # Survival probability Egg-Adult:
-pEA_f <- function(temp){Quad_func(0.00361,9.04,39.33,temp)}
+pEA_f_albo <- function(temp){Quad_func(0.00361,9.04,39.33,temp)}
 vec <- seq(min_temp,max_temp,time_step)
-pEA <- sapply(vec, pEA_f)
-pEA_df <- data.frame( x = vec, pEA = pEA)
+pEA_albo <- sapply(vec, pEA_f_albo)
+pEA_df_albo <- data.frame( x = vec, pEA = pEA_albo)
 
-pEA_plot <- ggplot(pEA_df) + 
+pEA_plot_albo <- ggplot(pEA_df_albo) + 
   geom_line(aes(x, pEA), color ="blue")  +
   xlab("Temperature (Cº)") +
   ylab("pEA, Edd-adult survival probability") 
-pEA_plot
+pEA_plot_albo
 
 # Mosquito Development Rate:
-MDR_f <- function(temp){Briere_func(0.0000638,8.6,39.66,temp)}
+MDR_f_albo <- function(temp){Briere_func(0.0000638,8.6,39.66,temp)}
 vec <- seq(min_temp,max_temp,time_step)
-MDR <- sapply(vec, MDR_f)
-MDR_df <- data.frame( x = vec, MDR = MDR)
+MDR_albo <- sapply(vec, MDR_f_albo)
+MDR_df_albo <- data.frame( x = vec, MDR = MDR_albo)
 
-MDR_plot <- ggplot(MDR_df) + 
+MDR_plot_albo <- ggplot(MDR_df_albo) + 
   geom_line(aes(x, MDR), color ="blue")  +
   xlab("Temperature (Cº)") +
   ylab("MDR, mosquito Development Rate") 
-MDR_plot
+MDR_plot_albo
 
 # Adult life span:
-lf_f <- function(temp){Quad_func(1.43,13.41,31.51,temp)}
+lf_f_albo <- function(temp){Quad_func(1.43,13.41,31.51,temp)}
 vec <- seq(min_temp,max_temp,time_step)
-lf <- sapply(vec, lf_f)
-lf_df <- data.frame( x = vec, lf = lf)
+lf_albo <- sapply(vec, lf_f_albo)
+lf_df_albo <- data.frame( x = vec, lf = lf_albo)
 
-lf_plot <- ggplot(lf_df) + 
+lf_plot_albo <- ggplot(lf_df_albo) + 
   geom_line(aes(x, lf), color ="blue")  +
   xlab("Temperature (Cº)") +
   ylab("lf, adult life span") 
-lf_plot
+lf_plot_albo
 
 # R0 depending on Temperature (Cº):
-vec <- seq(min_temp,max_temp,time_step)
-R0 <- sapply(vec, R0_func)
-r0_df <- data.frame( x = vec, a = R0)
+R0_func_albo <- function(Te){
+  a <- a_f_albo(Te)
+  f <- TFD_f_albo(Te)
+  deltaa <- 1/lf_f_albo(Te)
+  probla <- pEA_f_albo(Te)
+  R0 <- sqrt(f*(a/deltaa)*probla)
+  return(R0)
+}
 
-R0_plot <- ggplot(r0_df) + 
+vec <- seq(min_temp,max_temp,time_step)
+R0_albo <- sapply(vec, R0_func_albo)
+r0_df_albo <- data.frame( x = vec, a = R0_albo)
+
+R0_plot_albo <- ggplot(r0_df_albo) + 
   geom_line(aes(x, a), color ="blue")  +
   xlab("Temperature (Cº)") +
   ylab(TeX("$R_0 (Suitability index)$")) +
   geom_hline(yintercept = 1, linetype = "dashed", color = "red")
-R0_plot
+R0_plot_albo
 
 
 library("cowplot")
-plot_grid(a_plot,TFD_plot,pEA_plot,MDR_plot,lf_plot, R0_plot)
-
+albo <- plot_grid(a_plot_albo,TFD_plot_albo,pEA_plot_albo,
+                  MDR_plot_albo,lf_plot_albo, R0_plot_albo)
+albo
 ######## RACHEL FORMULA MT ##########
 # # Egg viability:
 # egg_f <- function(temp){Quad_func(0.00265,-0.91,34.26,temp)}
@@ -158,3 +161,97 @@ Mt_plot <- ggplot(Mt_df) +
   xlab("Temperature (Cº)") +
   ylab(TeX("$M_T(Mosquito density)$")) 
 Mt_plot
+
+########-------------------Aegypti-----------------------########
+# Thermal responses #
+min_temp = 10
+max_temp = 40
+time_step <- 0.001
+# Biting rate:
+a_f_aeg <- function(temp){Briere_func(0.000202,13.35,40.08,temp)}
+vec <- seq(min_temp,max_temp,time_step)
+a_aeg  <- sapply(vec, a_f_aeg )
+a_df_aeg <- data.frame( x = vec, a = a_aeg )
+
+a_plot_aeg <- ggplot(a_df_aeg) + 
+  geom_line(aes(x, a), color ="blue") +
+  xlab("Temperature (Cº)") +
+  ylab("a, Biting rate") 
+a_plot_aeg
+
+# Fecundity:
+TFD_f_aeg <- function(temp){Briere_func(0.00856,14.58,34.61,temp)}
+vec <- seq(min_temp,max_temp,time_step)
+TFD_aeg <- sapply(vec, TFD_f_aeg)
+TFD_df_aeg <- data.frame( x = vec, TFD = TFD_aeg)
+
+TFD_plot_aeg <- ggplot(TFD_df_aeg) + 
+  geom_line(aes(x, TFD), color ="blue")  +
+  xlab("Temperature (Cº)") +
+  ylab("TFD, Fecundity rate") 
+TFD_plot_aeg
+
+# Survival probability Egg-Adult:
+pEA_f_aeg <- function(temp){Quad_func(0.00599,13.56,38.29,temp)}
+vec <- seq(min_temp,max_temp,time_step)
+pEA_aeg <- sapply(vec, pEA_f_aeg)
+pEA_df_aeg <- data.frame( x = vec, pEA = pEA_aeg)
+
+pEA_plot_aeg <- ggplot(pEA_df_aeg) + 
+  geom_line(aes(x, pEA), color ="blue")  +
+  xlab("Temperature (Cº)") +
+  ylab("pEA, Edd-adult survival probability") 
+pEA_plot_aeg
+
+# Mosquito Development Rate:
+MDR_f_aeg <- function(temp){Briere_func(0.0000786,11.36,39.17,temp)}
+vec <- seq(min_temp,max_temp,time_step)
+MDR_aeg <- sapply(vec, MDR_f_aeg)
+MDR_df_aeg <- data.frame( x = vec, MDR = MDR_aeg)
+
+MDR_plot_aeg <- ggplot(MDR_df_aeg) + 
+  geom_line(aes(x, MDR), color ="blue")  +
+  xlab("Temperature (Cº)") +
+  ylab("MDR, mosquito Development Rate") 
+MDR_plot_aeg
+
+# Adult life span:
+lf_f_aeg <- function(temp){Quad_func(0.148,9.16,37.73,temp)}
+vec <- seq(min_temp,max_temp,time_step)
+lf_aeg <- sapply(vec, lf_f_aeg)
+lf_df_aeg <- data.frame( x = vec, lf = lf_aeg)
+
+lf_plot_aeg <- ggplot(lf_df_aeg) + 
+  geom_line(aes(x, lf), color ="blue")  +
+  xlab("Temperature (Cº)") +
+  ylab("lf, adult life span") 
+lf_plot_aeg
+
+# R0 depending on Temperature (Cº):
+R0_func_aeg <- function(Te){
+  a <- a_f_aeg(Te)
+  f <- TFD_f_aeg(Te)
+  deltaa <- 1/lf_f_aeg(Te)
+  probla <- pEA_f_aeg(Te)
+  R0 <- sqrt((f/deltaa)*probla)
+  return(R0)
+}
+
+vec <- seq(min_temp,max_temp,time_step)
+R0_aeg <- sapply(vec, R0_func_aeg)
+r0_df_aeg <- data.frame( x = vec, a = R0_aeg)
+
+R0_plot_aeg <- ggplot(r0_df_aeg) + 
+  geom_line(aes(x, a), color ="blue")  +
+  xlab("Temperature (Cº)") +
+  ylab(TeX("$R_0 (Suitability index)$")) +
+  geom_hline(yintercept = 1, linetype = "dashed", color = "red")
+R0_plot_aeg
+
+
+library("cowplot")
+aegyp <- plot_grid(a_plot_aeg,TFD_plot_aeg,pEA_plot_aeg,
+          MDR_plot_aeg,lf_plot_aeg, R0_plot_aeg)
+
+albo
+aegyp

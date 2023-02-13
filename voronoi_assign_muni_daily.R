@@ -64,19 +64,17 @@ weather_daily <- readRDS(Path)
 
 # Average weather data by month, smaller database:
 weather_daily$fecha <- as.Date(weather_daily$fecha)
-weather_daily_filt <- as.data.frame(weather_daily[which(weather_daily$fecha >  as.Date("2010-01-01")),])
-weather_daily_filt$month <- format(weather_daily_filt$fecha, "%m") 
-weather_daily_filt$year <- format(weather_daily_filt$fecha, "%y") 
+weather_daily$month <- format(weather_daily$fecha, "%m") 
+weather_daily$year <- format(weather_daily$fecha, "%y") 
+weather_daily$day <- format(weather_daily$fecha, "%d") 
+weather_daily_filt <- as.data.frame(weather_daily[which(weather_daily$fecha >  as.Date("2018-01-01")),])
 weather_daily_filt[which(is.na(weather_daily_filt$prec)),8] <- 0
-weather_daily_filt_mean <- weather_daily_filt %>%  group_by(INDICATIVO, month, year) %>% 
-  summarise(tmin = min(tmin), tmax = max(tmax), tmed = mean(tmed),
-            precmed = mean(prec), num_weather = n())
 
 indi_station_geo <- unique(weather_daily_filt[, c(1,2)])
 
-weather_daily_filt_mean <- weather_daily_filt_mean[order(weather_daily_filt_mean$year,
-                                                         weather_daily_filt_mean$month,
-                                                         weather_daily_filt_mean$INDICATIVO),]
+weather_daily_filt_mean <- weather_daily_filt[order(weather_daily_filt$year,
+                                                         weather_daily_filt$month,
+                                                         weather_daily_filt$INDICATIVO),]
 
 # # List of list with meteo station that are depending on the month.
 # part_df <- split(weather_daily_filt_mean, list(weather_daily_filt_mean$month, weather_daily_filt_mean$year))
@@ -162,13 +160,26 @@ rel_meteostat_muni <- function(weather_daily_f){
 min_year <- as.numeric(min(weather_daily_filt_mean$year))
 max_year <- as.numeric(max(weather_daily_filt_mean$year))
 while(min_year < (max_year + 1)){
-  for(i in c(1:12)){
-    weather_daily_f <- weather_daily_filt_mean[which(as.numeric(weather_daily_filt_mean$month) == i &
-                                                       as.numeric(weather_daily_filt_mean$year) == min_year),]
-    df_weather <- rel_meteostat_muni(weather_daily_f)
-    write_rds(df_weather, paste0("~/INVASIBILITY_THRESHOLD/output/weather/aemet_weather_monthly_",i,"_",min_year,".Rds"))
-    rm(weather_daily_f,df_weather)  
+  if(leap_year(min_year) == TRUE){
+    l = 366    
+  }else{
+    l = 365
   }
-  min_year = min_year + 1
+  weather_daily_f <- weather_daily_filt_mean[which(as.numeric(weather_daily_filt_mean$year) == min_year),]
+  weather_daily_f$day_month <- c(1:length(weather_daily_f$INDICATIVO))
+  for(i in c(1:l)){
+    weather_daily_f <- weather_daily_filt_mean[which(as.numeric(weather_daily_filt_mean$day_month) == i),]
+    df_weather <- rel_meteostat_muni(weather_daily_f)
+    
+    if(exists('weather_year') && is.data.frame(get('weather_year'))){
+      weather_year <- rbind(df_weather,weather_year)
+    }else{
+      weather_year <- df_weather
+    }
+    
+    rm(weather_daily_f,df_weather)  
+    min_year = min_year + 1
+  }
+  write_rds(weather_year, paste0("~/INVASIBILITY_THRESHOLD/output/weather/Daily/aemet_weather_year_",min_year,".Rds"))
 }
 
