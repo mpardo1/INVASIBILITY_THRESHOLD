@@ -147,10 +147,10 @@ rel_meteostat_muni <- function(weather_daily_f){
   weather_municip <- merge(x=weather_daily_f, y=these_points, 
                            by.x="INDICATIVO", by.y="indicativo", all.x=TRUE, all.y = TRUE)
   
-  weather_municip <-  weather_municip %>%  group_by(NAMEUNIT, month, year) %>% 
-    summarise(tmin = ifelse(is.na(min(tmin)),0,min(tmin)),
-              tmax = ifelse(is.na(max(tmax)),0,max(tmax)),
-              tmed = ifelse(is.na(mean(tmed)),0,mean(tmed)),
+  weather_municip <-  weather_municip %>%  group_by(NAMEUNIT, fecha) %>% 
+    summarise(tmin = ifelse(is.na(min(tmin)) | is.infinite(min(tmin)),0,min(tmin)),
+              tmax = ifelse(is.na(max(tmax)) | is.infinite(max(tmax)),0,max(tmax)),
+              tmed = ifelse(is.na(mean(tmed)) | is.infinite(mean(tmed)),0,mean(tmed)),
               precmed = ifelse(is.na(mean(precmed)),0,mean(precmed)), rep = sum(num_weather), n = n())
   
   rm(these_points,spain_muni_map, vor,spain_perimeter)
