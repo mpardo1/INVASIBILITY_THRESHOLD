@@ -148,10 +148,11 @@ rel_meteostat_muni <- function(weather_daily_f){
                            by.x="INDICATIVO", by.y="indicativo", all.x=TRUE, all.y = TRUE)
   
   weather_municip <-  weather_municip %>%  group_by(NAMEUNIT, fecha) %>% 
-    summarise(tmin = ifelse(is.na(min(tmin)) | is.infinite(min(tmin)),0,min(tmin)),
-              tmax = ifelse(is.na(max(tmax)) | is.infinite(max(tmax)),0,max(tmax)),
-              tmed = ifelse(is.na(mean(tmed)) | is.infinite(mean(tmed)),0,mean(tmed)),
-              precmed = ifelse(is.na(mean(precmed)),0,mean(precmed)), rep = sum(num_weather), n = n())
+    summarise(tmin = ifelse(is.na(tmin) | is.infinite(tmin),0,min(tmin)),
+              tmax = ifelse(is.na(tmax) | is.infinite(tmax),0,max(tmax)),
+              tmed = ifelse(is.na(tmed) | is.infinite(tmed),0,mean(tmed)),
+              precmed = ifelse(is.na(prec) | is.infinite(prec),0,mean(prec)),
+              rep = sum(num_weather), n = n())
   
   rm(these_points,spain_muni_map, vor,spain_perimeter)
   print(paste0("Time expended in the function:", Sys.time() -  init_time )) 
