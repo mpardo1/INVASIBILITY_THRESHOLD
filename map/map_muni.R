@@ -217,12 +217,15 @@ plot_map <- function(path){
 }
 
 rm(weather_municip_R0)
-df_plot <- lapply(list_file, plot_map)
+Path <- "~/INVASIBILITY_THRESHOLD/output/weather/Monthly/weather/"
+list_file <- list.files(Path)
+list_file_filt <- list_file[which(str_sub(list_file, -6,-5) == "10")]
+df_plot <- lapply(list_file_filt, plot_map)
 df_plot <- do.call(rbind.data.frame, df_plot)
 
 ggplot(df_plot) +
   geom_sf(aes(fill = R0_tmed), size = 0.01) + 
-  scale_fill_viridis(name = "R0(T)", limits = c(0, 40)) +
+  scale_fill_viridis(name = "R0(T)", limits = c(0, 15)) +
   geom_sf(data = can_box) + coord_sf(datum = NA) +
   theme(plot.margin = margin(0.2, 0.2, 0.2, 0.2, "cm")) + 
   theme_void() +
@@ -242,6 +245,7 @@ plot_num_aeg <- ggplot(df_plot_bool) +
   ggtitle("Aedes aegypti 2010") +
   theme_bw() 
 
+plot_num_aeg
 ggsave("~/Documentos/PHD/2023/INVASIBILITY/Plots/num_months_aeg.png")
 
 vec <- seq(0,40,1)
