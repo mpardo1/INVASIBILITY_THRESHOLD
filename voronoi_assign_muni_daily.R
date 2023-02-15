@@ -151,8 +151,7 @@ rel_meteostat_muni <- function(weather_daily_f){
     summarise(tmin = ifelse(is.na(tmin) | is.infinite(tmin),0,min(tmin)),
               tmax = ifelse(is.na(tmax) | is.infinite(tmax),0,max(tmax)),
               tmed = ifelse(is.na(tmed) | is.infinite(tmed),0,mean(tmed)),
-              precmed = ifelse(is.na(prec) | is.infinite(prec),0,mean(prec)),
-              rep = sum(num_weather), n = n())
+              precmed = ifelse(is.na(prec) | is.infinite(prec),0,mean(prec)), n = n())
   
   rm(these_points,spain_muni_map, vor,spain_perimeter)
   print(paste0("Time expended in the function:", Sys.time() -  init_time )) 
