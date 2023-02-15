@@ -13,6 +13,7 @@ library(rmapshaper)
 library("ggpubr")
 library(viridis)
 library(stringr)
+
 # Spain map municipalities
 esp_can <- esp_get_munic_siane(moveCAN = TRUE)
 esp_can$R0_test <- runif(length(esp_can$codauto),0,5)
@@ -170,6 +171,9 @@ df_plot_ccaa$date <- as.Date(paste0("01/",df_plot_ccaa$month,"/20",df_plot_ccaa$
 ggplot(df_plot_ccaa) + 
   geom_line(aes(date, avg_R0, color = ine.ccaa.name )) + 
   theme_bw()
+
+ggsave("~/Documentos/PHD/2023/INVASIBILITY/Plots/ccaa_alb_2010.png")
+
 #### -------------------------- Aegypti ------------------------- ####
 ## Thermal responses Aedes Aegypti from Mordecai 2017:
 a_f_aeg <- function(temp){Briere_func(0.000202,13.35,40.08,temp)} # Biting rate
@@ -189,30 +193,20 @@ R0_func_aeg <- function(Te){
 }
 
 ## Function to read all output weather file compute R0 and create a list of df.  
-Path <- "~/INVASIBILITY_THRESHOLD/output/weather/Monthly/"
+Path <- "~/INVASIBILITY_THRESHOLD/output/weather/Monthly/weather"
 list_file <- list.files(Path)
+## Function to read all output weather file compute R0 and create a list of df.  
 plot_map <- function(path){
   
-  if(substr(path,24,24) == "_"){
-    month_num <- as.numeric(substr(path,23,23))
-  }else{
-    month_num <- as.numeric(substr(path,23,24))
-  }
-  
-  weather <- as.data.frame(readRDS(paste0("~/INVASIBILITY_THRESHOLD/output/weather/Monthly/",path)))
+  weather <- as.data.frame(readRDS(paste0("~/INVASIBILITY_THRESHOLD/output/weather/Monthly/weather/",path)))
   weather$R0_tmin <- sapply(weather$tmin, R0_func_aeg)
   weather$R0_tmed <- sapply(weather$tmed, R0_func_aeg)
   weather$R0_tmax <- sapply(weather$tmax, R0_func_aeg)
   
   colnames(esp_can) <- c(colnames(esp_can)[1:5], "NAMEUNIT",colnames(esp_can)[7:length(colnames(esp_can))])
   # Merge the municipalities shapefile with the weather data:
-  weather_municip_R01 <-  esp_can %>% 
-    left_join(weather)
+  weather_municip_R01 <-  esp_can %>%  left_join(weather)
   
-  # merge(x=esp_can, y=weather,
-  #                            by.x="name",by.y="NAMEUNIT", all.x=TRUE, all.y = TRUE)
-  
-  weather_municip_R01$month_n <- month_num
   if(exists('weather_municip_R0') && is.data.frame(get('weather_municip_R0'))){
     weather_municip_R0 <- rbind(weather_municip_R0,weather_municip_R01)
   }else{
@@ -226,15 +220,14 @@ rm(weather_municip_R0)
 df_plot <- lapply(list_file, plot_map)
 df_plot <- do.call(rbind.data.frame, df_plot)
 
-# Create plots:
 ggplot(df_plot) +
   geom_sf(aes(fill = R0_tmed), size = 0.01) + 
-  scale_fill_viridis(name = "R0(T)", limits = c(0, 10)) +
+  scale_fill_viridis(name = "R0(T)", limits = c(0, 40)) +
   geom_sf(data = can_box) + coord_sf(datum = NA) +
   theme(plot.margin = margin(0.2, 0.2, 0.2, 0.2, "cm")) + 
   theme_void() +
-  labs(title = "Year 2010, Month: {current_frame}") +
-  transition_manual(month_n)
+  labs(title = "Month: {current_frame}") +
+  transition_manual(month)
 
 anim_save("~/Documentos/PHD/2023/INVASIBILITY/Plots/animation_aeg.gif", animation = last_animation())
 
