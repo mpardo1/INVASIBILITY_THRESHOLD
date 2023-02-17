@@ -13,6 +13,7 @@ library(rmapshaper)
 library("ggpubr")
 library(viridis)
 library(stringr)
+library(gdata)
 
 # Spain map municipalities
 esp_can <- esp_get_munic_siane(moveCAN = TRUE)
@@ -131,10 +132,12 @@ plot_map <- function(path){
 Path <- "~/INVASIBILITY_THRESHOLD/output/weather/Monthly/weather/"
 list_file <- list.files(Path)
 list_file_filt <- list_file[which(str_sub(list_file, -6,-5) == "10")]
+rm(weather_municip_R0)
 df_plot <- lapply(list_file_filt, plot_map)
+rm(weather_municip_R0)
 df_plot <- do.call(rbind.data.frame, df_plot)
 
-rm(weather_municip_R0)
+
 # Create plots:
 ggplot(df_plot) +
   geom_sf(aes(fill = R0_tmed), size = 0.01) + 
@@ -219,13 +222,13 @@ plot_map <- function(path){
 rm(weather_municip_R0)
 Path <- "~/INVASIBILITY_THRESHOLD/output/weather/Monthly/weather/"
 list_file <- list.files(Path)
-list_file_filt <- list_file[which(str_sub(list_file, -6,-5) == "10")]
+list_file_filt <- list_file[which(str_sub(list_file, -6,-5) == "15")]
 df_plot <- lapply(list_file_filt, plot_map)
 df_plot <- do.call(rbind.data.frame, df_plot)
 
 ggplot(df_plot) +
   geom_sf(aes(fill = R0_tmed), size = 0.01) + 
-  scale_fill_viridis(name = "R0(T)", limits = c(0, 15)) +
+  scale_fill_viridis(name = "R0(T)", limits = c(0, 45)) +
   geom_sf(data = can_box) + coord_sf(datum = NA) +
   theme(plot.margin = margin(0.2, 0.2, 0.2, 0.2, "cm")) + 
   theme_void() +
@@ -263,3 +266,14 @@ ggplot(df_plot) +
   theme_bw() + theme(text = element_text(size=20))
 
 ggarrange(plot_num_aeg,plot_sum_albo, common.legend = TRUE)
+
+# Spain map municipalities with population density
+spain_muni_map = st_read("~/Documentos/PHD/2023/INVASIBILITY/data/Municipios_de_Espa%C3%B1a._Padron2017.shp")
+muni_geo <- st_read("~/Documentos/PHD/2023/INVASIBILITY/data/Municipios_IGN.shp")
+spain_muni_map$PAD_2C02_norm <- spain_muni_map$PAD_2C02/max(spain_muni_map$PAD_2C02)
+esp_pop <- merge(spain_muni_map,esp_can, by.x = "Texto", by.x = )
+
+ggplot(spain_muni_map) +
+  geom_sf(aes(fill = PAD_2C02_norm), size = 0.01) +
+  geom_sf(data = can_box_pop) + theme_bw()
+
