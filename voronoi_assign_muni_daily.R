@@ -145,7 +145,7 @@ rel_meteostat_muni <- function(weather_daily_f){
   these_points$geometry <- NULL
   these_points <- unique(these_points)
   
-  print("Antes del merge")
+  print("*************Antes del merge")
   weather_municip <- merge(x=weather_daily_f, y=these_points, 
                            by.x="INDICATIVO", by.y="indicativo", all.x=TRUE, all.y = TRUE)
   
@@ -163,9 +163,10 @@ rel_meteostat_muni <- function(weather_daily_f){
 }
 
 ### Loop over all months and years:
-Cores <- parallel::detectCores()#Numero de cores a utilizar.
+Cores <- 15 #parallel::detectCores()#Numero de cores a utilizar.
 min_year <- as.numeric(min(weather_daily_filt_mean$year))
 max_year <- as.numeric(max(weather_daily_filt_mean$year))
+print("***********************Antes del while")
 while(min_year <= max_year ){
   print(paste0("Min year:", min_year))
     weather_daily_f <- weather_daily_filt_mean[which(as.numeric(weather_daily_filt_mean$year) == min_year),]
