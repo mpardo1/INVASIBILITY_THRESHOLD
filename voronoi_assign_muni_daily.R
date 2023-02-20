@@ -159,6 +159,7 @@ rel_meteostat_muni <- function(weather_daily_f){
 }
 
 ### Loop over all months and years:
+Cores <- parallel::detectCores()#Numero de cores a utilizar.
 min_year <- as.numeric(min(weather_daily_filt_mean$year))
 max_year <- as.numeric(max(weather_daily_filt_mean$year))
 while(min_year <= max_year ){
