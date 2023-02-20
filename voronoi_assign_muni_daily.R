@@ -126,6 +126,7 @@ rel_meteostat_muni <- function(weather_daily_f){
   spain_muni_map = st_read("~/INVASIBILITY_THRESHOLD/muni_data/recintos_municipales_inspire_peninbal_etrs89/recintos_municipales_inspire_peninbal_etrs89.shp") %>%
     bind_rows(st_read("~/INVASIBILITY_THRESHOLD/data/recintos_municipales_inspire_canarias_wgs84/recintos_municipales_inspire_canarias_wgs84.shp"))
   
+  print("Antes del voronoi")
   # Cambia el sistema de coordenadas.
   st_crs(spain_muni_map) = 4258
   spain_muni_map = spain_muni_map %>% st_transform(st_crs(ua))
@@ -144,14 +145,17 @@ rel_meteostat_muni <- function(weather_daily_f){
   these_points$geometry <- NULL
   these_points <- unique(these_points)
   
+  print("Antes del merge")
   weather_municip <- merge(x=weather_daily_f, y=these_points, 
                            by.x="INDICATIVO", by.y="indicativo", all.x=TRUE, all.y = TRUE)
   
+  print("Antes del groupby")
   weather_municip <-  weather_municip %>%  group_by(NAMEUNIT, fecha) %>% 
     summarise(tmin = ifelse(is.na(tmin) | is.infinite(tmin),0,min(tmin)),
               tmax = ifelse(is.na(tmax) | is.infinite(tmax),0,max(tmax)),
               tmed = ifelse(is.na(tmed) | is.infinite(tmed),0,mean(tmed)),
               precmed = ifelse(is.na(prec) | is.infinite(prec),0,mean(prec)), n = n())
+  print("Despues del groupby")
   
   rm(these_points,spain_muni_map, vor,spain_perimeter)
   print(paste0("Time expended in the function:", Sys.time() -  init_time )) 
@@ -172,6 +176,7 @@ while(min_year <= max_year ){
       weather_daily_f <- weather_daily_f[which(as.numeric(weather_daily_f$day_month) == k),]
       df_weather <- rel_meteostat_muni(weather_daily_f)
       
+      print("Dentro del mclapply")
       if(exists('weather_year') && is.data.frame(get('weather_year'))){
         weather_year <- rbind(df_weather,weather_year)
       }else{
