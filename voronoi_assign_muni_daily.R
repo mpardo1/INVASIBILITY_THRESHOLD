@@ -161,27 +161,27 @@ rel_meteostat_muni <- function(weather_daily_f){
 ### Loop over all months and years:
 min_year <- as.numeric(min(weather_daily_filt_mean$year))
 max_year <- as.numeric(max(weather_daily_filt_mean$year))
-while(min_year < (max_year + 1)){
-  if(leap_year(min_year) == TRUE){
-    l = 366    
-  }else{
-    l = 365
-  }
-  weather_daily_f <- weather_daily_filt_mean[which(as.numeric(weather_daily_filt_mean$year) == min_year),]
-  weather_daily_f$day_month <- c(1:length(weather_daily_f$INDICATIVO))
-  for(i in c(1:l)){
-    weather_daily_f <- weather_daily_filt_mean[which(as.numeric(weather_daily_filt_mean$day_month) == i),]
-    df_weather <- rel_meteostat_muni(weather_daily_f)
-    
-    if(exists('weather_year') && is.data.frame(get('weather_year'))){
-      weather_year <- rbind(df_weather,weather_year)
-    }else{
-      weather_year <- df_weather
-    }
-    
-    rm(weather_daily_f,df_weather)  
-    min_year = min_year + 1
-  }
-  write_rds(weather_year, paste0("~/INVASIBILITY_THRESHOLD/output/weather/Daily/aemet_weather_year_",min_year,".Rds"))
+while(min_year <= max_year ){
+  print(paste0("Min year:", min_year))
+    weather_daily_f <- weather_daily_filt_mean[which(as.numeric(weather_daily_filt_mean$year) == min_year),]
+    weather_daily_f$day_month <- as.numeric(yday(weather_daily_f$fecha))
+    min_day = min( weather_daily_f$day_month)
+    max_day = max( weather_daily_f$day_month)
+    weather_df_y <- mclapply(min_day:max_day, mc.cores = Cores, mc.preschedule = F,function(k){ 
+      weather_daily_f <- weather_daily_f[which(as.numeric(weather_daily_f$day_month) == k),]
+      df_weather <- rel_meteostat_muni(weather_daily_f)
+      
+      if(exists('weather_year') && is.data.frame(get('weather_year'))){
+        weather_year <- rbind(df_weather,weather_year)
+      }else{
+        weather_year <- df_weather
+      }
+      
+      rm(weather_daily_f,df_weather) 
+      weather_year
+    })
+  outweather <- weather_df_y
+  write_rds(outweather, paste0("~/INVASIBILITY_THRESHOLD/output/weather/Daily/aemet_weather_year_",min_year,".Rds"))
+  min_year = min_year + 1
 }
 

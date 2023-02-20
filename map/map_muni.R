@@ -277,3 +277,6 @@ ggplot(spain_muni_map) +
   geom_sf(aes(fill = PAD_2C02_norm), size = 0.01) +
   geom_sf(data = can_box_pop) + theme_bw()
 
+## Daily output
+Path <- "~/aemet_weather_year_383.Rds"
+weather <- as.data.frame(readRDS(Path))

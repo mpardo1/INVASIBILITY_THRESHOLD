@@ -118,7 +118,7 @@ while(condition){
   start_time <- Sys.time()
   print(paste0("Iteration: ", it))
   #Ahora viene la paralelización
-  parall <- mclapply(1:sims, mc.cores = Cores, mc.preschedule = F,function(k){
+  parall <- mcmapply(1:sims, mc.cores = Cores, mc.preschedule = F,function(k){
     
     print(paste("k:",k))
     start_time1 <- Sys.time()
