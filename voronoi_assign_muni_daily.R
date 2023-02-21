@@ -24,7 +24,7 @@ library(janitor)
 library(RcppRoll)
 library(parallel)
 library(data.table)
-library("mapSpain")
+# library("mapSpain")
 # library(groupdata2)
 
 # SETTING DATES ####
