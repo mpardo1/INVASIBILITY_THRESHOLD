@@ -24,6 +24,7 @@ library(janitor)
 library(RcppRoll)
 library(parallel)
 library(data.table)
+library("mapSpain")
 # library(groupdata2)
 
 # SETTING DATES ####
@@ -57,6 +58,7 @@ station_points = st_read("~/INVASIBILITY_THRESHOLD/data/Estaciones_Completas.shp
   bind_rows(st_read("~/INVASIBILITY_THRESHOLD/data/Estaciones_Automaticas.shp")) %>% 
   bind_rows(st_read("~/INVASIBILITY_THRESHOLD/data/Estaciones_Pluviometricas.shp")) %>% 
   st_transform(SPAIN_CRS)
+
 
 # File with weather data:
 Path <- "~/INVASIBILITY_THRESHOLD/output/weather/aemet_weather_daily_deep_history_sf_2023-01-30.Rds"
@@ -111,7 +113,7 @@ rel_meteostat_muni <- function(weather_daily_f){
   spain_perimeter = st_read("~/INVASIBILITY_THRESHOLD/data/recintos_autonomicas_inspire_peninbal_etrs89.shp") %>%
     bind_rows(st_read("~/INVASIBILITY_THRESHOLD/data/recintos_autonomicas_inspire_canarias_wgs84.shp")) %>%
     st_transform(SPAIN_CRS) %>% summarize()
-  
+  station_points <- station_points %>% drop_na()
   
   # Voronoi cells for weather stations ####
   vor = station_points %>% st_geometry() %>% st_union() %>%
@@ -123,25 +125,28 @@ rel_meteostat_muni <- function(weather_daily_f){
   #   geom_sf()
   
   # John Codes: ####
-  spain_muni_map = st_read("~/INVASIBILITY_THRESHOLD/muni_data/recintos_municipales_inspire_peninbal_etrs89/recintos_municipales_inspire_peninbal_etrs89.shp") %>%
-    bind_rows(st_read("~/INVASIBILITY_THRESHOLD/data/recintos_municipales_inspire_canarias_wgs84/recintos_municipales_inspire_canarias_wgs84.shp"))
+  # spain_muni_map = st_read("~/INVASIBILITY_THRESHOLD/muni_data/recintos_municipales_inspire_peninbal_etrs89/recintos_municipales_inspire_peninbal_etrs89.shp") %>%
+  #   bind_rows(st_read("~/INVASIBILITY_THRESHOLD/data/recintos_municipales_inspire_canarias_wgs84/recintos_municipales_inspire_canarias_wgs84.shp"))
   
   print("Antes del voronoi")
   # Cambia el sistema de coordenadas.
-  st_crs(spain_muni_map) = 4258
-  spain_muni_map = spain_muni_map %>% st_transform(st_crs(ua))
+  esp_can <- esp_get_munic_siane(moveCAN = FALSE)
+  st_crs(esp_can) = 4258
+  
+  spain_muni_map = esp_can %>% st_transform(st_crs(ua))
   this_perimeter_25830 <- spain_perimeter %>% st_transform(st_crs(ua)) %>% st_union()
   these_points = st_make_grid(st_bbox(this_perimeter_25830)+100000*c(-1,-1,1,1),
                               cellsize = c(cell_res,cell_res), what = "polygons",
                               square = TRUE) %>% st_sf %>%
     st_join(spain_muni_map %>%
-              dplyr::select(NAMEUNIT, NATCODE, CODNUT1, CODNUT2, CODNUT3),
+              dplyr::select(name, ine.ccaa.name, ine.prov.name),
             join = st_intersects, left=FALSE) %>%
     st_cast("POINT") %>% st_as_sf() %>%
     st_join(vor %>% dplyr::select(INDICATIVO) %>%
               rename(indicativo = INDICATIVO), join = st_intersects, left=FALSE)
   
-  these_points <- unique(these_points[,c(1,6,7)])
+  rm(ua, this_perimeter_25830)
+  
   these_points$geometry <- NULL
   these_points <- unique(these_points)
   
@@ -150,7 +155,7 @@ rel_meteostat_muni <- function(weather_daily_f){
                            by.x="INDICATIVO", by.y="indicativo", all.x=TRUE, all.y = TRUE)
   
   print("Antes del groupby")
-  weather_municip <-  weather_municip %>%  group_by(NAMEUNIT, fecha) %>% 
+  weather_municip <-  weather_municip %>%  group_by(name, ine.ccaa.name, ine.prov.name, fecha) %>% 
     summarise(tmin = ifelse(is.na(tmin) | is.infinite(tmin),0,min(tmin)),
               tmax = ifelse(is.na(tmax) | is.infinite(tmax),0,max(tmax)),
               tmed = ifelse(is.na(tmed) | is.infinite(tmed),0,mean(tmed)),
@@ -163,13 +168,14 @@ rel_meteostat_muni <- function(weather_daily_f){
 }
 
 ### Loop over all months and years:
-Cores <- 15 #parallel::detectCores()#Numero de cores a utilizar.
+Cores <- 20 #parallel::detectCores()#Numero de cores a utilizar.
 min_year <- as.numeric(min(weather_daily_filt_mean$year))
 max_year <- as.numeric(max(weather_daily_filt_mean$year))
 print("***********************Antes del while")
 while(min_year <= max_year ){
   print(paste0("Min year:", min_year))
     weather_daily_f <- weather_daily_filt_mean[which(as.numeric(weather_daily_filt_mean$year) == min_year),]
+    weather_daily_f <- weather_daily_f %>% drop_na()
     weather_daily_f$day_month <- as.numeric(yday(weather_daily_f$fecha))
     min_day = min( weather_daily_f$day_month)
     max_day = max( weather_daily_f$day_month)
@@ -188,7 +194,7 @@ while(min_year <= max_year ){
       weather_year
     })
   outweather <- weather_df_y
-  write_rds(outweather, paste0("~/INVASIBILITY_THRESHOLD/output/weather/Daily/aemet_weather_year_",min_year,".Rds"))
+  write_rds(outweather, paste0("~/INVASIBILITY_THRESHOLD/output/weather/Daily/aemet_weather_year_1_",min_year,".Rds"))
   min_year = min_year + 1
 }
 
