@@ -130,7 +130,8 @@ rel_meteostat_muni <- function(weather_daily_f){
   
   print("Antes del voronoi")
   # Cambia el sistema de coordenadas.
-  esp_can <- esp_get_munic_siane(moveCAN = FALSE)
+  # esp_can <- esp_get_munic_siane(moveCAN = FALSE)
+  esp_can <- readRDS("~/INVASIBILITY_THRESHOLD/data/esp_can.Rds")
   st_crs(esp_can) = 4258
   
   spain_muni_map = esp_can %>% st_transform(st_crs(ua))
