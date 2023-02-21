@@ -128,12 +128,13 @@ rel_meteostat_muni <- function(weather_daily_f){
   # spain_muni_map = st_read("~/INVASIBILITY_THRESHOLD/muni_data/recintos_municipales_inspire_peninbal_etrs89/recintos_municipales_inspire_peninbal_etrs89.shp") %>%
   #   bind_rows(st_read("~/INVASIBILITY_THRESHOLD/data/recintos_municipales_inspire_canarias_wgs84/recintos_municipales_inspire_canarias_wgs84.shp"))
   
-  print("Antes del voronoi")
+  print("Después del voronoi")
   # Cambia el sistema de coordenadas.
   esp_can <- esp_get_munic_siane(moveCAN = FALSE)
   # esp_can <- readRDS("~/INVASIBILITY_THRESHOLD/data/esp_can.Rds")
   st_crs(esp_can) = 4258
   
+  print("Antes de usar esp_can")
   spain_muni_map = esp_can %>% st_transform(st_crs(ua))
   this_perimeter_25830 <- spain_perimeter %>% st_transform(st_crs(ua)) %>% st_union()
   these_points = st_make_grid(st_bbox(this_perimeter_25830)+100000*c(-1,-1,1,1),
@@ -146,6 +147,7 @@ rel_meteostat_muni <- function(weather_daily_f){
     st_join(vor %>% dplyr::select(INDICATIVO) %>%
               rename(indicativo = INDICATIVO), join = st_intersects, left=FALSE)
   
+  print("Despues de usar esp_can")
   rm(ua, this_perimeter_25830)
   
   these_points$geometry <- NULL
