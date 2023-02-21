@@ -24,7 +24,7 @@ library(janitor)
 library(RcppRoll)
 library(parallel)
 library(data.table)
-library("mapSpain")
+# library("mapSpain")
 # library(groupdata2)
 
 # SETTING DATES ####
@@ -130,8 +130,8 @@ rel_meteostat_muni <- function(weather_daily_f){
   
   print("Después del voronoi")
   # Cambia el sistema de coordenadas.
-  esp_can <- esp_get_munic_siane(moveCAN = FALSE)
-  # esp_can <- readRDS("~/INVASIBILITY_THRESHOLD/data/esp_can.Rds")
+  # esp_can <- esp_get_munic_siane(moveCAN = FALSE)
+  esp_can <- readRDS("~/INVASIBILITY_THRESHOLD/data/esp_can.Rds")
   st_crs(esp_can) = 4258
   
   print("Antes de usar esp_can")
