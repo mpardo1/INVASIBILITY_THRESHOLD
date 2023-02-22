@@ -136,6 +136,7 @@ rel_meteostat_muni <- function(weather_daily_f){
   
   print("Antes de usar esp_can")
   spain_muni_map = esp_can %>% st_transform(st_crs(ua))
+  print("despues del st_transform ")
   this_perimeter_25830 <- spain_perimeter %>% st_transform(st_crs(ua)) %>% st_union()
   these_points = st_make_grid(st_bbox(this_perimeter_25830)+100000*c(-1,-1,1,1),
                               cellsize = c(cell_res,cell_res), what = "polygons",
@@ -171,7 +172,7 @@ rel_meteostat_muni <- function(weather_daily_f){
 }
 
 ### Loop over all months and years:
-Cores <- 20 #parallel::detectCores()#Numero de cores a utilizar.
+Cores <- 15 #parallel::detectCores()#Numero de cores a utilizar.
 min_year <- as.numeric(min(weather_daily_filt_mean$year))
 max_year <- as.numeric(max(weather_daily_filt_mean$year))
 print("***********************Antes del while")

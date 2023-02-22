@@ -44,7 +44,7 @@ library(tidyverse)
 soil <- muni_test
 # field polygons
 field <- landcover %>% 
-  st_as_sfc(crs = st_crs(soil))
+  st_transform(st_crs(soil))
 
 # intersect - note that sf is intelligent with attribute data!
 pi <- st_intersection(soil, field)
