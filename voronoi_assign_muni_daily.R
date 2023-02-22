@@ -198,7 +198,7 @@ while(min_year <= max_year ){
       weather_year
     })
   outweather <- weather_df_y
-  write_rds(outweather, paste0("~/INVASIBILITY_THRESHOLD/output/weather/Daily/aemet_weather_year_2_",min_year,".Rds"))
+  write_rds(outweather, paste0("~/INVASIBILITY_THRESHOLD/output/weather/Daily/aemet_weather_year_3_",min_year,".Rds"))
   min_year = min_year + 1
 }
 
