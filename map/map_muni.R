@@ -287,11 +287,11 @@ weather_ccaa <- weather %>%  group_by(ine.ccaa.name,fecha) %>%
             tmed = ifelse(is.na(tmed) | is.infinite(tmed),0,mean(tmed)),
             precmed = ifelse(is.na(precmed) | is.infinite(precmed),0,mean(precmed)), n = n())
 
-weather_ccaa <- unique(weather_ccaa)
-weather_ccaa$R0_alb <- sapply(weather$tmed, R0_func_alb)
-weather_ccaa$R0_aeg <- sapply(weather$tmed, R0_func_aeg)
+weather_ccaa <- as.data.frame(unique(weather_ccaa))
+weather_ccaa$R0_alb <- sapply(weather_ccaa$tmed, R0_func_alb)
+weather_ccaa$R0_aeg <- sapply(weather_ccaa$tmed, R0_func_aeg)
 
 weather_ccaa_filt <- weather_ccaa[which(weather_ccaa$ine.ccaa.name == "Canarias"),]
-ggplot(weather_ccaa_filt) + 
-  geom_point(aes(fecha,R0_alb, color = ine.ccaa.name)) + 
+ggplot(weather_ccaa) + 
+  geom_line(aes(fecha,R0_alb, color = ine.ccaa.name)) + 
   theme_bw()

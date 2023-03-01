@@ -57,75 +57,75 @@ station_points = st_read("~/INVASIBILITY_THRESHOLD/data/Estaciones_Completas.shp
   bind_rows(st_read("~/INVASIBILITY_THRESHOLD/data/Estaciones_Pluviometricas.shp")) %>% 
   st_transform(SPAIN_CRS)
 
-# h <- new_handle()
-# handle_setheaders(h, 'api_key' = 'eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJqb2huLnBhbG1lckB1cGYuZWR1IiwianRpIjoiYWRjYTliNGItNmZkMC00MTlkLWI1MzMtNjRlNzQwMGY2MDAxIiwiaXNzIjoiQUVNRVQiLCJpYXQiOjE2MTA0NTk4MTUsInVzZXJJZCI6ImFkY2E5YjRiLTZmZDAtNDE5ZC1iNTMzLTY0ZTc0MDBmNjAwMSIsInJvbGUiOiIifQ.JtTlq8QIaAEdte8Mn3JrgzGvkwrtboEpswfEK6Lb1Hc')
-# 
-# all_dates = seq.Date(from = as_date("2004-01-01"), to=as_date("2022-07-23"), by = "day")
-# 
-# ncores = 1
-# 
-# i = length(all_dates)-7
-# weather_daily = bind_rows(lapply(1:length(all_dates), function(i){
-# 
-#   start_date = all_dates[i]
-#   print(start_date)
-#   flush.console()
-#   if(i %% 10 == 0) Sys.sleep(30)
-# 
-#   req = curl_fetch_memory(paste0('https://opendata.aemet.es/opendata/api/valores/climatologicos/diarios/datos/fechaini/', start_date, 'T00%3A00%3A00UTC/fechafin/', start_date, 'T23%3A59%3A59UTC/todasestaciones'), handle=h)
-# 
-#   wurl = fromJSON(rawToChar(req$content))$datos
-# 
-#   req = curl_fetch_memory(wurl)
-# 
-#   wdia  = fromJSON(rawToChar(req$content)) %>% as_tibble() %>% select(fecha, indicativo, velmedia, tmed, tmin, tmax, prec) %>% mutate(
-#     velmedia = as.numeric(str_replace(velmedia, ",", ".")),
-#     tmed = as.numeric(str_replace(tmed, ",", ".")),
-#     tmin = as.numeric(str_replace(tmin, ",", ".")),
-#     tmax = as.numeric(str_replace(tmax, ",", ".")),
-#     prec = as.numeric(str_replace(prec, ",", ".")),
-#     FW = as.integer(velmedia <= (6*3.6)*1000/(60*60)),
-#     FT = case_when(tmed<=15~0, tmed>30~0, (tmed>15 & tmed <=20)~ (.2*tmed)-3, (tmed>20 & tmed<=25)~1, (tmed>25 & tmed <= 30)~ (-.2*tmed)+6),
-#     mwi = FW*FT
-#   ) %>% select(fecha, indicativo, mwi, tmed, tmin, tmax, prec) %>% filter(!is.na(mwi))
-# 
-#   return(wdia)
-# }))
-# 
-# distinct_station_points = station_points %>% group_by(INDICATIVO) %>% summarize()
-# 
-# weather_daily_sf = distinct_station_points %>% left_join(weather_daily, by=c("INDICATIVO"="indicativo")) %>% filter(!is.na(mwi) & !is.na(fecha))
-# 
-# write_rds(weather_daily, paste0("~/INVASIBILITY_THRESHOLD/output/weather/aemet_weather_daily_deep_history_",Sys.Date(),".Rds"))
-# 
-# write_rds(weather_daily_sf, paste0("~/INVASIBILITY_THRESHOLD/output/weather/aemet_weather_daily_deep_history_sf_",Sys.Date(),".Rds"))
+h <- new_handle()
+handle_setheaders(h, 'api_key' = 'eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJqb2huLnBhbG1lckB1cGYuZWR1IiwianRpIjoiYWRjYTliNGItNmZkMC00MTlkLWI1MzMtNjRlNzQwMGY2MDAxIiwiaXNzIjoiQUVNRVQiLCJpYXQiOjE2MTA0NTk4MTUsInVzZXJJZCI6ImFkY2E5YjRiLTZmZDAtNDE5ZC1iNTMzLTY0ZTc0MDBmNjAwMSIsInJvbGUiOiIifQ.JtTlq8QIaAEdte8Mn3JrgzGvkwrtboEpswfEK6Lb1Hc')
 
-Path <- "~/INVASIBILITY_THRESHOLD/output/weather/aemet_weather_daily_deep_history_sf_2023-01-30.Rds"
-weather_daily <- readRDS(Path)
+all_dates = seq.Date(from = as_date("2000-01-01"), to=as_date("2006-01-01"), by = "day")
 
+ncores = 1
 
-# Filter weather data for the left join otherwise too heavy.
-weather_daily$fecha <- as.Date(weather_daily$fecha)
-weather_daily_filt <- as.data.frame(weather_daily[which(weather_daily$fecha >  as.Date("2021-01-01")),])
-weather_daily_filt$month <- format(weather_daily_filt$fecha, "%m") 
-weather_daily_filt$year <- format(weather_daily_filt$fecha, "%y") 
-weather_daily_filt[which(is.na(weather_daily_filt$prec)),8] <- 0
-weather_daily_filt_mean <- weather_daily_filt %>%  group_by(INDICATIVO, month, year) %>% 
-  summarise(geometry = geometry, 
-            tmin = min(tmin), tmax = max(tmax), tmed = mean(tmed),
-            precmed = mean(prec), num_weather = n())
+i = length(all_dates)-7
+weather_daily = bind_rows(lapply(1:length(all_dates), function(i){
 
-weather_daily_filt_mean <- weather_daily_filt_mean[order(weather_daily_filt_mean$INDICATIVO,
-                                                         weather_daily_filt_mean$year,
-                                                         weather_daily_filt_mean$month),]
+  start_date = all_dates[i]
+  print(start_date)
+  flush.console()
+  if(i %% 10 == 0) Sys.sleep(30)
 
-month_e <- "06"
-year_e <- "21"
-weather_daily_filt_mean <- weather_daily_filt_mean[which(weather_daily_filt_mean$month == month_e & weather_daily_filt_mean$year == year_e),]
-station_meteo <- unique(weather_daily_filt_mean %>%  group_by(INDICATIVO) %>% 
-  summarise(geometry = geometry))
+  req = curl_fetch_memory(paste0('https://opendata.aemet.es/opendata/api/valores/climatologicos/diarios/datos/fechaini/', start_date, 'T00%3A00%3A00UTC/fechafin/', start_date, 'T23%3A59%3A59UTC/todasestaciones'), handle=h)
 
-rm(weather_daily)
+  wurl = fromJSON(rawToChar(req$content))$datos
+
+  req = curl_fetch_memory(wurl)
+
+  wdia  = fromJSON(rawToChar(req$content)) %>% as_tibble() %>% select(fecha, indicativo, velmedia, tmed, tmin, tmax, prec) %>% mutate(
+    velmedia = as.numeric(str_replace(velmedia, ",", ".")),
+    tmed = as.numeric(str_replace(tmed, ",", ".")),
+    tmin = as.numeric(str_replace(tmin, ",", ".")),
+    tmax = as.numeric(str_replace(tmax, ",", ".")),
+    prec = as.numeric(str_replace(prec, ",", ".")),
+    FW = as.integer(velmedia <= (6*3.6)*1000/(60*60)),
+    FT = case_when(tmed<=15~0, tmed>30~0, (tmed>15 & tmed <=20)~ (.2*tmed)-3, (tmed>20 & tmed<=25)~1, (tmed>25 & tmed <= 30)~ (-.2*tmed)+6),
+    mwi = FW*FT
+  ) %>% select(fecha, indicativo, mwi, tmed, tmin, tmax, prec) %>% filter(!is.na(mwi))
+
+  return(wdia)
+}))
+
+distinct_station_points = station_points %>% group_by(INDICATIVO) %>% summarize()
+
+weather_daily_sf = distinct_station_points %>% left_join(weather_daily, by=c("INDICATIVO"="indicativo")) %>% filter(!is.na(mwi) & !is.na(fecha))
+
+write_rds(weather_daily, paste0("~/INVASIBILITY_THRESHOLD/output/weather/aemet_weather_daily_deep_history_",Sys.Date(),".Rds"))
+
+write_rds(weather_daily_sf, paste0("~/INVASIBILITY_THRESHOLD/output/weather/aemet_weather_daily_deep_history_sf_",Sys.Date(),".Rds"))
+# 
+# Path <- "~/INVASIBILITY_THRESHOLD/output/weather/aemet_weather_daily_deep_history_sf_2023-01-30.Rds"
+# weather_daily <- readRDS(Path)
+
+# 
+# # Filter weather data for the left join otherwise too heavy.
+# weather_daily$fecha <- as.Date(weather_daily$fecha)
+# weather_daily_filt <- as.data.frame(weather_daily[which(weather_daily$fecha >  as.Date("2021-01-01")),])
+# weather_daily_filt$month <- format(weather_daily_filt$fecha, "%m") 
+# weather_daily_filt$year <- format(weather_daily_filt$fecha, "%y") 
+# weather_daily_filt[which(is.na(weather_daily_filt$prec)),8] <- 0
+# weather_daily_filt_mean <- weather_daily_filt %>%  group_by(INDICATIVO, month, year) %>% 
+#   summarise(geometry = geometry, 
+#             tmin = min(tmin), tmax = max(tmax), tmed = mean(tmed),
+#             precmed = mean(prec), num_weather = n())
+# 
+# weather_daily_filt_mean <- weather_daily_filt_mean[order(weather_daily_filt_mean$INDICATIVO,
+#                                                          weather_daily_filt_mean$year,
+#                                                          weather_daily_filt_mean$month),]
+# 
+# month_e <- "06"
+# year_e <- "21"
+# weather_daily_filt_mean <- weather_daily_filt_mean[which(weather_daily_filt_mean$month == month_e & weather_daily_filt_mean$year == year_e),]
+# station_meteo <- unique(weather_daily_filt_mean %>%  group_by(INDICATIVO) %>% 
+#   summarise(geometry = geometry))
+# 
+# rm(weather_daily)
 #---------------------------------------------------------------------------#
 #----------------------ASSOCIATION METEO STATION MUNICIPALITIES-----------------------------#
 #### Associate municipalities to meteo stations
@@ -176,12 +176,12 @@ rm(weather_daily)
 #             rename(indicativo = INDICATIVO), join = st_intersects, left=FALSE) 
 # 
 # write_rds(these_points, paste0("~/INVASIBILITY_THRESHOLD/data/station_municipalities.Rds"))
-
-Path <- "~/INVASIBILITY_THRESHOLD/data/station_municipalities.Rds"
-these_points <- readRDS(Path)
-
-these_points <- unique(these_points[,c(1,6)])
-these_points_filt <- unique(as.data.frame(these_points)[,c(1,2)])
+# 
+# Path <- "~/INVASIBILITY_THRESHOLD/data/station_municipalities.Rds"
+# these_points <- readRDS(Path)
+# 
+# these_points <- unique(these_points[,c(1,6)])
+# these_points_filt <- unique(as.data.frame(these_points)[,c(1,2)])
 # ggplot(these_points) + geom_sf() + geom_sf(data=this_perimeter_25830, color="red", fill=NA)
 # length(unique(these_points$NATCODE))
 # these_points_muni_xy25830_df = unlist(st_geometry(these_points)) %>%
@@ -210,19 +210,19 @@ these_points_filt <- unique(as.data.frame(these_points)[,c(1,2)])
 
 # Join data frame municipalities names (these_points_muni_lc) with weather data from 
 # meteo stations (weather_daily_filt_mean)
-these_points_filt
-weather_municip <- merge(x=weather_daily_filt_mean, y=these_points_filt, 
-                   by.x="INDICATIVO", by.y="indicativo", all.x=TRUE, all.y = TRUE)
+# these_points_filt
+# weather_municip <- merge(x=weather_daily_filt_mean, y=these_points_filt, 
+#                    by.x="INDICATIVO", by.y="indicativo", all.x=TRUE, all.y = TRUE)
 
 # If there is more than one meteo station related with one municipality, average the temperatures
-# for the mean temp, and get the minimum (maximum) for the stations for the mintemp (maxtemp)
-weather_municip <-  weather_municip %>%  group_by(NAMEUNIT, month, year) %>% 
-  summarise(tmin = min(tmin), tmax = max(tmax), tmed = mean(tmed),
-            precmed = mean(precmed), rep = sum(num_weather), n = n())
-
-# Sort the data frame in order to take a look easily
-weather_municip <- weather_municip[order(weather_municip$NAMEUNIT,
-                                         weather_municip$year,
-                                         weather_municip$month),]
-write_rds(weather_municip, paste0("~/INVASIBILITY_THRESHOLD/output/weather/aemet_weather_daily_deep_history_sf_",Sys.Date(),".Rds"))
+# # for the mean temp, and get the minimum (maximum) for the stations for the mintemp (maxtemp)
+# weather_municip <-  weather_municip %>%  group_by(NAMEUNIT, month, year) %>% 
+#   summarise(tmin = min(tmin), tmax = max(tmax), tmed = mean(tmed),
+#             precmed = mean(precmed), rep = sum(num_weather), n = n())
+# 
+# # Sort the data frame in order to take a look easily
+# weather_municip <- weather_municip[order(weather_municip$NAMEUNIT,
+#                                          weather_municip$year,
+#                                          weather_municip$month),]
+# write_rds(weather_municip, paste0("~/INVASIBILITY_THRESHOLD/output/weather/aemet_weather_daily_deep_history_sf_",Sys.Date(),".Rds"))
 

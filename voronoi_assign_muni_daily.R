@@ -33,7 +33,6 @@ last_prediction_date = yesterday
 
 # SETTING CORES ####
 ncores = 8
-
 SPAIN_CRS = 25830
 
 # In order to work this github repository you need to create a directory called data in 
