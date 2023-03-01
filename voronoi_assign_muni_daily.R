@@ -60,7 +60,7 @@ station_points = st_read("~/INVASIBILITY_THRESHOLD/data/Estaciones_Completas.shp
 
 
 # File with weather data:
-Path <- "~/INVASIBILITY_THRESHOLD/output/weather/aemet_weather_daily_deep_history_sf_2023-01-30.Rds"
+Path <- "~/INVASIBILITY_THRESHOLD/output/weather/aemet_weather_daily_deep_history_sf_2023-03-01.Rds"
 weather_daily <- readRDS(Path)
 
 # Average weather data by month, smaller database:

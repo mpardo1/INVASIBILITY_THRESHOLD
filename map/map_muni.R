@@ -288,10 +288,20 @@ weather_ccaa <- weather %>%  group_by(ine.ccaa.name,fecha) %>%
             precmed = ifelse(is.na(precmed) | is.infinite(precmed),0,mean(precmed)), n = n())
 
 weather_ccaa <- as.data.frame(unique(weather_ccaa))
-weather_ccaa$R0_alb <- sapply(weather_ccaa$tmed, R0_func_alb)
-weather_ccaa$R0_aeg <- sapply(weather_ccaa$tmed, R0_func_aeg)
+weather_ccaa$R0_alb_med <- sapply(weather_ccaa$tmed, R0_func_alb)
+weather_ccaa$R0_aeg_med <- sapply(weather_ccaa$tmed, R0_func_aeg)
+weather_ccaa$R0_alb_max <- sapply(weather_ccaa$tmax, R0_func_alb)
+weather_ccaa$R0_aeg_max <- sapply(weather_ccaa$tmax, R0_func_aeg)
+weather_ccaa$R0_alb_min <- sapply(weather_ccaa$tmin, R0_func_alb)
+weather_ccaa$R0_aeg_min <- sapply(weather_ccaa$tmin, R0_func_aeg)
+weather_ccaa$R0_alb_avg <- (weather_ccaa$R0_alb_med + weather_ccaa$R0_alb_min + weather_ccaa$R0_alb_max)/3
+weather_ccaa$R0_aeg_avg <- (weather_ccaa$R0_aeg_med + weather_ccaa$R0_aeg_min + weather_ccaa$R0_aeg_max)/3
 
-weather_ccaa_filt <- weather_ccaa[which(weather_ccaa$ine.ccaa.name == "Canarias"),]
 ggplot(weather_ccaa) + 
   geom_line(aes(fecha,R0_alb, color = ine.ccaa.name)) + 
+  theme_bw()
+
+weather_ccaa_filt <- weather_ccaa[which(weather_ccaa$ine.ccaa.name == "Extremadura"),]
+ggplot(weather_ccaa_filt) + 
+  geom_smooth(aes(fecha,R0_alb_avg, color = ine.ccaa.name)) + 
   theme_bw()
