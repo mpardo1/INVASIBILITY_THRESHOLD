@@ -66,79 +66,25 @@ R0_func_alb <- function(Te){
 }
 
 # Read the weather data for a specific month and year for all municipalities
-Path <- "~/INVASIBILITY_THRESHOLD/output/weather/aemet_weather_daily_deep_history_sf_2023-02-01.Rds"
-weather <- as.data.frame(readRDS(Path))
-weather <- weather %>%
-  mutate(gdd = gdd(tmax = tmax, tmin = tmin, tbase = 10,
-                   tbase_max = 30)) %>%
-  mutate(daily_acc_gdd = c(NA, diff(gdd)))
+Path <- "~/INVASIBILITY_THRESHOLD/output/weather/Daily/aemet_weather_year_2_20.Rds"
+weather <- readRDS(Path)
+weather_df <- as.data.frame(do.call(rbind, weather))
+colnames(weather_df) <- c("muni_name", "ccaa_name", "prov_name",
+                          "date", "tmin", "tmed", "tmax", "precmed", "n")
 
-weather$R0_tmin <- sapply(weather$tmin, R0_func_alb)
-weather$R0_tmed <- sapply(weather$tmed, R0_func_alb)
-weather$R0_tmax <- sapply(weather$tmax, R0_func_alb)
-# Merge the municipalities shapefile with the weather data:
-weather_municip_R0 <- merge(x=esp_can, y=weather,
-                          by.x="name",by.y="NAMEUNIT", all.x=TRUE, all.y = TRUE)
-
-
-# Plot Map
-R0_tmin_plot <- ggplot(weather_municip_R0) +
-  geom_sf(aes(fill = R0_tmin), size = 0.01) + scale_fill_viridis() +
-  geom_sf(data = can_box) + theme_bw() + ggtitle("Min temperature")
-
-R0_tmed_plot <- ggplot(weather_municip_R0) +
-  geom_sf(aes(fill = R0_tmed), size = 0.01) + scale_fill_viridis() +
-  geom_sf(data = can_box) + theme_bw() + ggtitle("Average temperature")
-
-R0_tmax_plot <- ggplot(weather_municip_R0) +
-  geom_sf(aes(fill = R0_tmax), size = 0.01) + scale_fill_viridis() +
-  geom_sf(data = can_box) + theme_bw() + ggtitle("Max temperature")
-
-
-plot_3 <- ggarrange(R0_tmin_plot + 
-                      scale_fill_discrete(name = "R0"),
-                    R0_tmed_plot,
-                    common.legend = TRUE,
-                    legend = "bottom", ncol = 2)
-
-plot <- ggarrange(plot_3,
-          R0_tmax_plot,
-          common.legend = TRUE, legend = "none", heights = c(1,0.8), ncol = 1)
-
-plot + annotate("text", x = 0, y = 0.8, label = "August 2021")
-     
 ## Function to read all output weather file compute R0 and create a list of df.  
-plot_map <- function(path){
-
-  weather <- as.data.frame(readRDS(paste0("~/INVASIBILITY_THRESHOLD/output/weather/Monthly/weather/",path)))
-  weather$R0_tmin <- sapply(weather$tmin, R0_func_alb)
-  weather$R0_tmed <- sapply(weather$tmed, R0_func_alb)
-  weather$R0_tmax <- sapply(weather$tmax, R0_func_alb)
+weather_df$R0_tmin <- sapply(weather_df$tmin, R0_func_alb)
+weather_df$R0_tmed <- sapply(weather_df$tmed, R0_func_alb)
+weather_df$R0_tmax <- sapply(weather_df$tmax, R0_func_alb)
   
-  colnames(esp_can) <- c(colnames(esp_can)[1:5], "NAMEUNIT",colnames(esp_can)[7:length(colnames(esp_can))])
+  colnames(esp_can) <- c(colnames(esp_can)[1:5], "muni_name",colnames(esp_can)[7:length(colnames(esp_can))])
   # Merge the municipalities shapefile with the weather data:
   weather_municip_R01 <-  esp_can %>%  left_join(weather)
-    
-    if(exists('weather_municip_R0') && is.data.frame(get('weather_municip_R0'))){
-      weather_municip_R0 <- rbind(weather_municip_R0,weather_municip_R01)
-    }else{
-      weather_municip_R0 <- weather_municip_R01
-    }
 
-  return(weather_municip_R0)
-}
-
-Path <- "~/INVASIBILITY_THRESHOLD/output/weather/Monthly/weather/"
-list_file <- list.files(Path)
-list_file_filt <- list_file[which(str_sub(list_file, -6,-5) == "10")]
-rm(weather_municip_R0)
-df_plot <- lapply(list_file_filt, plot_map)
-rm(weather_municip_R0)
-df_plot <- do.call(rbind.data.frame, df_plot)
-
-
+  weather_municip_R01_monthly <- weather_municip_R01 %>% group_by(month) %>% 
+    summarise(R0_med = mean(R0_tmed),R0_min = min(R0_tmin),R0_max = mean(R0_tmax))
 # Create plots:
-ggplot(df_plot) +
+ggplot(weather_municip_R01) +
   geom_sf(aes(fill = R0_tmed), size = 0.01) + 
   scale_fill_viridis(name = "R0(T)", limits = c(0, 40)) +
   geom_sf(data = can_box) + coord_sf(datum = NA) +
@@ -184,6 +130,7 @@ pEA_f_aeg <- function(temp){Quad_func(0.00599,13.56,38.29,temp)} # Survival prob
 MDR_f_aeg <- function(temp){Briere_func(0.0000786,11.36,39.17,temp)} # Mosquito Development Rate
 lf_f_aeg <- function(temp){Quad_func(0.148,9.16,37.73,temp)} # Adult life span
 
+census <- mapSpain::pobmun19
 # R0 function by temperature:
 R0_func_aeg <- function(Te){
   a <- a_f_aeg(Te)

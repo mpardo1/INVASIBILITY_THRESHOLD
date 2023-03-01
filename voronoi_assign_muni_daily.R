@@ -68,14 +68,13 @@ weather_daily$fecha <- as.Date(weather_daily$fecha)
 weather_daily$month <- format(weather_daily$fecha, "%m") 
 weather_daily$year <- format(weather_daily$fecha, "%y") 
 weather_daily$day <- format(weather_daily$fecha, "%d") 
-weather_daily_filt <- as.data.frame(weather_daily[which(weather_daily$fecha >  as.Date("2018-01-01")),])
-weather_daily_filt[which(is.na(weather_daily_filt$prec)),8] <- 0
+weather_daily[which(is.na(weather_daily$prec)),8] <- 0
 
-indi_station_geo <- unique(weather_daily_filt[, c(1,2)])
+indi_station_geo <- unique(weather_daily[, c(1,2)])
 
-weather_daily_filt_mean <- weather_daily_filt[order(weather_daily_filt$year,
-                                                         weather_daily_filt$month,
-                                                         weather_daily_filt$INDICATIVO),]
+weather_daily_filt_mean <- weather_daily[order(weather_daily$year,
+                                               weather_daily$month,
+                                               weather_daily$INDICATIVO),]
 
 # # List of list with meteo station that are depending on the month.
 # part_df <- split(weather_daily_filt_mean, list(weather_daily_filt_mean$month, weather_daily_filt_mean$year))
