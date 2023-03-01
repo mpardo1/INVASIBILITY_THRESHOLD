@@ -82,7 +82,7 @@ weather_daily_filt_mean <- weather_daily[order(weather_daily$year,
 # list_INDI <- unique(list_meteo_station)
 
 # Delete non use data frame to free space.
-rm(weather_daily, weather_daily_filt)
+rm(weather_daily)
 len <- length(unique(with(weather_daily_filt_mean, paste0(year, month))))
 #---------------------------------------------------------------------------#
 

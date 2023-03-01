@@ -77,14 +77,17 @@ weather_df$R0_tmin <- sapply(weather_df$tmin, R0_func_alb)
 weather_df$R0_tmed <- sapply(weather_df$tmed, R0_func_alb)
 weather_df$R0_tmax <- sapply(weather_df$tmax, R0_func_alb)
   
-  colnames(esp_can) <- c(colnames(esp_can)[1:5], "muni_name",colnames(esp_can)[7:length(colnames(esp_can))])
-  # Merge the municipalities shapefile with the weather data:
-  weather_municip_R01 <-  esp_can %>%  left_join(weather)
+colnames(esp_can) <- c(colnames(esp_can)[1:5], "muni_name",colnames(esp_can)[7:length(colnames(esp_can))])
+# Merge the municipalities shapefile with the weather data:
+weather_municip_R01 <-  esp_can %>%  left_join(weather_df)
+weather_municip_R01$month <- lubridate::month(weather_municip_R01$date)
+weather_municip_R01$year <- lubridate::year(weather_municip_R01$date)
 
-  weather_municip_R01_monthly <- weather_municip_R01 %>% group_by(month) %>% 
+weather_municip_R01_monthly <- weather_municip_R01 %>% group_by(month,muni_name) %>% 
     summarise(R0_med = mean(R0_tmed),R0_min = min(R0_tmin),R0_max = mean(R0_tmax))
+
 # Create plots:
-ggplot(weather_municip_R01) +
+ggplot(weather_municip_R01_monthly) +
   geom_sf(aes(fill = R0_tmed), size = 0.01) + 
   scale_fill_viridis(name = "R0(T)", limits = c(0, 40)) +
   geom_sf(data = can_box) + coord_sf(datum = NA) +
