@@ -88,7 +88,7 @@ weather_municip_R01_monthly <- weather_municip_R01 %>% group_by(month,muni_name)
 
 # Create plots:
 ggplot(weather_municip_R01_monthly) +
-  geom_sf(aes(fill = R0_tmed), size = 0.01) + 
+  geom_sf(aes(fill = R0_med), size = 0.01) + 
   scale_fill_viridis(name = "R0(T)", limits = c(0, 40)) +
   geom_sf(data = can_box) + coord_sf(datum = NA) +
   theme(plot.margin = margin(0.2, 0.2, 0.2, 0.2, "cm")) + 
