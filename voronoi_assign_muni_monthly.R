@@ -36,6 +36,6 @@ group_monthly <- function(file_name){
 
 # Read the weather data for a specific month and year for all municipalities
 list_files <- list.files(Path)
-df_list <- lapply(list_file_filt, group_monthly)
+df_list <- lapply(list_files, group_monthly)
 
 write_rds(df_list, paste0("~/INVASIBILITY_THRESHOLD/output/weather/monthly/aemet_weather_year_monthly_yearlist.Rds"))
