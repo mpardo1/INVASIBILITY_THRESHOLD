@@ -31,10 +31,11 @@ group_monthly <- function(file_name){
     summarise(t_med = mean(tmed), t_min = min(tmin),
               t_max = mean(tmax), precmed = mean(precmed))
   
-  write_rds(weather_municip_R01_monthly, paste0("~/INVASIBILITY_THRESHOLD/output/weather/monthly/aemet_weather_year_monthly_year",
-                                                min(weather_municip_R01$year),".Rds"))
-  return(weather_municip_R01_monthly)
+    return(weather_municip_R01_monthly)
 }
 
 # Read the weather data for a specific month and year for all municipalities
 list_files <- list.files(Path)
+df_list <- lapply(list_file_filt, plot_map)
+
+write_rds(df_list, paste0("~/INVASIBILITY_THRESHOLD/output/weather/monthly/aemet_weather_year_monthly_yearlist.Rds"))
