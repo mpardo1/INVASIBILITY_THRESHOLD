@@ -173,7 +173,7 @@ rel_meteostat_muni <- function(weather_daily_f){
 }
 
 ### Loop over all months and years:
-Cores <- 14 #parallel::detectCores()#Numero de cores a utilizar.
+Cores <- 10 #parallel::detectCores()#Numero de cores a utilizar.
 min_year <- as.numeric(min(weather_daily_filt_mean$year))
 max_year <- as.numeric(max(weather_daily_filt_mean$year))
 print("***********************Antes del while")
