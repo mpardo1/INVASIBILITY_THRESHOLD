@@ -139,6 +139,8 @@ rel_meteostat_muni <- function(weather_daily_f){
   spain_muni_map = esp_can %>% st_transform(st_crs(ua))
   print("despues del st_transform ")
   this_perimeter_25830 <- spain_perimeter %>% st_transform(st_crs(ua)) %>% st_union()
+  
+  print("Antes de these points ")
   these_points = st_make_grid(st_bbox(this_perimeter_25830)+100000*c(-1,-1,1,1),
                               cellsize = c(cell_res,cell_res), what = "polygons",
                               square = TRUE) %>% st_sf %>%

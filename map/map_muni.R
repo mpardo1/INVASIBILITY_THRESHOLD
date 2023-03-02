@@ -13,7 +13,7 @@ library("ggpubr")
 library(viridis)
 library(stringr)
 library(gdata)
-
+library("data.table")
 # Spain map municipalities
 esp_can <- esp_get_munic_siane(moveCAN = TRUE)
 esp_can$R0_test <- runif(length(esp_can$codauto),0,5)
@@ -81,12 +81,18 @@ weather_df$R0_tmed <- sapply(weather_df$tmed, R0_func_alb)
 weather_df$R0_tmax <- sapply(weather_df$tmax, R0_func_alb)
   
 colnames(esp_can) <- c(colnames(esp_can)[1:5], "muni_name",colnames(esp_can)[7:length(colnames(esp_can))])
+
 # Merge the municipalities shapefile with the weather data:
 weather_municip_R01 <-  esp_can %>%  left_join(weather_df)
 weather_municip_R01$month <- lubridate::month(weather_municip_R01$date)
 weather_municip_R01$year <- lubridate::year(weather_municip_R01$date)
 
-weather_municip_R01_monthly <- weather_municip_R01 %>% group_by(month,muni_name) %>% 
+weather_municip_R01_dt <- setDT(weather_municip_R01) # Convert data.frame to data.table
+data_sum <- weather_municip_R01_dt[ , .(R0_med = mean(R0_tmed),
+                                        R0_min = min(R0_tmin),
+                                        R0_max = mean(R0_tmax)), by = list(month,muni_name)]     # Aggregate data
+
+weather_municip_R01_monthly <- weather_municip_R01_dt %>% group_by(month,muni_name) %>% 
     summarise(R0_med = mean(R0_tmed),R0_min = min(R0_tmin),R0_max = mean(R0_tmax))
 
 # Create plots:
