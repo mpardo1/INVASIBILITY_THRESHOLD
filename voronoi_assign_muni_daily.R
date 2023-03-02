@@ -108,9 +108,11 @@ len <- length(unique(with(weather_daily_filt_mean, paste0(year, month))))
 rel_meteostat_muni <- function(weather_daily_f){
   init_time <- Sys.time()
   station_points <- station_points[which(station_points$INDICATIVO %in% unique(weather_daily_f$INDICATIVO)),]
+  print("Antes de st_read")
   spain_perimeter = st_read("~/INVASIBILITY_THRESHOLD/data/recintos_autonomicas_inspire_peninbal_etrs89.shp") %>%
     bind_rows(st_read("~/INVASIBILITY_THRESHOLD/data/recintos_autonomicas_inspire_canarias_wgs84.shp")) %>%
     st_transform(SPAIN_CRS) %>% summarize()
+  print("Antes de drop_na")
   station_points <- station_points %>% drop_na()
   
   print("Antes de voronoi")
