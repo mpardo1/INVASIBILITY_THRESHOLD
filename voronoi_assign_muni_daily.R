@@ -113,6 +113,7 @@ rel_meteostat_muni <- function(weather_daily_f){
     st_transform(SPAIN_CRS) %>% summarize()
   station_points <- station_points %>% drop_na()
   
+  print("Antes de voronoi")
   # Voronoi cells for weather stations ####
   vor = station_points %>% st_geometry() %>% st_union() %>%
     st_voronoi(envelope = st_geometry(spain_perimeter)) %>%
@@ -186,7 +187,8 @@ while(min_year <= max_year ){
     weather_df_y <- mclapply(min_day:max_day, mc.cores = Cores, mc.preschedule = F,function(k){ 
       print("Despues del malapply")
       weather_daily_f <- weather_daily_f[which(as.numeric(weather_daily_f$day_month) == k),]
-      df_weather <- rel_meteostat_muni(weather_daily_f)
+      print("Dentro del mclapply")
+       df_weather <- rel_meteostat_muni(weather_daily_f)
       
       print("Dentro del mclapply")
       if(exists('weather_year') && is.data.frame(get('weather_year'))){
