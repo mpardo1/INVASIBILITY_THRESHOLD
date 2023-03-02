@@ -178,10 +178,13 @@ while(min_year <= max_year ){
   print(paste0("Min year:", min_year))
     weather_daily_f <- weather_daily_filt_mean[which(as.numeric(weather_daily_filt_mean$year) == min_year),]
     weather_daily_f <- weather_daily_f %>% drop_na()
+    print("Después del dropna")
     weather_daily_f$day_month <- as.numeric(yday(weather_daily_f$fecha))
     min_day = min( weather_daily_f$day_month)
     max_day = max( weather_daily_f$day_month)
+    print("Antes del malapply")
     weather_df_y <- mclapply(min_day:max_day, mc.cores = Cores, mc.preschedule = F,function(k){ 
+      print("Despues del malapply")
       weather_daily_f <- weather_daily_f[which(as.numeric(weather_daily_f$day_month) == k),]
       df_weather <- rel_meteostat_muni(weather_daily_f)
       

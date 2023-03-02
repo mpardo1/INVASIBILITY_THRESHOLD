@@ -65,6 +65,9 @@ R0_func_alb <- function(Te){
   return(R0)
 }
 
+# Population density in each municipality.
+census <- mapSpain::pobmun19
+
 # Read the weather data for a specific month and year for all municipalities
 Path <- "~/INVASIBILITY_THRESHOLD/output/weather/Daily/aemet_weather_year_2_20.Rds"
 weather <- readRDS(Path)
@@ -125,6 +128,32 @@ ggplot(df_plot_ccaa) +
 
 ggsave("~/Documentos/PHD/2023/INVASIBILITY/Plots/ccaa_alb_2010.png")
 
+### Incorporating rain and human density:
+h_f <- function(hum, rain){
+  (1-erat)*(((1+e0)*exp(-evar*(rain-eopt)^2))/(exp(-evar*(rain - eopt)^2) + e0)) +
+    erat*(edens/(edens + exp(-efac*hum)))
+}
+
+# Constants: 
+erat = 0.5
+e0 = 1.5
+evar = 0.05
+eopt = 8
+efac = 0.01
+edens = 0.01
+
+# R0 function by temperature:
+R0_func_alb <- function(Te,hum,rain){
+  a <- a_f_alb(Te)
+  f <- TFD_f_alb(Te)
+  deltaa <- 1/lf_f_alb(Te)
+  probla <- pEA_f_alb(Te)
+  h <- h_f(hum,rain)
+  R0 <- sqrt(f*(a/deltaa)*probla*(h*(h+deltE)))
+  return(R0)
+}
+
+
 #### -------------------------- Aegypti ------------------------- ####
 ## Thermal responses Aedes Aegypti from Mordecai 2017:
 a_f_aeg <- function(temp){Briere_func(0.000202,13.35,40.08,temp)} # Biting rate
@@ -133,7 +162,6 @@ pEA_f_aeg <- function(temp){Quad_func(0.00599,13.56,38.29,temp)} # Survival prob
 MDR_f_aeg <- function(temp){Briere_func(0.0000786,11.36,39.17,temp)} # Mosquito Development Rate
 lf_f_aeg <- function(temp){Quad_func(0.148,9.16,37.73,temp)} # Adult life span
 
-census <- mapSpain::pobmun19
 # R0 function by temperature:
 R0_func_aeg <- function(Te){
   a <- a_f_aeg(Te)
