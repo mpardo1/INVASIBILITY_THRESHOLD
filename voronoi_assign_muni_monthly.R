@@ -4,7 +4,6 @@ library(tidyverse)
 library(sf)
 library(dplyr)
 library(lubridate)
-library(rmapshaper)
 library(stringr)
 library(gdata)
 

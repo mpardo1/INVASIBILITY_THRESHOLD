@@ -96,27 +96,27 @@ ggplot(weather_municip_R01_monthly) +
   labs(title = "Month: {current_frame}") +
   transition_manual(month)
 
-anim_save("~/Documentos/PHD/2023/INVASIBILITY/Plots/animation_alb_2010.gif",
+anim_save("~/Documentos/PHD/2023/INVASIBILITY/Plots/animation_alb_2020.gif",
           animation = last_animation())
 
-df_plot$bool <- ifelse(df_plot$R0_tmed >= 1, 1,0)
-df_plot_bool <- df_plot %>%  group_by(NAMEUNIT) %>% 
+weather_municip_R01_monthly$bool <- ifelse(weather_municip_R01_monthly$R0_med >= 1, 1,0)
+weather_municip_R01_monthly_g <- weather_municip_R01_monthly %>%  group_by(muni_name) %>% 
   summarise( sum_bool = sum(bool))
 
-plot_sum_albo <- ggplot(df_plot_bool) +
+plot_sum_albo <- ggplot(weather_municip_R01_monthly_g) +
   geom_sf(aes(fill = sum_bool), lwd = 0) + 
   scale_fill_viridis(name = "Nº of months with R0>1",
-                     limits = c(0, 12), option="magma") +
+                     limits = c(0, 12), option="turbo") +
   geom_sf(data = can_box) + coord_sf(datum = NA)  + 
-  ggtitle("Aedes Albopictus 2010") + 
+  ggtitle("Aedes Albopictus 2020") + 
   theme_bw() 
 
 plot_sum_albo
-ggsave("~/Documentos/PHD/2023/INVASIBILITY/Plots/num_months_alb_2010.png")
+ggsave("~/Documentos/PHD/2023/INVASIBILITY/Plots/num_months_alb_2020.png")
 
 # Time series in CCAA R0:
-df_plot_ccaa <- df_plot %>% group_by(ine.ccaa.name, month, year) %>% 
-  summarise( avg_R0 = mean(R0_tmed), n = n())
+df_plot_ccaa <- weather_municip_R01_monthly %>% group_by(ccaa_name, month, year) %>% 
+  summarise( avg_R0 = mean(R0_med), n = n())
 df_plot_ccaa$date <- as.Date(paste0("01/",df_plot_ccaa$month,"/20",df_plot_ccaa$year))
 
 ggplot(df_plot_ccaa) + 
