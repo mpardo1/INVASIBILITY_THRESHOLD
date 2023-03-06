@@ -83,20 +83,20 @@ weather_df$R0_tmax <- sapply(weather_df$tmax, R0_func_alb)
 colnames(esp_can) <- c(colnames(esp_can)[1:5], "muni_name",colnames(esp_can)[7:length(colnames(esp_can))])
 
 # Merge the municipalities shapefile with the weather data:
-weather_municip_R01 <-  esp_can %>%  left_join(weather_df)
-weather_municip_R01$month <- lubridate::month(weather_municip_R01$date)
-weather_municip_R01$year <- lubridate::year(weather_municip_R01$date)
+weather_df$month <- lubridate::month(weather_df$date)
+weather_df$year <- lubridate::year(weather_df$date)
 
-weather_municip_R01_dt <- setDT(weather_municip_R01) # Convert data.frame to data.table
+weather_municip_R01_dt <- setDT(weather_df) # Convert data.frame to data.table
 data_sum <- weather_municip_R01_dt[ , .(R0_med = mean(R0_tmed),
                                         R0_min = min(R0_tmin),
                                         R0_max = mean(R0_tmax)), by = list(month,muni_name)]     # Aggregate data
 
-weather_municip_R01_monthly <- weather_municip_R01_dt %>% group_by(month,muni_name) %>% 
-    summarise(R0_med = mean(R0_tmed),R0_min = min(R0_tmin),R0_max = mean(R0_tmax))
+plot_df <-  esp_can %>%  left_join(data_sum)
+# weather_municip_R01_monthly <- weather_municip_R01_dt %>% group_by(month,muni_name) %>% 
+#     summarise(R0_med = mean(R0_tmed),R0_min = min(R0_tmin),R0_max = mean(R0_tmax))
 
 # Create plots:
-ggplot(weather_municip_R01_monthly) +
+ggplot(plot_df) +
   geom_sf(aes(fill = R0_med), size = 0.01) + 
   scale_fill_viridis(name = "R0(T)", limits = c(0, 40)) +
   geom_sf(data = can_box) + coord_sf(datum = NA) +
@@ -108,11 +108,13 @@ ggplot(weather_municip_R01_monthly) +
 anim_save("~/Documentos/PHD/2023/INVASIBILITY/Plots/animation_alb_2020.gif",
           animation = last_animation())
 
-weather_municip_R01_monthly$bool <- ifelse(weather_municip_R01_monthly$R0_med >= 1, 1,0)
-weather_municip_R01_monthly_g <- weather_municip_R01_monthly %>%  group_by(muni_name) %>% 
-  summarise( sum_bool = sum(bool))
+data_sum$bool <- ifelse(data_sum$R0_med >= 1, 1,0)
+plot_df_grouped <- data_sum[ , .(sum_bool = sum(bool)), 
+                                           by = list(muni_name)]     # Aggregate data
 
-plot_sum_albo <- ggplot(weather_municip_R01_monthly_g) +
+plot_df <-  esp_can %>%  left_join(plot_df_grouped)
+
+plot_sum_albo <- ggplot(plot_df) +
   geom_sf(aes(fill = sum_bool), lwd = 0) + 
   scale_fill_viridis(name = "Nº of months with R0>1",
                      limits = c(0, 12), option="turbo") +
@@ -123,13 +125,20 @@ plot_sum_albo <- ggplot(weather_municip_R01_monthly_g) +
 plot_sum_albo
 ggsave("~/Documentos/PHD/2023/INVASIBILITY/Plots/num_months_alb_2020.png")
 
+rm(data_sum,weather_df,weather,plot_df,plot_df_grouped)
 # Time series in CCAA R0:
-df_plot_ccaa <- weather_municip_R01_monthly %>% group_by(ccaa_name, month, year) %>% 
-  summarise( avg_R0 = mean(R0_med), n = n())
-df_plot_ccaa$date <- as.Date(paste0("01/",df_plot_ccaa$month,"/20",df_plot_ccaa$year))
+df_plot_ccaa <- weather_municip_R01_dt[ , .(avg_R0 = mean(R0_tmed)), 
+                         by = list(ccaa_name, date)]     # Aggregate data
 
-ggplot(df_plot_ccaa) + 
-  geom_line(aes(date, avg_R0, color = ine.ccaa.name )) + 
+df_plot_ccaa$date <- as.Date(paste0("01/",df_plot_ccaa$month,"/20",df_plot_ccaa$year))
+plot_df_ccaa <- merge(esp_can, df_plot_ccaa, 
+                      by.x = "ine.ccaa.name", by.y = "ccaa_name")
+
+plot_df_ccaa_filt <- plot_df_ccaa[which((plot_df_ccaa$ine.ccaa.name == "Cataluña") |  
+                                          plot_df_ccaa$ine.ccaa.name == "Valencia"),]
+ggplot(plot_df_ccaa) + 
+  geom_smooth(aes(date, avg_R0, color = ine.ccaa.name )) + 
+  ylab("R0") + 
   theme_bw()
 
 ggsave("~/Documentos/PHD/2023/INVASIBILITY/Plots/ccaa_alb_2010.png")
