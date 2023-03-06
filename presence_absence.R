@@ -9,9 +9,11 @@ library(gganimate)
 library(viridis)
 library("data.table")
 
-Path = "~/INVASIBILITY_THRESHOLD/data/PresenceAbsence_MA_BG.csv"
+Path = "~/INVASIBILITY_THRESHOLD/data/PresenceAbsence_MA_BG2.csv"
 df_pa <- read.table(file = Path, 
-                    sep = " ", header=TRUE, fill = TRUE)
+                    sep = ",", header=TRUE, fill = TRUE)
+Path = "~/INVASIBILITY_THRESHOLD/data/PresenceAbsence_MA_BG2.rds"
+saveRDS(df_pa, Path)
 
 esp_can <- esp_get_munic_siane(moveCAN = TRUE)
 # Check how to form NATCODE:
