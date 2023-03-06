@@ -69,7 +69,7 @@ R0_func_alb <- function(Te){
 census <- mapSpain::pobmun19
 
 # Read the weather data for a specific month and year for all municipalities
-Path <- "~/INVASIBILITY_THRESHOLD/output/weather/Daily/aemet_weather_year_2_20.Rds"
+Path <- "~/INVASIBILITY_THRESHOLD/output/weather/Daily/aemet_weather_year_Marz_0.Rds"
 weather <- readRDS(Path)
 weather_df <- as.data.frame(do.call(rbind, weather))
 colnames(weather_df) <- c("muni_name", "ccaa_name", "prov_name",
