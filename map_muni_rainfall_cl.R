@@ -10,6 +10,7 @@ library(viridis)
 library(stringr)
 library(gdata)
 library("data.table")
+library(parallel)
 
 #------------------------FUNCTIONS---------------------------#
 # Main functions 
@@ -63,7 +64,16 @@ R0_func_alb <- function(rain,hum,Te){
   return(R0)
 }
 
+
 #####
+esp_can <- esp_get_munic_siane(moveCAN = TRUE)
+esp_can$R0_test <- runif(length(esp_can$codauto),0,5)
+can_box <- esp_get_can_box()
+census <- mapSpain::pobmun19
+esp_can_pop <- esp_can %>% left_join(census, by = c("cmun" = "cmun","cpro" = "cpro"))
+esp_can_pop$area <- as.numeric(st_area(esp_can_pop))/1000000
+esp_can_pop$pop_km <- esp_can_pop$pob19/esp_can_pop$area
+
 Path <- "~/INVASIBILITY_THRESHOLD/output/weather/Daily/aemet_weather_year_Marz_1.Rds"
 weather <- readRDS(Path)
 weather_df <- as.data.frame(do.call(rbind, weather))
