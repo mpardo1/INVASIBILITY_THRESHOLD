@@ -2,13 +2,11 @@ rm(list=ls())
 library("mapSpain")
 library(tidyverse)
 library(sf)
-library(pollen)
 library(raster)
 library(ggplot2)
 library(dplyr)
 library(lubridate)
 library(gganimate)
-library(rmapshaper)
 library("ggpubr")
 library(viridis)
 library(stringr)
@@ -85,15 +83,15 @@ hum_cte <- 200
 te_cte <- 15
 out <- sapply(vec,R0_func_alb,hum=hum_cte, Te=te_cte)
 
-df_out <- data.frame(vec, out)
-ggplot(df_out) + 
-  geom_line(aes(vec,out))
-
-out <- sapply(vec,h_f,hum=hum_cte)
-
-df_out <- data.frame(vec, out)
-ggplot(df_out) + 
-  geom_line(aes(vec,out))
+# df_out <- data.frame(vec, out)
+# ggplot(df_out) + 
+#   geom_line(aes(vec,out))
+# 
+# out <- sapply(vec,h_f,hum=hum_cte)
+# 
+# df_out <- data.frame(vec, out)
+# ggplot(df_out) + 
+#   geom_line(aes(vec,out))
 
 
 # Population density in each municipality.
@@ -102,20 +100,20 @@ esp_can_pop <- esp_can %>% left_join(census, by = c("cmun" = "cmun","cpro" = "cp
 esp_can_pop$area <- as.numeric(st_area(esp_can_pop))/1000000
 esp_can_pop$pop_km <- esp_can_pop$pob19/esp_can_pop$area
 
-ggplot(esp_can_pop) +
-  geom_sf(aes(fill = area), size = 0.1) +
-  scale_fill_viridis(name = "area") +
-  geom_sf(data = can_box) + theme_bw()
-
-ggplot(esp_can_pop) +
-  geom_sf(aes(fill = pob29), size = 0.1) +
-  scale_fill_viridis(name = "Population") +
-  geom_sf(data = can_box) + theme_bw()
-
-ggplot(esp_can_pop) +
-  geom_sf(aes(fill = pop_km), size = 0.1) +
-  scale_fill_viridis(name = "Population per Km2") +
-  geom_sf(data = can_box) + theme_bw()
+# ggplot(esp_can_pop) +
+#   geom_sf(aes(fill = area), size = 0.1) +
+#   scale_fill_viridis(name = "area") +
+#   geom_sf(data = can_box) + theme_bw()
+# 
+# ggplot(esp_can_pop) +
+#   geom_sf(aes(fill = pob29), size = 0.1) +
+#   scale_fill_viridis(name = "Population") +
+#   geom_sf(data = can_box) + theme_bw()
+# 
+# ggplot(esp_can_pop) +
+#   geom_sf(aes(fill = pop_km), size = 0.1) +
+#   scale_fill_viridis(name = "Population per Km2") +
+#   geom_sf(data = can_box) + theme_bw()
 
 #####
 Path <- "~/INVASIBILITY_THRESHOLD/output/weather/Daily/aemet_weather_year_Marz_1.Rds"
@@ -136,25 +134,25 @@ for(i in c(1:nrow(weather_df))){
   weather_dt$R0_tmed[i] <- R0_func_alb(weather_dt$precmed[i],weather_dt$pop_km[i],weather_dt$tmed[i])
 }
 
-saveRDS(weather_df,"~/INVASIBILITY_THRESHOLD/output/weather/Daily/weather_out_R0.Rds")
+saveRDS(weather_dt,"~/INVASIBILITY_THRESHOLD/output/weather/Daily/weather_out_1R0.Rds")
 # 
 # weather_df$R0_tmin <- sapply(weather_df$precmed, R0_func_alb,
 #                              hum = weather_df$pop_km, Te = weather_df$tmin)
 # weather_df$R0_tmed <- sapply(weather_df$precmed, R0_func_alb)
 # weather_df$R0_tmax <- sapply(weather_df$precmed, R0_func_alb)
 
-colnames(esp_can) <- c(colnames(esp_can)[1:5], "muni_name",colnames(esp_can)[7:length(colnames(esp_can))])
-
-# Merge the municipalities shapefile with the weather data:
-weather_df$month <- lubridate::month(weather_df$date)
-weather_df$year <- lubridate::year(weather_df$date)
-
-weather_municip_R01_dt <- setDT(weather_df) # Convert data.frame to data.table
-data_sum <- weather_municip_R01_dt[ , .(R0_med = mean(R0_tmed),
-                                        R0_min = min(R0_tmin),
-                                        R0_max = mean(R0_tmax)), by = list(month,muni_name)]     # Aggregate data
-
-plot_df <-  esp_can %>%  left_join(data_sum)
+# colnames(esp_can) <- c(colnames(esp_can)[1:5], "muni_name",colnames(esp_can)[7:length(colnames(esp_can))])
+# 
+# # Merge the municipalities shapefile with the weather data:
+# weather_df$month <- lubridate::month(weather_df$date)
+# weather_df$year <- lubridate::year(weather_df$date)
+# 
+# weather_municip_R01_dt <- setDT(weather_df) # Convert data.frame to data.table
+# data_sum <- weather_municip_R01_dt[ , .(R0_med = mean(R0_tmed),
+#                                         R0_min = min(R0_tmin),
+#                                         R0_max = mean(R0_tmax)), by = list(month,muni_name)]     # Aggregate data
+# 
+# plot_df <-  esp_can %>%  left_join(data_sum)
 # weather_municip_R01_monthly <- weather_municip_R01_dt %>% group_by(month,muni_name) %>% 
 #     summarise(R0_med = mean(R0_tmed),R0_min = min(R0_tmin),R0_max = mean(R0_tmax))
 
