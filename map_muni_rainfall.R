@@ -116,3 +116,55 @@ ggplot(esp_can_pop) +
   geom_sf(aes(fill = pop_km), size = 0.1) +
   scale_fill_viridis(name = "Population per Km2") +
   geom_sf(data = can_box) + theme_bw()
+
+#####
+Path <- "~/INVASIBILITY_THRESHOLD/output/weather/Daily/aemet_weather_year_Marz_1.Rds"
+weather <- readRDS(Path)
+weather_df <- as.data.frame(do.call(rbind, weather))
+weather_df <- weather_df %>% left_join(esp_can_pop, by = c("name" = "name.x"))
+weather_df <- weather_df[,c(1:8,10,12,15,19,22:24)]
+colnames(weather_df) <- c("name", "ccaa_name", "prov_name",colnames(weather_df)[4:ncol(weather_df)])
+weather_df$R0_tmin <- 0
+weather_df$R0_tmax <- 0
+weather_df$R0_tmed <- 0
+## Function to read all output weather file compute R0 and create a list of df.
+weather_dt <- setDT(weather_df)
+for(i in c(1:nrow(weather_df))){
+  print(paste0("i:",i))
+  weather_dt$R0_tmin[i] <- R0_func_alb(weather_dt$precmed[i],weather_dt$pop_km[i],weather_dt$tmin[i])
+  weather_dt$R0_tmax[i] <- R0_func_alb(weather_dt$precmed[i],weather_dt$pop_km[i],weather_dt$tmax[i])
+  weather_dt$R0_tmed[i] <- R0_func_alb(weather_dt$precmed[i],weather_dt$pop_km[i],weather_dt$tmed[i])
+}
+
+saveRDS(weather_df,"~/INVASIBILITY_THRESHOLD/output/weather/Daily/weather_out_R0.Rds")
+# 
+# weather_df$R0_tmin <- sapply(weather_df$precmed, R0_func_alb,
+#                              hum = weather_df$pop_km, Te = weather_df$tmin)
+# weather_df$R0_tmed <- sapply(weather_df$precmed, R0_func_alb)
+# weather_df$R0_tmax <- sapply(weather_df$precmed, R0_func_alb)
+
+colnames(esp_can) <- c(colnames(esp_can)[1:5], "muni_name",colnames(esp_can)[7:length(colnames(esp_can))])
+
+# Merge the municipalities shapefile with the weather data:
+weather_df$month <- lubridate::month(weather_df$date)
+weather_df$year <- lubridate::year(weather_df$date)
+
+weather_municip_R01_dt <- setDT(weather_df) # Convert data.frame to data.table
+data_sum <- weather_municip_R01_dt[ , .(R0_med = mean(R0_tmed),
+                                        R0_min = min(R0_tmin),
+                                        R0_max = mean(R0_tmax)), by = list(month,muni_name)]     # Aggregate data
+
+plot_df <-  esp_can %>%  left_join(data_sum)
+# weather_municip_R01_monthly <- weather_municip_R01_dt %>% group_by(month,muni_name) %>% 
+#     summarise(R0_med = mean(R0_tmed),R0_min = min(R0_tmin),R0_max = mean(R0_tmax))
+
+# 
+# # Create plots:
+# ggplot(plot_df) +
+#   geom_sf(aes(fill = R0_max), size = 0.01) + 
+#   scale_fill_viridis(name = "R0(T)", limits = c(0,max(plot_df$R0_max))) +
+#   geom_sf(data = can_box) + coord_sf(datum = NA) +
+#   theme(plot.margin = margin(0.2, 0.2, 0.2, 0.2, "cm")) + 
+#   theme_void() +
+#   labs(title = "Month: {current_frame}") +
+#   transition_manual(month)
