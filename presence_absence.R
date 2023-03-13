@@ -21,19 +21,118 @@ esp_can_filt$geometry <- NULL
 unique(esp_can_filt)
 
 can_box <- esp_get_can_box()
+
+### Read RDS with R0
+Path <- "~/INVASIBILITY_THRESHOLD/output/weather/Daily/R0_aemet_weather_year_2_22.Rds"
+weather_R0 <- readRDS(Path)
+weather_R0$bool <- ifelse(weather_R0$R0_tmed >1,1,0)
+weather_R0 <- weather_R0 %>% group_by(name) %>%
+  summarise(sum_month = sum(weather_R0$bool), avg_R0med = mean(R0_tmed), 
+                avg_R0min = mean(R0_tmin), avg_R0max = mean(R0_tmax))
+
+esp_can <- esp_get_munic_siane(moveCAN = TRUE)
+can_box <- esp_get_can_box()
+# Check how to form NATCODE:
+unique(esp_can_filt)
+nr <- nrow(esp_can)
+esp_can$dist <- 0
+for(i in c(1:nr)){
+  esp_can$dist[i] <- st_distance(esp_can[which(esp_can$name == "Sant Cugat del Vallès"),],esp_can[i,])
+}
+
+ggplot(esp_can) +
+  geom_sf(aes(fill = dist), size = 0.1) +
+  scale_fill_viridis(name = "distance") +
+  geom_sf(data = can_box) + theme_bw()
+
 esp_can$NATCODE <- as.numeric(paste0("34",esp_can$codauto,esp_can$cpro,esp_can$LAU_CODE))
 # esp_can <- esp_can[-(which(is.na(esp_can$name))),]
 df_pa$NATCODE <- as.numeric(df_pa$NATCODE)
 df_join <- esp_can %>% left_join(df_pa)
 df_join$pa <- ifelse((df_join$A_PRIM_DET_OFICIAL == 0 & df_join$A_PRIM_DET_CITSCI == 0),0,1)
 df_join$pa[which(is.na(df_join$pa))] <- 0
-# muni_spain = st_read("~/INVASIBILITY_THRESHOLD/data/Municipios_IGN.shp")
-# muni_spain$NATCODE <- as.numeric(muni_spain$NATCODE)
-# df_join <- muni_spain %>% left_join(df_pa)
-# df_join$pa <- ifelse((df_join$A_PRIM_DET_OFICIAL == 0 & df_join$A_PRIM_DET_CITSCI == 0),0,1)
-# df_join <- df_join[-(which(is.na(df_join$pa))),]
 
 ggplot(df_join) +
   geom_sf(aes(fill = factor(pa)), size = 0.1) +
   geom_sf(data = can_box) + theme_bw()
+
+df_R0_PA <- weather_R0 %>% left_join(df_join)
+df_R0_PA <- df_R0_PA[-which(is.na(df_R0_PA)),]
+
+ggplot(df_R0_PA) + 
+  geom_point(aes(avg_R0min, pa), size = 0.1) + 
+  theme_bw()
+
+ggplot(df_R0_PA) + 
+  geom_point(aes(avg_R0med, pa), size = 0.1) + 
+  theme_bw()
+
+ggplot(df_R0_PA) + 
+  geom_point(aes(avg_R0max, pa), size = 0.1) + 
+  theme_bw()
+
+ggplot(df_R0_PA) + 
+  geom_point(aes(dist, pa), size = 0.1) + 
+  theme_bw()
+
+df_pa$year_first <- 0
+for(i in c(1:nrow(df_pa))){
+  if(df_pa$A_PRIM_DET_OFICIAL[i] == 0 & df_pa$A_PRIM_DET_CITSCI[i] == 0){
+    df_pa$year_first[i] <- 0
+  }else if(df_pa$A_PRIM_DET_OFICIAL[i] == 0 & df_pa$A_PRIM_DET_CITSCI[i] > 0){
+    df_pa$year_first[i] <- df_pa$A_PRIM_DET_CITSCI[i]
+  }else if(df_pa$A_PRIM_DET_CITSCI[i] == 0 & df_pa$A_PRIM_DET_OFICIAL[i] > 0){
+    df_pa$year_first[i] <- df_pa$A_PRIM_DET_OFICIAL[i]
+  }else if(df_pa$A_PRIM_DET_CITSCI[i] > 0 & df_pa$A_PRIM_DET_OFICIAL[i] > 0 & df_pa$A_PRIM_DET_CITSCI[i] >  df_pa$A_PRIM_DET_OFICIAL[i]){
+    df_pa$year_first[i] <- df_pa$A_PRIM_DET_OFICIAL[i]
+  }else if(df_pa$A_PRIM_DET_CITSCI[i] > 0 & df_pa$A_PRIM_DET_OFICIAL[i] > 0 & df_pa$A_PRIM_DET_CITSCI[i] < df_pa$A_PRIM_DET_OFICIAL[i]){
+    df_pa$year_first[i] <- df_pa$A_PRIM_DET_CITSCI[i]
+  }
+  
+}
+df_pa_filt <- df_pa[, c(1,5)]
+# df_pa_filt$year <- df_pa_filt$year_first
+# df_pa_filt <- reshape(df_pa_filt, idvar = "year_first", timevar = "year", direction = "wide")
+# df_pa_filt[is.na(df_pa_filt)] <- 0
+df_bar <- unique(df_join[which(df_join$name == "Barcelona" | df_join$name %like% "Sant Adrià de Besòs"),])
+plot(df_bar)
+st_touches(df_join)
+df_join <- esp_can %>% left_join(df_pa_filt)
+
+## Compute jumps in colonization
+df_join <- df_join[,c(6,10,11)]
+list_2004 <- df_join[which(df_join$year_first == 2004), ]
+df_jump <- data.frame(year = numeric(0), num_jumps = numeric(0))
+df_join <- df_join[which(df_join$year_first >0),]
+min_year = min(df_join$year_first) 
+max_year = max(df_join$year_first) - 1
+diff <- max_year - min_year 
+for(i in c(1:diff)){
+  list_2004 <- df_join[which(df_join$year_first == (min_year + i - 1) & df_join$year_first > (min_year + i - 2)), ] 
+  list_2005 <- df_join[which(df_join$year_first == (min_year + i) & df_join$year_first > (min_year + i - 1)), ] 
+  # plot(list_2005[,c(1,3)])
+  touches <- st_touches(list_2004, list_2005)
+  list_touch <- unique(unlist(st_touches(list_2005[-unique(unlist(touches)),])))
+  if(length(list_touch) > 0){
+    num_jumps <- nrow(list_2005) - length(unique(unlist(touches))) - list_touch
+  }else{
+    num_jumps <- nrow(list_2005) - length(unique(unlist(touches)))
+  }
+ 
+  df_jump[i,] <- c((min_year + i),num_jumps )
+}
+
+ggplot(df_jump) + 
+  geom_line(aes(year,num_jumps)) + 
+  ylab("Number of municipalities") + 
+  theme_bw()
+
+# # Check if the df is well computed:
+# list_2004 <- df_join[which(df_join$year_first ==  2005 & df_join$year_first > 2004), ] 
+# list_2005 <- df_join[which(df_join$year_first == 2006 & df_join$year_first > 2005), ] 
+# # plot(list_2005[,c(1,3)])
+# touches <- st_touches(list_2004, list_2005)
+# num_jumps <- nrow(list_2005) - length(unique(unlist(touches)))
+# plot(rbind(list_2005[,c(2,3)],list_2004[,c(2,3)]))
+
 

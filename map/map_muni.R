@@ -50,10 +50,18 @@ Quad_func <- function(cte, tmin, tmax, temp){
 #### -------------------------- Albopictus ------------------------- ####
 ## Thermal responses Aedes Albopictus from Mordecai 2017:
 a_f_alb <- function(temp){Briere_func(0.000193,10.25,38.32,temp)} # Biting rate
-TFD_f_alb <- function(temp){Briere_func(0.0488,8.02,35.65,temp)} # Fecundity
+TFD_f_alb <- function(temp){Briere_func(0.00488,8.02,35.65,temp)} # Fecundity
 pEA_f_alb <- function(temp){Quad_func(0.00361,9.04,39.33,temp)} # Survival probability Egg-Adult
 MDR_f_alb <- function(temp){Briere_func(0.0000638,8.6,39.66,temp)} # Mosquito Development Rate
 lf_f_alb <- function(temp){Quad_func(1.43,13.41,31.51,temp)} # Adult life span
+
+
+vec <- seq(0,40,1)
+out_f <- sapply(vec,a_f_alb)
+out_TFD <- sapply(vec,TFD_f_alb)
+df <- data.frame(Temp = vec, out_f,out_TFD, EFD =out_f*out_TFD)
+plot_EFD_alb <- ggplot(df) + 
+  geom_line(aes(vec,EFD))
 
 # R0 function by temperature:
 R0_func_alb <- function(Te){
@@ -86,7 +94,7 @@ weather_df$year <- lubridate::year(weather_df$date)
 weather_municip_R01_dt <- setDT(weather_df) # Convert data.frame to data.table
 data_sum <- weather_municip_R01_dt[ , .(R0_med = mean(R0_tmed),
                                         R0_min = min(R0_tmin),
-                                        R0_max = mean(R0_tmax)), by = list(month,muni_name)]     # Aggregate data
+                                        R0_max = max(R0_tmax)), by = list(month,muni_name)]     # Aggregate data
 
 plot_df <-  esp_can %>%  left_join(data_sum)
 # weather_municip_R01_monthly <- weather_municip_R01_dt %>% group_by(month,muni_name) %>% 
@@ -150,6 +158,15 @@ pEA_f_aeg <- function(temp){Quad_func(0.00599,13.56,38.29,temp)} # Survival prob
 MDR_f_aeg <- function(temp){Briere_func(0.0000786,11.36,39.17,temp)} # Mosquito Development Rate
 lf_f_aeg <- function(temp){Quad_func(0.148,9.16,37.73,temp)} # Adult life span
 
+vec <- seq(0,40,1)
+out_EFD <- sapply(vec,EFD_f_aeg)
+df <- data.frame(Temp = vec, out_EFD)
+plot_aeg_EFD <- ggplot(df) + 
+  geom_line(aes(vec,out_EFD))
+
+library("ggpubr")
+ggarrange(plot_EFD_alb + ggtitle("Albopictus"),
+          plot_aeg_EFD + ggtitle("Aegipty"))
 # R0 function by temperature:
 R0_func_aeg <- function(Te){
   a <- a_f_aeg(Te)
@@ -180,7 +197,7 @@ weather_df$year <- lubridate::year(weather_df$date)
 weather_municip_R01_dt <- setDT(weather_df) # Convert data.frame to data.table
 data_sum <- weather_municip_R01_dt[ , .(R0_med = mean(R0_tmed),
                                         R0_min = min(R0_tmin),
-                                        R0_max = mean(R0_tmax)), by = list(month,muni_name)]     # Aggregate data
+                                        R0_max = max(R0_tmax)), by = list(month,muni_name)]     # Aggregate data
 
 plot_df <-  esp_can %>%  left_join(data_sum)
 # weather_municip_R01_monthly <- weather_municip_R01_dt %>% group_by(month,muni_name) %>% 
