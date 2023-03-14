@@ -83,6 +83,8 @@ esp_can_pop$pop_km <- esp_can_pop$pob19/esp_can_pop$area
 
 #####
 list_files <- list.files("~/INVASIBILITY_THRESHOLD/output/weather/Daily/")
+ind <- which(list_files %like% ".Rds")
+list_files <- list_files[ind]
 Cores = 2
 file_out <- mclapply(1:length(list_files), mc.cores = Cores, mc.preschedule = F,function(i){ 
   Path <- paste0("~/INVASIBILITY_THRESHOLD/output/weather/Daily/", list_files[i])
