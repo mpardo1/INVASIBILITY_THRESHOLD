@@ -2,6 +2,7 @@ rm(list=ls())
 library("mapSpain")
 library(tidyverse)
 library(sf)
+library(raster)
 library(ggplot2)
 library(dplyr)
 library(lubridate)
@@ -11,6 +12,10 @@ library(stringr)
 library(gdata)
 library("data.table")
 library(parallel)
+
+# Spain map municipalities
+esp_can <- esp_get_munic_siane(moveCAN = TRUE)
+can_box <- esp_get_can_box()
 
 #------------------------FUNCTIONS---------------------------#
 # Main functions 
@@ -39,20 +44,24 @@ pEA_f_alb <- function(temp){Quad_func(0.00361,9.04,39.33,temp)} # Survival proba
 MDR_f_alb <- function(temp){Briere_func(0.0000638,8.6,39.66,temp)} # Mosquito Development Rate
 lf_f_alb <- function(temp){Quad_func(1.43,13.41,31.51,temp)} # Adult life span
 
+
+
 ### Incorporating rain and human density:
 h_f <- function(hum, rain){
-  (1-erat)*(((1+e0)*exp(-evar*(rain-eopt)^2))/(exp(-evar*(rain - eopt)^2) + e0)) +
+  # Constants: 
+  erat = 0.5
+  e0 = 1.5
+  evar = 0.05
+  eopt = 8
+  efac = 0.01
+  edens = 0.01
+  
+  
+  hatch <- (1-erat)*(((1+e0)*exp(-evar*(rain-eopt)^2))/(exp(-evar*(rain - eopt)^2) + e0)) +
     erat*(edens/(edens + exp(-efac*hum)))
+  return(hatch)
 }
 
-# Constants: 
-erat = 0.5
-e0 = 1.5
-evar = 0.05
-eopt = 8
-efac = 0.01
-edens = 0.01
-deltE = 0.1
 # R0 function by temperature:
 R0_func_alb <- function(rain,hum,Te){
   a <- a_f_alb(Te)
@@ -60,41 +69,72 @@ R0_func_alb <- function(rain,hum,Te){
   deltaa <- 1/lf_f_alb(Te)
   probla <- pEA_f_alb(Te)
   h <- h_f(hum,rain)
+  deltE = 0.1
   R0 <- sqrt(f*(a/deltaa)*probla*(h*(h+deltE)))
   return(R0)
 }
 
 
-#####
-esp_can <- esp_get_munic_siane(moveCAN = TRUE)
-esp_can$R0_test <- runif(length(esp_can$codauto),0,5)
-can_box <- esp_get_can_box()
+# Population density in each municipality.
 census <- mapSpain::pobmun19
 esp_can_pop <- esp_can %>% left_join(census, by = c("cmun" = "cmun","cpro" = "cpro"))
 esp_can_pop$area <- as.numeric(st_area(esp_can_pop))/1000000
 esp_can_pop$pop_km <- esp_can_pop$pob19/esp_can_pop$area
 
-Path <- "~/INVASIBILITY_THRESHOLD/output/weather/Daily/aemet_weather_year_Marz_1.Rds"
-weather <- readRDS(Path)
-weather_df <- as.data.frame(do.call(rbind, weather))
-weather_df <- weather_df %>% left_join(esp_can_pop, by = c("name" = "name.x"))
-weather_df <- weather_df[,c(1:8,10,12,15,19,22:24)]
-colnames(weather_df) <- c("name", "ccaa_name", "prov_name",colnames(weather_df)[4:ncol(weather_df)])
-weather_df$R0_tmin <- 0
-weather_df$R0_tmax <- 0
-weather_df$R0_tmed <- 0
-weather_dt <- setDT(weather_df)
-## Function to read all output weather file compute R0 and create a list of df.
-Cores <- 10
-weather_df_R0 <- mclapply(1:nrow(weather_dt), mc.cores = Cores, mc.preschedule = F,function(i){ 
-  print(paste0("i:",i))
-  weather_dt$R0_tmin[i] <- R0_func_alb(weather_dt$precmed[i],weather_dt$pop_km[i],weather_dt$tmin[i])
-  weather_dt$R0_tmax[i] <- R0_func_alb(weather_dt$precmed[i],weather_dt$pop_km[i],weather_dt$tmax[i])
-  weather_dt$R0_tmed[i] <- R0_func_alb(weather_dt$precmed[i],weather_dt$pop_km[i],weather_dt$tmed[i])
-  weather_dt
+#####
+list_files <- list.files("~/INVASIBILITY_THRESHOLD/output/weather/Daily/")
+Cores = 2
+file_out <- mclapply(1:length(list_files), mc.cores = Cores, mc.preschedule = F,function(i){ 
+  Path <- paste0("~/INVASIBILITY_THRESHOLD/output/weather/Daily/", list_files[i])
+  print(paste0("File:",Path))
+  weather <- readRDS(Path)
+  if((list_files[i] %like% "Marz") | (list_files[i] %like% "_2_")){
+    weather_dt <- setDT(weather) # Convert data.frame to data.table
+    rm(weather)
+    weather_dt$month <- lubridate::month(weather_dt$fecha)
+    weather_dt$year <- lubridate::year(weather_dt$fecha)
+    weather_dt <- weather_dt[ , .(tmed = mean(tmed),
+                                  tmin = min(tmin),
+                                  tmax = max(tmax),
+                                  precmed = mean(precmed)),by = list(month,year,name)] 
+    weather_dt <- weather_dt %>% left_join(esp_can_pop, by = c("name" = "name.x"))
+    weather_dt$NATCODE <- as.numeric(paste0("34",weather_dt$codauto,weather_dt$cpro,weather_dt$LAU_CODE))
+    weather_dt <- weather_dt[,c(1:7,20,22,23)]
+  }else{
+    print("else")
+    weather_df <- as.data.frame(do.call(rbind, weather))
+    weather_dt <- setDT(weather_df) # Convert data.frame to data.table
+    rm(weather_df)
+    rm(weather)
+    weather_dt$month <- lubridate::month(weather_dt$fecha)
+    weather_dt$year <- lubridate::year(weather_dt$fecha)
+    weather_dt <- weather_dt[ , .(tmed = mean(tmed),
+                                  tmin = min(tmin),
+                                  tmax = max(tmax),
+                                  precmed = mean(precmed)),by = list(month,year,NAMEUNIT)] 
+    weather_dt <- weather_dt %>% left_join(esp_can_pop, by = c("NAMEUNIT" = "name.x"))
+    weather_dt$NATCODE <- as.numeric(paste0("34",weather_dt$codauto,weather_dt$cpro,weather_dt$LAU_CODE))
+    weather_dt <- weather_dt[,c(1:7,19,21,22)]
+  }
+  
+  weather_dt$R0_tmin <- 0
+  weather_dt$R0_tmax <- 0
+  weather_dt$R0_tmed <- 0
+  
+  ## Function to read all output weather file compute R0 and create a list of df.
+
+  for(k in c(1:nrow(weather_dt))){
+    print(paste0("K:",k))
+    weather_dt$R0_tmin[k] <- R0_func_alb(weather_dt$precmed[k],
+                                         weather_dt$pop_km[k],weather_dt$tmin[k])
+    weather_dt$R0_tmax[k] <- R0_func_alb(weather_dt$precmed[k],
+                                         weather_dt$pop_km[k],weather_dt$tmax[k])
+    weather_dt$R0_tmed[k] <- R0_func_alb(weather_dt$precmed[k],
+                                         weather_dt$pop_km[k],weather_dt$tmed[k])
+  }
+  
+  Path <- paste0("~/INVASIBILITY_THRESHOLD/output/weather/Daily/rainfall/monthly_rainf_", list_files[i])
+  saveRDS(weather_dt,Path)
+  rm(weather_dt)
 })
-
-weather_dfs <- weather_df_R0
-saveRDS(weather_dfs,"~/INVASIBILITY_THRESHOLD/output/weather/Daily/weather_out_R0.Rds")
-
 

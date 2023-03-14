@@ -162,7 +162,7 @@ for(i in c(1:nrow(weather_dt))){
 ggplot(weather_dt) + 
   geom_line(aes(fecha,R0_tmin))
 
-saveRDS(weather_dt,"~/INVASIBILITY_THRESHOLD/output/weather/Daily/weather_out_1R0.Rds")
+saveRDS(weather_dt,"~/INVASIBILITY_THRESHOLD/output/weather/Daily/weather_out_R0_rain_2022.Rds")
 # 
 # weather_df$R0_tmin <- sapply(weather_df$precmed, R0_func_alb,
 #                              hum = weather_df$pop_km, Te = weather_df$tmin)
