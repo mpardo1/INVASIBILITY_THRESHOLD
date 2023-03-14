@@ -86,7 +86,7 @@ list_files <- list.files("~/INVASIBILITY_THRESHOLD/output/weather/Daily/")
 ind <- which(list_files %like% ".Rds")
 list_files <- list_files[ind]
 Cores = 2
-file_out <- mclapply(1:length(list_files), mc.cores = Cores, mc.preschedule = F,function(i){ 
+for( i in c(1:length(list_files)){ 
   Path <- paste0("~/INVASIBILITY_THRESHOLD/output/weather/Daily/", list_files[i])
   print(paste0("File:",Path))
   weather <- readRDS(Path)
@@ -142,5 +142,5 @@ file_out <- mclapply(1:length(list_files), mc.cores = Cores, mc.preschedule = F,
   saveRDS(weather_dt,Path)
   print("After saving")
   rm(weather_dt)
-})
+}
 
