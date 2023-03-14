@@ -1,4 +1,5 @@
 rm(list=ls())
+.rs.restartR()
 library("mapSpain")
 library(tidyverse)
 library(sf)
@@ -135,4 +136,24 @@ ggplot(df_jump) +
 # num_jumps <- nrow(list_2005) - length(unique(unlist(touches)))
 # plot(rbind(list_2005[,c(2,3)],list_2004[,c(2,3)]))
 
+muni_mat <- readRDS(file = "/home/marta/INVASIBILITY_THRESHOLD/data/mob/output/output_mat_mob_muni.Rds")
+muni_incoming <- data.frame(LAU_CODE = colnames(muni_mat), inc_travel = rowSums(muni_mat))
+muni_incoming$inc_relative <- muni_incoming$inc_travel/max(muni_incoming$inc_travel)
 
+muni_shp2 <- st_read("~/INVASIBILITY_THRESHOLD/data/Municipios_IGN.shp") 
+muni_shp2 <- muni_shp2[,c(3,8)]
+muni_shp2$geometry <- NULL
+colnames(muni_shp2) <- c("NATCODE", "LAU_CODE")
+
+muni_incoming <- setDT(muni_incoming)
+muni_shp2 <- setDT(muni_shp2)
+
+muni_incoming <- merge(muni_incoming,muni_shp2)
+muni_incoming$LAU_CODE <- NULL
+can_box <- esp_get_can_box()
+esp_can$NATCODE <- paste0("34",esp_can$codauto,esp_can$cpro,esp_can$LAU_CODE)
+
+muni_incoming_plot <- esp_can %>% left_join(muni_incoming)
+ggplot(muni_incoming_plot) +
+  geom_sf(aes(fill = inc_relative), size = 0.1) +
+  geom_sf(data = can_box) + theme_bw()
