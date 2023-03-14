@@ -60,7 +60,7 @@ station_points = st_read("~/INVASIBILITY_THRESHOLD/data/Estaciones_Completas.shp
 
 
 # File with weather data:
-Path <- "~/INVASIBILITY_THRESHOLD/output/weather/aemet_weather_daily_deep_history_sf_2023-03-01.Rds"
+Path <- "~/INVASIBILITY_THRESHOLD/output/weather/aemet_weather_daily_deep_history_sf_2023-01-30.Rds"
 weather_daily <- readRDS(Path)
 
 # Average weather data by month, smaller database:
@@ -205,7 +205,7 @@ while(min_year <= max_year ){
       weather_year
     })
   outweather <- weather_df_y
-  write_rds(outweather, paste0("~/INVASIBILITY_THRESHOLD/output/weather/Daily/aemet_weather_year_Marz_",min_year,".Rds"))
+  write_rds(outweather, paste0("~/INVASIBILITY_THRESHOLD/output/weather/Daily/aemet_weather_year_whole_",min_year,".Rds"))
   min_year = min_year + 1
 }
 
