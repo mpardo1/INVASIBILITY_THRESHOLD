@@ -91,6 +91,7 @@ file_out <- mclapply(1:length(list_files), mc.cores = Cores, mc.preschedule = F,
   print(paste0("File:",Path))
   weather <- readRDS(Path)
   if((list_files[i] %like% "Marz") | (list_files[i] %like% "_2_")){
+    print("Marz or _2_")
     weather_dt <- setDT(weather) # Convert data.frame to data.table
     rm(weather)
     weather_dt$month <- lubridate::month(weather_dt$fecha)
@@ -119,12 +120,13 @@ file_out <- mclapply(1:length(list_files), mc.cores = Cores, mc.preschedule = F,
     weather_dt <- weather_dt[,c(1:7,19,21,22)]
   }
   
+  print("After if")
   weather_dt$R0_tmin <- 0
   weather_dt$R0_tmax <- 0
   weather_dt$R0_tmed <- 0
   
   ## Function to read all output weather file compute R0 and create a list of df.
-
+  print("Before loop")
   for(k in c(1:nrow(weather_dt))){
     print(paste0("K:",k))
     weather_dt$R0_tmin[k] <- R0_func_alb(weather_dt$precmed[k],
@@ -135,8 +137,10 @@ file_out <- mclapply(1:length(list_files), mc.cores = Cores, mc.preschedule = F,
                                          weather_dt$pop_km[k],weather_dt$tmed[k])
   }
   
+  print("After loop")
   Path <- paste0("~/INVASIBILITY_THRESHOLD/output/weather/Daily/rainfall/monthly_rainf_", list_files[i])
   saveRDS(weather_dt,Path)
+  print("After saving")
   rm(weather_dt)
 })
 
