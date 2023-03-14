@@ -90,7 +90,7 @@ for(i in c(1:length(list_files))){
   Path <- paste0("~/INVASIBILITY_THRESHOLD/output/weather/Daily/", list_files[i])
   print(paste0("File:",Path))
   weather <- readRDS(Path)
-  if((list_files[i] %like% "Marz") | (list_files[i] %like% "_2_")){
+  if((list_files[i] %like% "Marz")){
     print("Marz or _2_")
     weather_dt <- setDT(weather) # Convert data.frame to data.table
     rm(weather)
@@ -107,6 +107,7 @@ for(i in c(1:length(list_files))){
     print("else")
     weather_df <- as.data.frame(do.call(rbind, weather))
     weather_dt <- setDT(weather_df) # Convert data.frame to data.table
+    colnames(weather_dt)[1] <- "NAMEUNIT"
     rm(weather_df)
     rm(weather)
     weather_dt$month <- lubridate::month(weather_dt$fecha)
