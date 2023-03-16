@@ -1,5 +1,5 @@
 rm(list=ls())
-.rs.restartR()
+# .rs.restartR()
 library(readxl)
 library(tidyverse)
 library(comperes)
