@@ -2,9 +2,8 @@ rm(list=ls())
 # .rs.restartR()
 library(readxl)
 library(tidyverse)
-library(comperes)
+# library(comperes)
 library(sf)
-library(mapSpain)
 
 wd <- "~/INVASIBILITY_THRESHOLD/data/"
 setwd(wd)
