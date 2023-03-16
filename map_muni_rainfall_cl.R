@@ -96,10 +96,10 @@ for(i in c(1:length(list_files))){
     rm(weather)
     weather_dt$month <- lubridate::month(weather_dt$fecha)
     weather_dt$year <- lubridate::year(weather_dt$fecha)
-    weather_dt <- weather_dt[ , .(tmed = mean(tmed),
-                                  tmin = min(tmin),
-                                  tmax = max(tmax),
-                                  precmed = mean(precmed)),by = list(month,year,name)] 
+    # weather_dt <- weather_dt[ , .(tmed = mean(tmed),
+    #                               tmin = min(tmin),
+    #                               tmax = max(tmax),
+    #                               precmed = mean(precmed)),by = list(month,year,name)] 
     weather_dt <- weather_dt %>% left_join(esp_can_pop, by = c("name" = "name.x"))
     weather_dt$NATCODE <- as.numeric(paste0("34",weather_dt$codauto,weather_dt$cpro,weather_dt$LAU_CODE))
     weather_dt <- weather_dt[,c(1:7,20,22,23)]
@@ -112,10 +112,10 @@ for(i in c(1:length(list_files))){
     rm(weather)
     weather_dt$month <- lubridate::month(weather_dt$fecha)
     weather_dt$year <- lubridate::year(weather_dt$fecha)
-    weather_dt <- weather_dt[ , .(tmed = mean(tmed),
-                                  tmin = min(tmin),
-                                  tmax = max(tmax),
-                                  precmed = mean(precmed)),by = list(month,year,NAMEUNIT)] 
+    # weather_dt <- weather_dt[ , .(tmed = mean(tmed),
+    #                               tmin = min(tmin),
+    #                               tmax = max(tmax),
+    #                               precmed = mean(precmed)),by = list(month,year,NAMEUNIT)] 
     weather_dt <- weather_dt %>% left_join(esp_can_pop, by = c("NAMEUNIT" = "name.x"))
     weather_dt$NATCODE <- as.numeric(paste0("34",weather_dt$codauto,weather_dt$cpro,weather_dt$LAU_CODE))
     weather_dt <- weather_dt[,c(1:7,19,21,22)]
@@ -139,7 +139,7 @@ for(i in c(1:length(list_files))){
   }
   
   print("After loop")
-  Path <- paste0("~/INVASIBILITY_THRESHOLD/output/weather/Daily/rainfall/monthly_rainf_", list_files[i])
+  Path <- paste0("~/INVASIBILITY_THRESHOLD/output/weather/Daily/rainfall/daily_rainf_", list_files[i])
   saveRDS(weather_dt,Path)
   print("After saving")
   rm(weather_dt)
