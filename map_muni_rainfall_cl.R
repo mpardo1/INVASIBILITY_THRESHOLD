@@ -91,8 +91,9 @@ for(i in c(1:length(list_files))){
   print(paste0("File:",Path))
   weather <- readRDS(Path)
   if((list_files[i] %like% "Marz")){
+    weather_df <- as.data.frame(do.call(rbind, weather))
     print("Marz or _2_")
-    weather_dt <- setDT(weather) # Convert data.frame to data.table
+    weather_dt <- setDT(weather_df) # Convert data.frame to data.table
     rm(weather)
     weather_dt$month <- lubridate::month(weather_dt$fecha)
     weather_dt$year <- lubridate::year(weather_dt$fecha)
@@ -100,9 +101,12 @@ for(i in c(1:length(list_files))){
     #                               tmin = min(tmin),
     #                               tmax = max(tmax),
     #                               precmed = mean(precmed)),by = list(month,year,name)] 
-    weather_dt <- weather_dt %>% left_join(esp_can_pop, by = c("name" = "name.x"))
+    weather_dt <- setDT(weather_dt %>% left_join(esp_can_pop, by = c("name" = "name.x")))
+    
     weather_dt$NATCODE <- as.numeric(paste0("34",weather_dt$codauto,weather_dt$cpro,weather_dt$LAU_CODE))
-    weather_dt <- weather_dt[,c(1:7,20,22,23)]
+    weather_dt <- weather_dt[,c("name","fecha","tmin",
+                                "tmed","tmax", "precmed",
+                                "pob19","geometry","NATCODE","pop_km")]
   }else{
     print("else")
     weather_df <- as.data.frame(do.call(rbind, weather))
@@ -116,7 +120,7 @@ for(i in c(1:length(list_files))){
     #                               tmin = min(tmin),
     #                               tmax = max(tmax),
     #                               precmed = mean(precmed)),by = list(month,year,NAMEUNIT)] 
-    weather_dt <- weather_dt %>% left_join(esp_can_pop, by = c("NAMEUNIT" = "name.x"))
+    weather_dt <- setDT(weather_dt %>% left_join(esp_can_pop, by = c("NAMEUNIT" = "name.x")))
     weather_dt$NATCODE <- as.numeric(paste0("34",weather_dt$codauto,weather_dt$cpro,weather_dt$LAU_CODE))
     weather_dt <- weather_dt[,c("NAMEUNIT","fecha","tmin",
                                 "tmed","tmax", "precmed",
