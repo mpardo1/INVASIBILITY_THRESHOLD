@@ -8,12 +8,12 @@ library(sf)
 wd <- "~/INVASIBILITY_THRESHOLD/data/"
 setwd(wd)
 
-Path <- "/home/marta/INVASIBILITY_THRESHOLD/data/mob/June/"
+Path <- "/home/marta/INVASIBILITY_THRESHOLD/data/mob/June/June/"
 list_file <- list.files(Path)
 
 for(i in c(1:2)){
   ##### MITMA #####
-  Path <- paste0("~/INVASIBILITY_THRESHOLD/data/mob/June/", list_file[i])
+  Path <- paste0("~/INVASIBILITY_THRESHOLD/data/mob/June/June/", list_file[i])
   print(paste0("File:",list_file[i]))
   muni_ref_17 <- as.data.frame(read.csv(Path, sep = "|"))
   
