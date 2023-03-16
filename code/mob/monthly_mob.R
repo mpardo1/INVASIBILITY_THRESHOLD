@@ -8,10 +8,10 @@ library(sf)
 wd <- "~/INVASIBILITY_THRESHOLD/data/"
 setwd(wd)
 
-Path <- "/home/marta/INVASIBILITY_THRESHOLD/data/mob/June/June/"
+Path <- "~/INVASIBILITY_THRESHOLD/data/mob/June/June/"
 list_file <- list.files(Path)
 
-for(i in c(1:2)){
+for(i in c(1:length(list_file))){
   ##### MITMA #####
   Path <- paste0("~/INVASIBILITY_THRESHOLD/data/mob/June/June/", list_file[i])
   print(paste0("File:",list_file[i]))
