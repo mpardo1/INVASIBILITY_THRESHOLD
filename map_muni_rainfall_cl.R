@@ -85,7 +85,7 @@ esp_can_pop$pop_km <- esp_can_pop$pob19/esp_can_pop$area
 list_files <- list.files("~/INVASIBILITY_THRESHOLD/output/weather/Daily/")
 ind <- which(list_files %like% ".Rds")
 list_files <- list_files[ind]
-Cores = 2
+# Cores = 2
 for(i in c(1:length(list_files))){ 
   Path <- paste0("~/INVASIBILITY_THRESHOLD/output/weather/Daily/", list_files[i])
   print(paste0("File:",Path))
@@ -118,7 +118,9 @@ for(i in c(1:length(list_files))){
     #                               precmed = mean(precmed)),by = list(month,year,NAMEUNIT)] 
     weather_dt <- weather_dt %>% left_join(esp_can_pop, by = c("NAMEUNIT" = "name.x"))
     weather_dt$NATCODE <- as.numeric(paste0("34",weather_dt$codauto,weather_dt$cpro,weather_dt$LAU_CODE))
-    weather_dt <- weather_dt[,c(1:7,19,21,22)]
+    weather_dt <- weather_dt[,c("NAMEUNIT","fecha","tmin",
+                                "tmed","tmax", "precmed",
+                                "pob19","geometry","NATCODE","pop_km")]
   }
   
   print("After if")
