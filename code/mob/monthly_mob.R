@@ -31,3 +31,5 @@ monthly_mob_group <- monthly_mob[,c("origen", "destino", "viajes", "viajes_km")]
   summarise(viajes = sum(viajes),viajes_mean = mean(viajes),
             viajes_km = sum(viajes_km), viajes_km_mean = mean(viajes_km)) 
 # sum over período for daily quantities
+
+write_rds(monthly_mob_group, paste0("~/INVASIBILITY_THRESHOLD/output/mob/mobility_June.Rds"))
