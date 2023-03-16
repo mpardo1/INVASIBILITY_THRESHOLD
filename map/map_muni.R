@@ -50,18 +50,23 @@ Quad_func <- function(cte, tmin, tmax, temp){
 #### -------------------------- Albopictus ------------------------- ####
 ## Thermal responses Aedes Albopictus from Mordecai 2017:
 a_f_alb <- function(temp){Briere_func(0.000193,10.25,38.32,temp)} # Biting rate
-TFD_f_alb <- function(temp){Briere_func(0.00488,8.02,35.65,temp)} # Fecundity
+TFD_f_alb <- function(temp){Briere_func(0.0488,8.02,35.65,temp)} # Fecundity
 pEA_f_alb <- function(temp){Quad_func(0.00361,9.04,39.33,temp)} # Survival probability Egg-Adult
 MDR_f_alb <- function(temp){Briere_func(0.0000638,8.6,39.66,temp)} # Mosquito Development Rate
 lf_f_alb <- function(temp){Quad_func(1.43,13.41,31.51,temp)} # Adult life span
 
 
 vec <- seq(0,40,1)
-out_f <- sapply(vec,a_f_alb)
-out_TFD <- sapply(vec,TFD_f_alb)
-df <- data.frame(Temp = vec, out_f,out_TFD, EFD =out_f*out_TFD)
-plot_EFD_alb <- ggplot(df) + 
-  geom_line(aes(vec,EFD))
+out_f_alb <- sapply(vec,a_f_alb)
+out_TFD_alb <- sapply(vec,TFD_f_alb)
+df_alb <- data.frame(Temp = vec, out_f_alb,out_TFD_alb, EFD_alb =out_f_alb*out_TFD_alb)
+plot_EFD_alb <- ggplot(df_alb) + 
+  geom_line(aes(Temp,EFD_alb))
+
+ggplot(df_alb) + 
+  geom_line(aes(vec,out_TFD_alb))
+ggplot(df_alb) + 
+  geom_line(aes(vec,out_f_alb))
 
 # R0 function by temperature:
 R0_func_alb <- function(Te){
@@ -72,6 +77,15 @@ R0_func_alb <- function(Te){
   R0 <- sqrt(f*(a/deltaa)*probla)
   return(R0)
 }
+
+vec <- seq(0,40,1)
+out_R0_alb <- sapply(vec,R0_func_alb)
+df_alb <- data.frame(Temp = vec, out_R0_alb)
+plot_EFD_alb <- ggplot(df_alb) + 
+  xlab("Temperature") + ylab("R0, suitability index") +
+  geom_hline(yintercept = 1, linetype = "dashed", color = "red") +
+  geom_line(aes(Temp,out_R0_alb)) + theme_bw()
+plot_EFD_alb
 
 # Read the weather data for a specific month and year for all municipalities
 Path <- "~/INVASIBILITY_THRESHOLD/output/weather/Daily/aemet_weather_year_2_22.Rds"
@@ -159,14 +173,25 @@ MDR_f_aeg <- function(temp){Briere_func(0.0000786,11.36,39.17,temp)} # Mosquito 
 lf_f_aeg <- function(temp){Quad_func(0.148,9.16,37.73,temp)} # Adult life span
 
 vec <- seq(0,40,1)
-out_EFD <- sapply(vec,EFD_f_aeg)
-df <- data.frame(Temp = vec, out_EFD)
-plot_aeg_EFD <- ggplot(df) + 
-  geom_line(aes(vec,out_EFD))
+EFD_aeg <- sapply(vec,EFD_f_aeg)
+df_aeg <- data.frame(Temp = vec, EFD_aeg)
+plot_aeg_EFD <- ggplot(df_aeg) + 
+  geom_line(aes(Temp,EFD_aeg))
+
+df_merge <- merge(df_alb,df_aeg)
+df_merge <- df_merge[,c("Temp","EFD_alb", "EFD_aeg")]
+colnames(df_merge) <- c("Temperature", "Aedes albopictus", "Aedes aegypti")
+df_merge <- reshape2::melt(df_merge, id.var = "Temperature")
+ggplot(df_merge) + ylab("EFD, eggs per female per day") +
+  geom_line(aes(Temperature,value, color = variable)) + theme_bw()
 
 library("ggpubr")
-ggarrange(plot_EFD_alb + ggtitle("Albopictus"),
-          plot_aeg_EFD + ggtitle("Aegipty"))
+ggarrange(plot_EFD_alb + ylim(c(0,26)) + xlab("Temperature") +
+            ylab("EFD, eggs per female per day") +
+            ggtitle("Aedes Albopictus") + theme_bw(),
+          plot_aeg_EFD + ylim(c(0,26)) + ylab("") + xlab("Temperature") +
+            ggtitle("Aedes Aegipty") +theme_bw())
+
 # R0 function by temperature:
 R0_func_aeg <- function(Te){
   a <- a_f_aeg(Te)
