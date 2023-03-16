@@ -24,7 +24,7 @@ unique(esp_can_filt)
 can_box <- esp_get_can_box()
 
 ### Read RDS with R0
-Path <- "~/INVASIBILITY_THRESHOLD/output/weather/Daily/R0_aemet_weather_year_2_22.Rds"
+Path <- "~/INVASIBILITY_THRESHOLD/output/weather/Daily/R0/R0_aemet_weather_year_2_22.Rds"
 weather_R0 <- readRDS(Path)
 weather_R0$bool <- ifelse(weather_R0$R0_tmed >1,1,0)
 weather_R0 <- weather_R0 %>% group_by(name) %>%
@@ -139,21 +139,21 @@ ggplot(df_jump) +
 muni_mat <- readRDS(file = "/home/marta/INVASIBILITY_THRESHOLD/data/mob/output/output_mat_mob_muni.Rds")
 muni_incoming <- data.frame(LAU_CODE = colnames(muni_mat), inc_travel = rowSums(muni_mat))
 muni_incoming$inc_relative <- muni_incoming$inc_travel/max(muni_incoming$inc_travel)
+muni_ine_mitma <- read.csv("~/INVASIBILITY_THRESHOLD/data/mob/relacion_ine_zonificacionMitma.csv", sep = "|")
+muni_ine_mitma <- muni_ine_mitma[,c(1,3,5)]
+colnames(muni_ine_mitma)[3] <- "LAU_CODE" 
+muni_incoming <- muni_incoming %>% left_join(muni_ine_mitma)
 
-muni_shp2 <- st_read("~/INVASIBILITY_THRESHOLD/data/Municipios_IGN.shp") 
-muni_shp2 <- muni_shp2[,c(3,8)]
-muni_shp2$geometry <- NULL
-colnames(muni_shp2) <- c("NATCODE", "LAU_CODE")
 
-muni_incoming <- setDT(muni_incoming)
-muni_shp2 <- setDT(muni_shp2)
-
-muni_incoming <- merge(muni_incoming,muni_shp2)
-muni_incoming$LAU_CODE <- NULL
+esp_can <- esp_get_munic_siane(moveCAN = TRUE)
 can_box <- esp_get_can_box()
 esp_can$NATCODE <- paste0("34",esp_can$codauto,esp_can$cpro,esp_can$LAU_CODE)
+esp_can$LAU_CODE <- as.numeric(esp_can$LAU_CODE)
+muni_incoming$LAU_CODE <- as.numeric(muni_incoming$municipio_ine)
 
 muni_incoming_plot <- esp_can %>% left_join(muni_incoming)
 ggplot(muni_incoming_plot) +
   geom_sf(aes(fill = inc_relative), size = 0.1) +
   geom_sf(data = can_box) + theme_bw()
+
+
