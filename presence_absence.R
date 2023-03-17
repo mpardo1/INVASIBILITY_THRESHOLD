@@ -100,7 +100,7 @@ for(i in c(1:nrow(filt))){
 df_pa_filt <- esp_can %>% left_join(df_pa_filt)
 ggplot(df_pa_filt) +
   geom_sf(aes(fill = factor(pa)), size = 0.01) + 
-  scale_fill_viridis() +
+  scale_fill_manual(values = c("#464D77", "#36827F")) +
   geom_sf(data = can_box) + coord_sf(datum = NA) +
   theme(plot.margin = margin(0.2, 0.2, 0.2, 0.2, "cm")) + 
   theme_void() +

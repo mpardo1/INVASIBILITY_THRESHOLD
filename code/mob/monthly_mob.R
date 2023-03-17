@@ -24,7 +24,8 @@ for(i in c(1:length(list_file))){
   print("Dentro del mclapply")
   if(exists('monthly_mob') && is.data.frame(get('monthly_mob'))){
     monthly_mob <- rbind(monthly_mob,muni_ref_17)
-    monthly_mob <- monthly_mob[,c("origen", "destino", "viajes", "viajes_km")] %>%
+    monthly_mob <- monthly_mob[,c("origen", "destino", "viajes", "viajes_km", 
+                                  "viajes_mean","viajes_km_mean")] %>%
       group_by(origen, destino) %>%
       summarise(viajes = sum(viajes),viajes_mean = mean(viajes_mean),
                 viajes_km = sum(viajes_km), viajes_km_mean = mean(viajes_km_mean)) 
