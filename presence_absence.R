@@ -23,6 +23,7 @@ unique(esp_can_filt)
 
 can_box <- esp_get_can_box()
 
+
 ### Read RDS with R0
 Path <- "~/INVASIBILITY_THRESHOLD/output/weather/Daily/R0/R0_aemet_weather_year_2_22.Rds"
 weather_R0 <- readRDS(Path)
@@ -33,6 +34,7 @@ weather_R0 <- weather_R0 %>% group_by(name) %>%
 
 esp_can <- esp_get_munic_siane(moveCAN = TRUE)
 can_box <- esp_get_can_box()
+
 # Check how to form NATCODE:
 unique(esp_can_filt)
 nr <- nrow(esp_can)
@@ -49,14 +51,63 @@ ggplot(esp_can) +
 esp_can$NATCODE <- as.numeric(paste0("34",esp_can$codauto,esp_can$cpro,esp_can$LAU_CODE))
 # esp_can <- esp_can[-(which(is.na(esp_can$name))),]
 df_pa$NATCODE <- as.numeric(df_pa$NATCODE)
+
+df_pa$year_first <- 0
+for(i in c(1:nrow(df_pa))){
+  if(df_pa$A_PRIM_DET_OFICIAL[i] == 0 & df_pa$A_PRIM_DET_CITSCI[i] == 0){
+    df_pa$year_first[i] <- 0
+  }else if(df_pa$A_PRIM_DET_OFICIAL[i] == 0 & df_pa$A_PRIM_DET_CITSCI[i] > 0){
+    df_pa$year_first[i] <- df_pa$A_PRIM_DET_CITSCI[i]
+  }else if(df_pa$A_PRIM_DET_CITSCI[i] == 0 & df_pa$A_PRIM_DET_OFICIAL[i] > 0){
+    df_pa$year_first[i] <- df_pa$A_PRIM_DET_OFICIAL[i]
+  }else if(df_pa$A_PRIM_DET_CITSCI[i] > 0 & df_pa$A_PRIM_DET_OFICIAL[i] > 0 & df_pa$A_PRIM_DET_CITSCI[i] >  df_pa$A_PRIM_DET_OFICIAL[i]){
+    df_pa$year_first[i] <- df_pa$A_PRIM_DET_OFICIAL[i]
+  }else if(df_pa$A_PRIM_DET_CITSCI[i] > 0 & df_pa$A_PRIM_DET_OFICIAL[i] > 0 & df_pa$A_PRIM_DET_CITSCI[i] < df_pa$A_PRIM_DET_OFICIAL[i]){
+    df_pa$year_first[i] <- df_pa$A_PRIM_DET_CITSCI[i]
+  }
+  
+}
+
 df_join <- esp_can %>% left_join(df_pa)
 df_join$pa <- ifelse((df_join$A_PRIM_DET_OFICIAL == 0 & df_join$A_PRIM_DET_CITSCI == 0),0,1)
 df_join$pa[which(is.na(df_join$pa))] <- 0
+
 
 ggplot(df_join) +
   geom_sf(aes(fill = factor(pa)), size = 0.1) +
   geom_sf(data = can_box) + theme_bw()
 
+df_pa_filt <- df_join[,c("NATCODE","pa","year_first")]
+df_pa_2004 <- data.frame(df_pa_filt$NATCODE, pa = 0, year_first = 2004)
+for(i in c(2005:2022)){
+  df_pa_2005 <- data.frame(df_pa_filt$NATCODE, pa = 0, year_first = i)
+  
+  df_pa_2004 <- rbind(df_pa_2004, df_pa_2005)
+}
+df_pa_filt$geometry <- NULL
+colnames(df_pa_2004) <- colnames(df_pa_filt)
+df_pa_filt <- rbind(df_pa_filt,df_pa_2004)
+df_pa_filt <- df_pa_filt[-which(df_pa_filt$year == 0),]
+df_pa_filt <- df_pa_filt %>% group_by(NATCODE,year_first) %>%
+  summarise(year_first = mean(year_first), pa = max(pa))
+
+filt <- df_pa_filt[which(df_pa_filt$pa == 1),c("NATCODE","year_first")]
+for(i in c(1:nrow(filt))){
+  df_pa_filt[which(df_pa_filt$NATCODE == as.numeric(filt[i,"NATCODE"]) & 
+                    df_pa_filt$year_first >  as.numeric(filt[i,"year_first"])),"pa"] = 1
+}
+
+df_pa_filt <- esp_can %>% left_join(df_pa_filt)
+ggplot(df_pa_filt) +
+  geom_sf(aes(fill = factor(pa)), size = 0.01) + 
+  scale_fill_viridis() +
+  geom_sf(data = can_box) + coord_sf(datum = NA) +
+  theme(plot.margin = margin(0.2, 0.2, 0.2, 0.2, "cm")) + 
+  theme_void() +
+  labs(title = "Year: {current_frame}") +
+  transition_manual(year_first)
+
+## Comparison between R0 and presence absence
 df_R0_PA <- weather_R0 %>% left_join(df_join)
 df_R0_PA <- df_R0_PA[-which(is.na(df_R0_PA)),]
 
@@ -76,21 +127,9 @@ ggplot(df_R0_PA) +
   geom_point(aes(dist, pa), size = 0.1) + 
   theme_bw()
 
-df_pa$year_first <- 0
-for(i in c(1:nrow(df_pa))){
-  if(df_pa$A_PRIM_DET_OFICIAL[i] == 0 & df_pa$A_PRIM_DET_CITSCI[i] == 0){
-    df_pa$year_first[i] <- 0
-  }else if(df_pa$A_PRIM_DET_OFICIAL[i] == 0 & df_pa$A_PRIM_DET_CITSCI[i] > 0){
-    df_pa$year_first[i] <- df_pa$A_PRIM_DET_CITSCI[i]
-  }else if(df_pa$A_PRIM_DET_CITSCI[i] == 0 & df_pa$A_PRIM_DET_OFICIAL[i] > 0){
-    df_pa$year_first[i] <- df_pa$A_PRIM_DET_OFICIAL[i]
-  }else if(df_pa$A_PRIM_DET_CITSCI[i] > 0 & df_pa$A_PRIM_DET_OFICIAL[i] > 0 & df_pa$A_PRIM_DET_CITSCI[i] >  df_pa$A_PRIM_DET_OFICIAL[i]){
-    df_pa$year_first[i] <- df_pa$A_PRIM_DET_OFICIAL[i]
-  }else if(df_pa$A_PRIM_DET_CITSCI[i] > 0 & df_pa$A_PRIM_DET_OFICIAL[i] > 0 & df_pa$A_PRIM_DET_CITSCI[i] < df_pa$A_PRIM_DET_OFICIAL[i]){
-    df_pa$year_first[i] <- df_pa$A_PRIM_DET_CITSCI[i]
-  }
-  
-}
+
+
+
 df_pa_filt <- df_pa[, c(1,5)]
 # df_pa_filt$year <- df_pa_filt$year_first
 # df_pa_filt <- reshape(df_pa_filt, idvar = "year_first", timevar = "year", direction = "wide")
@@ -126,7 +165,8 @@ for(i in c(1:diff)){
 ggplot(df_jump) + 
   geom_line(aes(year,num_jumps)) + 
   ylab("Number of municipalities") + 
-  theme_bw()
+  theme_bw() +
+  theme(text = element_text(size = 15))
 
 # # Check if the df is well computed:
 # list_2004 <- df_join[which(df_join$year_first ==  2005 & df_join$year_first > 2004), ] 
