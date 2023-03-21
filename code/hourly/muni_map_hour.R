@@ -95,15 +95,34 @@ Path <- "~/INVASIBILITY_THRESHOLD/output/weather/Daily/Daily/aemet_weather_year_
 weather <- readRDS(Path)
 weather_df <- as.data.frame(do.call(rbind, weather))
 colnames(weather_df) <- c("muni_name", "ccaa_name", "prov_name",
-                          "date", "tmin", "tmed", "tmax", "precmed", "n")
+                          "date", "tmin", "tmax", "tmed", "precmed", "n")
 
 # Merge the municipalities shapefile with the weather data:
 weather_df$day <- lubridate::day(weather_df$date)
 weather_df$month <- lubridate::month(weather_df$date)
 weather_df$year <- lubridate::year(weather_df$date)
+weather_df$R0_tmin <- sapply(weather_df$tmin, R0_func_alb)
+weather_df$R0_tmed <- sapply(weather_df$tmed, R0_func_alb)
+weather_df$R0_tmax <- sapply(weather_df$tmax, R0_func_alb)
 
 weather_municip_R01_dt <- setDT(weather_df) # Convert data.frame to data.table
 plot_df_filt <- weather_municip_R01_dt[which((weather_municip_R01_dt$muni_name == "Barcelona") ),]
+plot_df_filt$R0_rollmean <- 0
+ind = 20
+len <- nrow(plot_df_filt) - ind
+for(i in c(1:len)){
+  plot_df_filt$R0_rollmean[i] <- mean(plot_df_filt$R0_tmed[i:(i+ind)])
+}
+
+ggplot(plot_df_filt, aes(x = date)) + 
+  geom_line(aes(y = R0_rollmean), color=temperatureColor) + 
+  geom_line(aes(y = tmed), color="#0072B2", linetype = "dotted") + 
+  ylab("R0") +
+  scale_y_continuous(name = "R0",
+    sec.axis = sec_axis(~.*coeff, name="Average temperature (Cº)"))  + 
+  theme_bw() +
+  theme(text = element_text(size = 15)) +
+  scale_x_date(date_breaks = "1 month",date_labels = "%b")
 
 require(chillR)
 all_daylengths<-cbind(JDay=1:365,sapply(daylength(latitude=41.39,JDay=1:365),cbind))

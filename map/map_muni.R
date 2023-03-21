@@ -79,13 +79,16 @@ R0_func_alb <- function(Te){
   return(R0)
 }
 
-vec <- seq(0,40,1)
+vec <- seq(0,40,0.1)
 out_R0_alb <- sapply(vec,R0_func_alb)
 df_alb <- data.frame(Temp = vec, out_R0_alb)
 plot_EFD_alb <- ggplot(df_alb) + 
   xlab("Temperature") + ylab("R0, suitability index") +
   geom_hline(yintercept = 1, linetype = "dashed", color = "red") +
-  geom_line(aes(Temp,out_R0_alb)) + theme_bw()
+  geom_line(aes(Temp,out_R0_alb)) + 
+  theme_bw() +
+  theme(text = element_text(size = 15)
+  )
 plot_EFD_alb
 
 # Read the weather data for a specific month and year for all municipalities
@@ -168,13 +171,13 @@ plot_df_ccaa <- merge(esp_can, df_plot_ccaa,
                       by.x = "ine.ccaa.name", by.y = "ccaa_name")
 
 
-plot_df_ccaa$rollmean_R0_med <- rollmean(avg_r0,7)
+plot_df_ccaa$rollmean_R0_med <- rollmean(avg_r0,30)
 plot_df_ccaa_filt <- plot_df_ccaa[which((plot_df_ccaa$ine.ccaa.name == "Cataluña") |  
                                           (plot_df_ccaa$ine.ccaa.name == "Valencia")|  
                                           (plot_df_ccaa$ine.ccaa.name == "Extremadura")|  
                                           (plot_df_ccaa$ine.ccaa.name == "Galicia")),]
 avg_r0 <- c(as.numeric(plot_df_ccaa_filt$avg_R0), as.numeric(plot_df_ccaa_filt$avg_R0[1:7]))
-roll_mean <-  rollmean(as.numeric(avg_r0),7)
+roll_mean <-  rollmean(as.numeric(avg_r0),30)
 plot_df_ccaa_filt$roll_mean <- roll_mean[1:nrow(plot_df_ccaa_filt)]
 
 ggplot(plot_df_ccaa_filt) + 

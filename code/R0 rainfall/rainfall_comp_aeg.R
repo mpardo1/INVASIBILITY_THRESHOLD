@@ -63,10 +63,10 @@ h_f <- function(hum, rain){
 
 # R0 function by temperature:
 R0_func_alb <- function(rain,hum,Te){
-  a <- a_f_alb(Te)
-  f <- TFD_f_alb(Te)
+  a <- a_f_aeg(Te)
+  f <- EFD_f_aeg(Te)
   deltaa <- 1/lf_f_alb(Te)
-  probla <- pEA_f_alb(Te)
+  probla <- pEA_f_aeg(Te)
   h <- h_f(hum,rain)
   deltE = 0.1
   R0 <- sqrt(f*(1/deltaa)*probla*(h*(h+deltE)))
