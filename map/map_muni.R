@@ -14,6 +14,7 @@ library(viridis)
 library(stringr)
 library(gdata)
 library("data.table")
+library("zoo")
 # Spain map municipalities
 esp_can <- esp_get_munic_siane(moveCAN = TRUE)
 esp_can$R0_test <- runif(length(esp_can$codauto),0,5)
@@ -88,7 +89,7 @@ plot_EFD_alb <- ggplot(df_alb) +
 plot_EFD_alb
 
 # Read the weather data for a specific month and year for all municipalities
-Path <- "~/INVASIBILITY_THRESHOLD/output/weather/Daily/aemet_weather_year_2_22.Rds"
+Path <- "~/INVASIBILITY_THRESHOLD/output/weather/Daily/Daily/aemet_weather_year_whole_8.Rds"
 weather <- readRDS(Path)
 weather_df <- as.data.frame(do.call(rbind, weather))
 colnames(weather_df) <- c("muni_name", "ccaa_name", "prov_name",
@@ -98,6 +99,7 @@ colnames(weather_df) <- c("muni_name", "ccaa_name", "prov_name",
 weather_df$R0_tmin <- sapply(weather_df$tmin, R0_func_alb)
 weather_df$R0_tmed <- sapply(weather_df$tmed, R0_func_alb)
 weather_df$R0_tmax <- sapply(weather_df$tmax, R0_func_alb)
+weather_df$R0_avg <- mean(weather_df$R0_tmin,weather_df$R0_tmax)
   
 colnames(esp_can) <- c(colnames(esp_can)[1:5], "muni_name",colnames(esp_can)[7:length(colnames(esp_can))])
 
@@ -106,9 +108,18 @@ weather_df$month <- lubridate::month(weather_df$date)
 weather_df$year <- lubridate::year(weather_df$date)
 
 weather_municip_R01_dt <- setDT(weather_df) # Convert data.frame to data.table
+plot_df_filt <- weather_municip_R01_dt[which((weather_municip_R01_dt$muni_name == "Barcelona") ),]
+plot_df_filt$R0_mean <- ifelse(plot_df_filt$R0_tmin == 0 | plot_df_filt$R0_tmax == 0,0, plot_df_filt$R0_tmed )
+
+ggplot(plot_df_filt) + 
+  geom_smooth(aes(date, R0_tmed)) + 
+  ylab("R0") + 
+  theme_bw()
+
 data_sum <- weather_municip_R01_dt[ , .(R0_med = mean(R0_tmed),
                                         R0_min = min(R0_tmin),
                                         R0_max = max(R0_tmax)), by = list(month,muni_name)]     # Aggregate data
+
 
 plot_df <-  esp_can %>%  left_join(data_sum)
 # weather_municip_R01_monthly <- weather_municip_R01_dt %>% group_by(month,muni_name) %>% 
@@ -118,7 +129,7 @@ plot_df <-  esp_can %>%  left_join(data_sum)
 # Create plots:
 ggplot(plot_df) +
   geom_sf(aes(fill = R0_max), size = 0.01) + 
-  scale_fill_viridis(name = "R0(T)", limits = c(0,max(plot_df$R0_max))) +
+  scale_fill_viridis(name = "R0(T)", limits = c(0,max(plot_df$R0_med))) +
   geom_sf(data = can_box) + coord_sf(datum = NA) +
   theme(plot.margin = margin(0.2, 0.2, 0.2, 0.2, "cm")) + 
   theme_void() +
@@ -128,7 +139,7 @@ ggplot(plot_df) +
 anim_save("~/Documentos/PHD/2023/INVASIBILITY/Plots/animation_alb_tmax_2020.gif",
           animation = last_animation())
 
-data_sum$bool <- ifelse(data_sum$R0_max >= 1, 1,0)
+data_sum$bool <- ifelse(data_sum$R0_med >= 1, 1,0)
 plot_df_grouped <- data_sum[ , .(sum_bool = sum(bool)), 
                                            by = list(muni_name)]     # Aggregate data
 
@@ -146,7 +157,9 @@ plot_sum_albo
 ggsave("~/Documentos/PHD/2023/INVASIBILITY/Plots/num_months_max_alb_2020.png")
 
 rm(data_sum,weather_df,weather,plot_df,plot_df_grouped)
+
 # Time series in CCAA R0:
+weather_municip_R01_dt <- weather_municip_R01_dt[-which( is.na(weather_municip_R01_dt$muni_name) ),]
 df_plot_ccaa <- weather_municip_R01_dt[ , .(avg_R0 = mean(R0_tmed)), 
                          by = list(ccaa_name, date)]     # Aggregate data
 
@@ -154,16 +167,34 @@ df_plot_ccaa$date <- as.Date(paste0("01/",df_plot_ccaa$month,"/20",df_plot_ccaa$
 plot_df_ccaa <- merge(esp_can, df_plot_ccaa, 
                       by.x = "ine.ccaa.name", by.y = "ccaa_name")
 
+
+plot_df_ccaa$rollmean_R0_med <- rollmean(avg_r0,7)
 plot_df_ccaa_filt <- plot_df_ccaa[which((plot_df_ccaa$ine.ccaa.name == "Cataluña") |  
-                                          plot_df_ccaa$ine.ccaa.name == "Valencia"),]
-ggplot(plot_df_ccaa) + 
+                                          (plot_df_ccaa$ine.ccaa.name == "Valencia")|  
+                                          (plot_df_ccaa$ine.ccaa.name == "Extremadura")|  
+                                          (plot_df_ccaa$ine.ccaa.name == "Galicia")),]
+avg_r0 <- c(as.numeric(plot_df_ccaa_filt$avg_R0), as.numeric(plot_df_ccaa_filt$avg_R0[1:7]))
+roll_mean <-  rollmean(as.numeric(avg_r0),7)
+plot_df_ccaa_filt$roll_mean <- roll_mean[1:nrow(plot_df_ccaa_filt)]
+
+ggplot(plot_df_ccaa_filt) + 
+  geom_line(aes(date, roll_mean, color = ine.ccaa.name )) + 
+  ylab("R0") + 
+  theme_bw()
+
+ggplot(plot_df_ccaa_filt) + 
+  geom_line(aes(date,avg_R0, color = ine.ccaa.name )) + 
+  ylab("R0") + 
+  theme_bw()
+
+ggplot(plot_df_ccaa_filt) + 
   geom_smooth(aes(date, avg_R0, color = ine.ccaa.name )) + 
   ylab("R0") + 
   theme_bw()
 
 ggsave("~/Documentos/PHD/2023/INVASIBILITY/Plots/ccaa_alb_2010.png")
 
-
+plot_df_filt <- plot_df[which((plot_df$ine.ccaa.name == "Cataluña")),]
 #### -------------------------- Aegypti ------------------------- ####
 ## Thermal responses Aedes Aegypti from Mordecai 2017:
 a_f_aeg <- function(temp){Briere_func(0.000202,13.35,40.08,temp)} # Biting rate

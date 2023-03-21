@@ -37,11 +37,6 @@ mat_eff_muni <- 1 - log(t(t(mat_mob_muni)/colSums(mat_mob_muni)))
 # (just like in the RMT model)
 
 ##### MAPS: MUNI #####
-muni_shp <- st_read("~/INVASIBILITY_THRESHOLD/data/mob/zonificacion-municipios/municipios_mitma.shp") 
- muni_centroids <- st_centroid(muni_shp$geometry) %>% st_geometry() %>% # generate centroids and save their coordinates
-  st_coordinates() %>% as.data.frame() %>%
-  mutate(ID = muni_shp$ID)
-
 muni_plot <- ggplot(data = muni_shp) + # plot areas and their centroids
   geom_sf() +
   geom_point(data = muni_centroids, aes(x = X, y = Y), size = 1) +
@@ -98,6 +93,16 @@ flowmapblue(muni_loc, muni_flow, clustering = TRUE, darkMode = TRUE, animation =
 
 
 # Take NATCODE from mapSpain package:
+muni_shp <- st_read("~/INVASIBILITY_THRESHOLD/data/mob/zonificacion-municipios/municipios_mitma.shp") 
+ggplot(muni_shp) + 
+  geom_sf()
+
+Path <- "~/INVASIBILITY_THRESHOLD/data/boundaries.gpkg"
+muni_shp <- st_read(Path) 
+
+muni_centroids <- st_centroid(muni_shp$geometry) %>% st_geometry() %>% # generate centroids and save their coordinates
+  st_coordinates() %>% as.data.frame() %>%
+  mutate(ID = muni_shp$ID)
 esp_can <- esp_get_munic_siane(moveCAN = FALSE)
 can_box <- esp_get_can_box()
 esp_can$NATCODE <- paste0("34",esp_can$codauto,esp_can$cpro,esp_can$LAU_CODE)
@@ -113,5 +118,19 @@ prep_wth <- (muni_centroids %>%  st_as_sf(coords = c("X","Y"),
 
 
 
+mob_June <- readRDS("~/INVASIBILITY_THRESHOLD/output/mob/mobility_June.Rds") 
+mob_June <- mob_June %>% group_by(destino) %>%
+  summarise(viajes = sum(viajes),viajes_mean = mean(viajes_mean),
+            viajes_km = sum(viajes_km), viajes_km_mean = mean(viajes_km_mean))
+mob_join <- mob_June %>% left_join(prep_wth, by = c("destino"= "ID"))
 
+Path = "~/INVASIBILITY_THRESHOLD/data/mob/20220401_Viajes_municipios.csv.gz"
+muni_ref_17 <- as.data.frame(read.csv(Path, sep = "|"))
+muni_ref_17 <- muni_ref_17 %>% group_by(destino) %>%
+  summarise(viajes = sum(viajes),
+            viajes_km = sum(viajes_km))
+Path = "~/INVASIBILITY_THRESHOLD/data/mob/relacion_ine_zonificacionMitma.csv"
+rel_MITMA_INE <- as.data.frame(read.csv(Path, sep = "|"))
 
+Path = "~/INVASIBILITY_THRESHOLD/data/mob/nombres_municipios.csv"
+rel_MITMA_INE <- as.data.frame(read.csv(Path, sep = "|"))

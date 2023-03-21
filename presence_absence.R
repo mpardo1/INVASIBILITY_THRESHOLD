@@ -100,13 +100,17 @@ for(i in c(1:nrow(filt))){
 df_pa_filt <- esp_can %>% left_join(df_pa_filt)
 ggplot(df_pa_filt) +
   geom_sf(aes(fill = factor(pa)), size = 0.01) + 
-  scale_fill_manual(values = c("#464D77", "#36827F")) +
+  scale_fill_manual(values = c("#ffeda0", "#B60808"), name = "",
+                    labels = c("Absence", "Presence")) +
   geom_sf(data = can_box) + coord_sf(datum = NA) +
-  theme(plot.margin = margin(0.2, 0.2, 0.2, 0.2, "cm")) + 
-  theme_void() +
+  theme_bw() +
+  theme(legend.text=element_text(size=15),
+        plot.title = element_text(size=15)) + 
   labs(title = "Year: {current_frame}") +
   transition_manual(year_first)
 
+anim_save("~/Documentos/PHD/2023/INVASIBILITY/Plots/map_PA.gif",
+          animation = last_animation())
 ## Comparison between R0 and presence absence
 df_R0_PA <- weather_R0 %>% left_join(df_join)
 df_R0_PA <- df_R0_PA[-which(is.na(df_R0_PA)),]
