@@ -91,6 +91,7 @@ plot_EFD_alb <- ggplot(df_alb) +
   )
 plot_EFD_alb
 
+
 # Read the weather data for a specific month and year for all municipalities
 Path <- "~/INVASIBILITY_THRESHOLD/output/weather/Daily/Daily/aemet_weather_year_whole_8.Rds"
 weather <- readRDS(Path)

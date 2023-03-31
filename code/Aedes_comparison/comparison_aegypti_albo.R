@@ -75,6 +75,62 @@ R0_func_alb <- function(rain,hum,Te){
 }
 
 
+vec <- seq(0,40,0.1)
+out_R0_alb <- sapply(vec, function(Te){R0_func_alb(8,400,Te)})
+df_alb <- data.frame(Temp = vec, out_R0_alb)
+plot_EFD_alb <- ggplot(df_alb) + 
+  xlab("Temperature (Cº)") + ylab("R0, suitability index") +
+  geom_hline(yintercept = 1, linetype = "dashed", color = "red") +
+  geom_line(aes(Temp,out_R0_alb)) + 
+  theme_bw() +
+  theme(text = element_text(size = 15)
+  )
+plot_EFD_alb
+
+vec <- seq(0,15,0.1)
+out_R0_alb <- sapply(vec, function(Te){R0_func_alb(Te,0,15)})
+df_alb <- data.frame(Temp = vec, out_R0_alb)
+plot_EFD_alb <- ggplot(df_alb) + 
+  xlab("Rainfall (mm day)") + ylab("R0, suitability index") +
+  geom_hline(yintercept = 1, linetype = "dashed", color = "red") +
+  geom_line(aes(Temp,out_R0_alb)) + 
+  theme_bw() +
+  theme(text = element_text(size = 15)
+  )
+plot_EFD_alb
+
+vec <- seq(0,1000,0.1)
+out_R0_alb <- sapply(vec, function(Te){R0_func_alb(0,Te,15)})
+df_alb <- data.frame(Temp = vec, out_R0_alb)
+plot_EFD_alb <- ggplot(df_alb) + 
+  xlab("Human density (km2)") + ylab("R0, suitability index") +
+  geom_hline(yintercept = 1, linetype = "dashed", color = "red") +
+  geom_line(aes(Temp,out_R0_alb)) + 
+  theme_bw() +
+  theme(text = element_text(size = 15)
+  )
+plot_EFD_alb
+
+
+df_r0 <- data.frame(hum = numeric(0), rain =numeric(0) , R0 = numeric(0))
+vec <- seq(0,20,0.01)
+vec1 <- seq(0,500,1)
+for(i in c(1:length(vec))){
+  for(j in c(1:length(vec1))){
+    df_r0[(nrow(df_r0)+1),] <- c(vec1[j],vec[i], R0_func_alb(vec[i],vec1[j],15))
+  }
+}
+
+df_r0$R0_bool <- ifelse(df_r0$R0>1,1,0)
+ggplot(df_r0) +
+  geom_point(aes(hum,rain,color=factor(R0_bool))) +
+  scale_color_manual(values = c("#ffeda0", "#B60808"), name = "",
+                  labels = c("R0<1", "R0>1")) +
+  theme_bw() +
+  theme(legend.text=element_text(size=15),
+        plot.title = element_text(size=15)) + 
+  guides(colour = guide_legend(override.aes = list(size=10)))
+
 #### -------------------------- Aegypti ------------------------- ####
 ## Thermal responses Aedes Aegypti from Mordecai 2017:
 a_f_aeg <- function(temp){Briere_func(0.000202,13.35,40.08,temp)} # Biting rate
