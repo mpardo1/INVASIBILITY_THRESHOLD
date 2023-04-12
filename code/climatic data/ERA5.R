@@ -1,77 +1,77 @@
 rm(list=ls())
 library(ncdf4)
 library(tidyverse)
-library(KrigR)
 library(sf) 
 library(RColorBrewer)
+library(raster)
+library(terra)
+library(geodata)
+library(exactextractr)
+library("mapSpain")
+library(reticulate)
+library(ncdf4)
 # Link ERA5 data:
 # https://cds.climate.copernicus.eu/cdsapp#!/dataset/reanalysis-cerra-single-levels?tab=overview
-# Nice tutorial to extract data from a nc file
-# https://towardsdatascience.com/how-to-crack-open-netcdf-files-in-r-and-extract-data-as-time-series-24107b70dcd
-# Download data:
-# Spain coordinates
-lon_min <- -9.28
-lon_max <- 3.34
-lat_min <- 36.00
-lat_max <- 43.82
+#install the CDS API
+conda_install("r-reticulate","cdsapi", pip=TRUE)#import python CDS-API
+cdsapi <- import('cdsapi')
+#for this step there must exist the file .cdsapirc
+server = cdsapi$Client() #start the connection
+#we create the query
+query <- r_to_py(list(
+  variable= "2m_temperature",
+  level_type= "surface_or_atmosphere",
+  data_type= "reanalysis",
+  product_type= "analysis",
+  year= '2020',
+  month= '01', 
+  day= '01',
+   time= c('00:00', '03:00', '06:00',
+            '09:00', '12:00', '15:00',
+            '18:00', '21:00'),
+   
+   format= 'grib'
+))
+
+#query to get the ncdf
+server$retrieve("reanalysis-era5-single-levels",
+                query,
+                "era5_ta_2018.grib")
 
 ## Read the file from Copernicus data.
-Path = "~/INVASIBILITY_THRESHOLD/data/ERA5/adaptor.mars.external-1680271509.6859422-29720-9-a7d5dfd1-4c9f-4d22-be1b-389929d0079c.nc"
-nc <- nc_open(Path)
-# Metadata file print, read carefully
-print(era5_temp)
-era5_temp[[1]]
-# Data variables and dimensions
-attributes(nc)
-attributes(nc$var)
-attributes(nc$dim)
+Path = "era5_ta_2018.grib"
+nc_raster <- rast(Path) 
+coord_ref <- st_crs(nc_raster)
+plot(nc_raster,1)
+esp_can <- esp_get_munic_siane(moveCAN = FALSE)
+esp <- st_transform(esp_can,coord_ref)
 
-x <- nc$dim$x$vals
-y <- nc$dim$y$vals
+# Crop Spain data
+rast_spain <- nc_raster  %>%
+  terra::crop(esp)
 
-library(mapproj)
-latlon <- mapproject(x, y, projection = "+proj=lcc +lon_0=0 +lat_1=60 +lat_2=40 +lat_0=45")
-lat <- latlon$y
-lon <- latlon$x
+plot(rast_spain,1)
+#--- extract values from the raster for each county ---#
+temp_muni <- terra::extract(rast_spain, esp)
+colnames(temp_muni) <- c("ID",as.Date(time(nc_raster)))
 
-# Extract the latitude and longitude data
-lat <- ncvar_get(era5_temp, "latitude")
-nlat <- length(lat)
-lon <- ncvar_get(era5_temp, "longitude")
-nlon <- length(lon)
-
-lat_ind <- which(lat>=27 & lat <=43.5)
-lon_ind <- which(lon>=-10 & lon <=5.5)
-
-temp <- ncvar_get(era5_temp, "t2m", start = c(1, lat_ind[1], lon_ind[1]),
-                  count = c(-1, length(lat_ind), length(lon_ind)))
-
-# Getting the longitude indexes which longitude values are between 140.9 and 149.8 (Victoria State)
-lonIdx <- which( era5_temp$dim$lon$vals > lon_min & era5_temp$dim$lon$vals < lon_max) ##
-# Reading longitude values within longitute indexes range (lonIdx)
-lon <- ncvar_get(era5_temp, "longitude", start=c(min(lonIdx)), count=c((max(lonIdx)-min(lonIdx)+1)))
-nlon <- dim(lon)
-head(lon)
-
-# Getting the latitude indexes which latitude values are between -39.10 and -34 (Victoria State)
-latIdx  <- which( era5_temp$dim$lat$vals > lat_min & era5_temp$dim$lat$vals < lat_max)
-# Reading latitude values within this index
-lat <- ncvar_get(era5_temp, "latitude", verbose = F, start=c(min(latIdx)), count=c((max(latIdx)-min(latIdx)+1)))
-nlat <- dim(lat)
-head(lat)
-# Extract the time, it is written as second since reference data, 
-#look for it in print(era5_temp) in my file: seconds since 1970-01-01.
-time <- ncvar_get(era5_temp, "time")
-tunits <- ncatt_get(era5_temp, "time", "units")  # check units tiem
-nt <- dim(time) 
-
-lswt_array <- ncvar_get(era5_temp, "t2m") 
-fillvalue <- ncatt_get(era5_temp, "t2m", "_FillValue")
-dim(lswt_array)
+#--- get mean tmax ---#
+temp_muni <-
+  temp_muni %>%
+  group_by(ID) %>%
+  summarize(tmean = mean(temp))
 
 
+esp_sf <- st_as_sf(esp) %>%
+   mutate(ID := seq_len(nrow(.))) %>%
+   left_join(., temp_muni, by = "ID")
 
-# Convert the data to Celsius
-temp_mean <- temp_mean - 273.15
-temp_max <- temp_max - 273.15
-temp_min <- temp_min - 273.15
+df_temp <- as.data.frame(esp_sf[,c("name", "tmean")])
+df_temp$geometry <- NULL
+esp_can <- esp_get_munic_siane(moveCAN = TRUE)
+esp_can <-  esp_can  %>% 
+  left_join(df_temp)
+
+ggplot(esp_can) + 
+  geom_sf(aes(fill = tmean), size = 0.1) + 
+  scale_fill_distiller(palette="Spectral")
