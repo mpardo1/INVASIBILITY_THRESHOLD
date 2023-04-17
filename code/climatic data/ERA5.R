@@ -13,8 +13,8 @@ setwd("~/")
 # https://cds.climate.copernicus.eu/cdsapp#!/dataset/reanalysis-cerra-single-levels?tab=overview
 # You need to create a file with the url and API key in (you need to log in first):https://cds.climate.copernicus.eu/api-how-to
 #install the CDS API
-# conda_install("r-reticulate","cdsapi", pip=TRUE)#import python CDS-API
-py_install("cdsapi", pip=TRUE)#import python CDS-API
+use_condaenv(conda = "/home/soft/miniconda3/bin")
+conda_install("r-reticulate","cdsapi", pip=TRUE)#import python CDS-API
 
 cdsapi <- import("cdsapi")
 #for this step there must exist the file .cdsapirc
