@@ -15,11 +15,15 @@ library(parallel)
 # https://cds.climate.copernicus.eu/cdsapp#!/dataset/reanalysis-cerra-single-levels?tab=overview
 # You need to create a file with the url and API key in (you need to log in first):https://cds.climate.copernicus.eu/api-how-to
 # Install the CDS API
+
+# create a new environment 
+conda_create("r-reticulate")
 conda_install("r-reticulate","cdsapi", pip=TRUE)#import python CDS-API
-cdsapi <- import('cdsapi')
+# indicate that we want to use a specific condaenv
+use_condaenv("r-reticulate")
 # For this step there must exist the file .cdsapirc
 server = cdsapi$Client() #start the connection
-Cores = 1
+Cores = 10
 func_weather <- function(mon, ye){
   date <- as.Date(paste0(ye,"-",mon ,"-23"), "%Y-%m-%d")
   max_day = lubridate::days_in_month(date)
@@ -84,16 +88,18 @@ func_weather <- function(mon, ye){
   return(df_temp)
 }
 
-df_out <- func_weather("01", "2000")
+month_vec <- str_c(1:12)%>%str_pad(2,"left","0")
+for (i in length(month_vec)) {
+  df_out <- func_weather(month_vec[i], "2000")
+  saveRDS(df_out,
+          paste0("~/INVASIBILITY_THRESHOLD/output/ERA5/temp_out_daily_",
+                 year_n,"_",month_vec[i],".Rds"))
+}
 
-aux_df <- df_out[[1]]
-esp_can
-esp_can <-  esp_can  %>% 
-  left_join(df_out[[1]] )
-
-saveRDS(df_out,
-        paste0("~/INVASIBILITY_THRESHOLD/output/ERA5/temp_out_daily_",
-               year_n,"_",month_n,".Rds"))
+# aux_df <- df_out[[1]]
+# esp_can
+# esp_can <-  esp_can  %>% 
+#   left_join(df_out[[1]] )
 # ggplot(esp_can) + 
 #   geom_sf(aes(fill = tmean), size = 0.1) + 
 #   scale_fill_distiller(palette="Spectral")
