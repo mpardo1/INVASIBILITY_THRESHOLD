@@ -98,7 +98,82 @@ print("Despues de func")
 saveRDS(df_out,paste0("~/INVASIBILITY_THRESHOLD/output/ERA5/temp_out_daily_",
                year_n,"_",month_n,".Rds"))
 
+month_n = "02"
+print("Antes de func")
+df_out <- func_weather(month_n, year_n)
+print("Despues de func")
+saveRDS(df_out,paste0("~/INVASIBILITY_THRESHOLD/output/ERA5/temp_out_daily_",
+                      year_n,"_",month_n,".Rds"))
 
+month_n = "03"
+print("Antes de func")
+df_out <- func_weather(month_n, year_n)
+print("Despues de func")
+saveRDS(df_out,paste0("~/INVASIBILITY_THRESHOLD/output/ERA5/temp_out_daily_",
+                      year_n,"_",month_n,".Rds"))
+
+month_n = "04"
+print("Antes de func")
+df_out <- func_weather(month_n, year_n)
+print("Despues de func")
+saveRDS(df_out,paste0("~/INVASIBILITY_THRESHOLD/output/ERA5/temp_out_daily_",
+                      year_n,"_",month_n,".Rds"))
+
+month_n = "05"
+print("Antes de func")
+df_out <- func_weather(month_n, year_n)
+print("Despues de func")
+saveRDS(df_out,paste0("~/INVASIBILITY_THRESHOLD/output/ERA5/temp_out_daily_",
+                      year_n,"_",month_n,".Rds"))
+
+month_n = "06"
+print("Antes de func")
+df_out <- func_weather(month_n, year_n)
+print("Despues de func")
+saveRDS(df_out,paste0("~/INVASIBILITY_THRESHOLD/output/ERA5/temp_out_daily_",
+                      year_n,"_",month_n,".Rds"))
+
+month_n = "07"
+print("Antes de func")
+df_out <- func_weather(month_n, year_n)
+print("Despues de func")
+saveRDS(df_out,paste0("~/INVASIBILITY_THRESHOLD/output/ERA5/temp_out_daily_",
+                      year_n,"_",month_n,".Rds"))
+
+month_n = "08"
+print("Antes de func")
+df_out <- func_weather(month_n, year_n)
+print("Despues de func")
+saveRDS(df_out,paste0("~/INVASIBILITY_THRESHOLD/output/ERA5/temp_out_daily_",
+                      year_n,"_",month_n,".Rds"))
+
+month_n = "09"
+print("Antes de func")
+df_out <- func_weather(month_n, year_n)
+print("Despues de func")
+saveRDS(df_out,paste0("~/INVASIBILITY_THRESHOLD/output/ERA5/temp_out_daily_",
+                      year_n,"_",month_n,".Rds"))
+
+month_n = "10"
+print("Antes de func")
+df_out <- func_weather(month_n, year_n)
+print("Despues de func")
+saveRDS(df_out,paste0("~/INVASIBILITY_THRESHOLD/output/ERA5/temp_out_daily_",
+                      year_n,"_",month_n,".Rds"))
+
+month_n = "11"
+print("Antes de func")
+df_out <- func_weather(month_n, year_n)
+print("Despues de func")
+saveRDS(df_out,paste0("~/INVASIBILITY_THRESHOLD/output/ERA5/temp_out_daily_",
+                      year_n,"_",month_n,".Rds"))
+
+month_n = "12"
+print("Antes de func")
+df_out <- func_weather(month_n, year_n)
+print("Despues de func")
+saveRDS(df_out,paste0("~/INVASIBILITY_THRESHOLD/output/ERA5/temp_out_daily_",
+                      year_n,"_",month_n,".Rds"))
 # aux_df <- df_out[[1]]
 # esp_can
 # esp_can <-  esp_can  %>% 
