@@ -8,6 +8,7 @@ library("mapSpain")
 library(reticulate)
 library(ncdf4)
 
+setwd("~/")
 # Link ERA5 data:
 # https://cds.climate.copernicus.eu/cdsapp#!/dataset/reanalysis-cerra-single-levels?tab=overview
 # You need to create a file with the url and API key in (you need to log in first):https://cds.climate.copernicus.eu/api-how-to
