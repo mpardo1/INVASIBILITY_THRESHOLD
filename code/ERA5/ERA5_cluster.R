@@ -89,9 +89,11 @@ func_weather <- function(mon, ye){
   return(df_temp)
 }
 
+# Select the Year that you want the daily temperatures:
+year_n = "2000"
 month_vec <- str_c(1:12)%>%str_pad(2,"left","0")
 for (i in length(month_vec)) {
-  df_out <- func_weather(month_vec[i], "2000")
+  df_out <- func_weather(month_vec[i], year_n)
   saveRDS(df_out,
           paste0("~/INVASIBILITY_THRESHOLD/output/ERA5/temp_out_daily_",
                  year_n,"_",month_vec[i],".Rds"))
