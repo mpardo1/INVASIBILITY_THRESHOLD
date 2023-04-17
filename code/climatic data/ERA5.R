@@ -13,9 +13,7 @@ library(ncdf4)
 # You need to create a file with the url and API key in (you need to log in first):https://cds.climate.copernicus.eu/api-how-to
 #install the CDS API
 conda_install("r-reticulate","cdsapi", pip=TRUE)#import python CDS-API
-# conda_install("r-reticulate", pip=TRUE)#import python CDS-API
-# py_install("cdsapi")
-cdsapi <- import('cdsapi')
+cdsapi <- import("cdsapi")
 #for this step there must exist the file .cdsapirc
 server = cdsapi$Client() #start the connection
 #we create the query
