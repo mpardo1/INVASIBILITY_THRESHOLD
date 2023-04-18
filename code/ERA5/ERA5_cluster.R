@@ -90,7 +90,7 @@ func_weather <- function(mon, ye){
 }
 
 # Select the Year that you want the daily temperatures:
-year_n = "2001"
+year_n = "2011"
 month_n = "01"
 print("Antes de func")
 df_out <- func_weather(month_n, year_n)
@@ -176,7 +176,7 @@ saveRDS(df_out,paste0("~/INVASIBILITY_THRESHOLD/output/ERA5/temp_out_daily_",
                       year_n,"_",month_n,".Rds"))
 
 # Select the Year that you want the daily temperatures:
-year_n = "2002"
+year_n = "2012"
 month_n = "01"
 print("Antes de func")
 df_out <- func_weather(month_n, year_n)
@@ -262,7 +262,7 @@ saveRDS(df_out,paste0("~/INVASIBILITY_THRESHOLD/output/ERA5/temp_out_daily_",
                       year_n,"_",month_n,".Rds"))
 
 # Select the Year that you want the daily temperatures:
-year_n = "2003"
+year_n = "2013"
 month_n = "01"
 print("Antes de func")
 df_out <- func_weather(month_n, year_n)
@@ -348,7 +348,7 @@ saveRDS(df_out,paste0("~/INVASIBILITY_THRESHOLD/output/ERA5/temp_out_daily_",
                       year_n,"_",month_n,".Rds"))
 
 # Select the Year that you want the daily temperatures:
-year_n = "2004"
+year_n = "2014"
 month_n = "01"
 print("Antes de func")
 df_out <- func_weather(month_n, year_n)
@@ -434,7 +434,7 @@ saveRDS(df_out,paste0("~/INVASIBILITY_THRESHOLD/output/ERA5/temp_out_daily_",
                       year_n,"_",month_n,".Rds"))
 
 # Select the Year that you want the daily temperatures:
-year_n = "2005"
+year_n = "2015"
 month_n = "01"
 print("Antes de func")
 df_out <- func_weather(month_n, year_n)
@@ -520,7 +520,7 @@ saveRDS(df_out,paste0("~/INVASIBILITY_THRESHOLD/output/ERA5/temp_out_daily_",
                       year_n,"_",month_n,".Rds"))
 
 # Select the Year that you want the daily temperatures:
-year_n = "2007"
+year_n = "2017"
 month_n = "01"
 print("Antes de func")
 df_out <- func_weather(month_n, year_n)
@@ -606,7 +606,7 @@ saveRDS(df_out,paste0("~/INVASIBILITY_THRESHOLD/output/ERA5/temp_out_daily_",
                       year_n,"_",month_n,".Rds"))
 
 # Select the Year that you want the daily temperatures:
-year_n = "2008"
+year_n = "2018"
 month_n = "01"
 print("Antes de func")
 df_out <- func_weather(month_n, year_n)
@@ -692,7 +692,7 @@ saveRDS(df_out,paste0("~/INVASIBILITY_THRESHOLD/output/ERA5/temp_out_daily_",
                       year_n,"_",month_n,".Rds"))
 
 # Select the Year that you want the daily temperatures:
-year_n = "2009"
+year_n = "2019"
 month_n = "01"
 print("Antes de func")
 df_out <- func_weather(month_n, year_n)
@@ -778,7 +778,7 @@ saveRDS(df_out,paste0("~/INVASIBILITY_THRESHOLD/output/ERA5/temp_out_daily_",
                       year_n,"_",month_n,".Rds"))
 
 # Select the Year that you want the daily temperatures:
-year_n = "2010"
+year_n = "2020"
 month_n = "01"
 print("Antes de func")
 df_out <- func_weather(month_n, year_n)
