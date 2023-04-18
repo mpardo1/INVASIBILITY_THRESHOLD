@@ -76,10 +76,12 @@ ggplot(df_out) +
   geom_line(aes(vec,out))
 
 ind <- df_out[which(df_out$out != 0),1]
-numd1 <- grad(function(x){R0_func_alb(8,500,x)}, ind)
-devf <- data.frame(ind,numd1)
-ggplot(devf) +
-  geom_line(aes(ind,numd1)) + theme_bw()
+numd1_t <- grad(function(x){R0_func_alb(8,500,x)}, ind)
+devf_t <- data.frame(ind,numd1_t)
+dev_t <- ggplot(devf_t) +
+  geom_line(aes(ind,numd1_t)) + 
+  xlab("Temperature(Cº)") + ylab("dR0/dT") +
+  theme_bw()
 
 # Derivative with respect to Rainfall
 vec <- seq(0,20,0.01)
@@ -88,10 +90,12 @@ te_cte <- 22
 out <- sapply(vec,R0_func_alb,hum=hum_cte, Te=te_cte)
 df_out <- data.frame(vec, out)
 ind <- df_out[which(df_out$out != 0),1]
-numd1 <- grad(function(x){R0_func_alb(x,hum_cte,te_cte)}, ind)
-devf <- data.frame(ind,numd1)
-ggplot(devf) +
-  geom_line(aes(ind,numd1)) + theme_bw()
+numd1_r <- grad(function(x){R0_func_alb(x,hum_cte,te_cte)}, ind)
+devf_r <- data.frame(ind,numd1_r)
+dev_r <- ggplot(devf_r) +
+  geom_line(aes(ind,numd1_r))  + 
+  xlab("Rainfall(mm)") + ylab("dR0/dR") +
+  theme_bw()
 
 # Derivative with respect to Human density
 vec <- seq(0,700,1)
@@ -100,7 +104,12 @@ te_cte <- 25
 out <- sapply(vec,R0_func_alb,rain=rain_cte, Te=te_cte)
 df_out <- data.frame(vec, out)
 ind <- df_out[which(df_out$out != 0),1]
-numd1 <- grad(function(x){R0_func_alb(rain_cte,x,te_cte)}, ind)
-devf <- data.frame(ind,numd1)
-ggplot(devf) +
-  geom_line(aes(ind,numd1)) + theme_bw()
+numd1_h <- grad(function(x){R0_func_alb(rain_cte,x,te_cte)}, ind)
+devf_h <- data.frame(ind,numd1_h)
+dev_h <- ggplot(devf_h) +
+  geom_line(aes(ind,numd1_h)) + 
+  xlab("Human density(km2)") + ylab("dR0/dH") +
+  theme_bw()
+
+library(ggpubr)
+ggarrange(dev_t,dev_r,dev_h)
