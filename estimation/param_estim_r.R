@@ -62,7 +62,8 @@ print(paste("time:", end_time-start_time))
 ll_ode <- function(x, # vector con los parámetros
                    forcings, # forzamientos para el solver de la ode
                    y ){ # datos
-                   
+  
+  # Penalize parameters not positive                
   if(x[1] < 0 | x[2] < 0 | x[3] < 0 | x[4] < 0 | x[5] < 0){
     res = -86829146000
   }else{
