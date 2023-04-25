@@ -125,3 +125,12 @@ dev_h <- ggplot(devf_h) +
 library(ggpubr)
 ggarrange(dev_t,dev_r,dev_h)
 ggarrange(plot_t,plot_r,plot_h)
+
+
+vec <- seq(-10,10,0.1)
+df_h <- grad(function(x){-6*exp(-3*x)}, vec)
+out_h <- sapply( vec,function(x){2*exp(-3*x)})
+df_out <- data.frame(vec, df_h,out_h)
+df_plot <- reshape2::melt(df_out, id.vars = "vec")
+ggplot(df_plot) +
+  geom_point(aes(vec,value, color =variable))
