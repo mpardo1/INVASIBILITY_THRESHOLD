@@ -86,8 +86,23 @@ daily_prec <- function(mon, ye){
   return(temp_muni_daily)
 }
 
-df_Jan_2020 <- daily_prec("01","2020")
- 
+y = "2020"
+for (i in c(1:12)) {
+  m <- ifelse(i<10, paste0("0", as.character(i)),as.character(i))
+  df_Jan_2020 <- daily_prec(m,y)
+  df_Jan_2020_t <- df_Jan_2020[,c(1,4:ncol(df_Jan_2020))]
+  df_Jan_2020_t <- df_Jan_2020_t[,c(1,seq(2,ncol(df_Jan_2020_t),2))]
+  esp_sf <- st_as_sf(esp) %>%
+    mutate(ID := seq_len(nrow(.))) %>%
+    left_join(., df_Jan_2020_t, by = "ID")
+  
+  esp_sf$NATCODE <- as.numeric(paste0("34",esp_sf$codauto,esp_sf$cpro,esp_sf$LAU_CODE))
+  esp_sf <- esp_sf[,c(9:ncol(esp_sf))]
+  esp_sf$geometry <- NULL
+  saveRDS(esp_sf, paste0("~/INVASIBILITY_THRESHOLD/output/ERA5/rainfall/rainfall_",y,"_",m,".Rds"))
+  rm(esp_sf,df_Jan_2020_t, df_Jan_2020)
+}
+
 #--- get mean tmax ---#
 temp_muni <- temp_muni %>%
   group_by(ID) %>%
