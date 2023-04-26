@@ -70,3 +70,4 @@ plot_quad <- ggplot(df_plot_quad) +
   geom_point(aes(vec, value, color=variable, shape = variable))
 
 ggarrange(plot_brier, plot_quad)
+
