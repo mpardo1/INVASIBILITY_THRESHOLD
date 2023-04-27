@@ -14,10 +14,10 @@ library(parallel)
 # You need to create a file with the url and API key in (you need to log in first):https://cds.climate.copernicus.eu/api-how-to
 #-----------------------CLUSTER--------------------------#
 # Run this the first time in cluster after comment it to dont run it
-# conda_create("r-reticulate")
-# conda_install("r-reticulate","cdsapi", pip=TRUE)#import python CDS-API
+conda_create("reticulate2")
+conda_install("r-reticulate","cdsapi", pip=TRUE)#import python CDS-API
 # indicate that we want to use a specific condaenv
-use_condaenv("r-reticulate")
+use_condaenv("reticulate2")
 cdsapi <- import("cdsapi")
 #-----------------------------------------------------#
 #-------------------LOCAL----------------------------#
