@@ -8,6 +8,7 @@ require(graphics)
 # https://academic.oup.com/jme/article/46/1/33/902827?login=false
 df_albo <- data.frame(temp = c(5,10,15,20,25,30,35,40),
           proportion_surv = c(0,0,4/8,62/80,61/80,54/80,3.5/120,0))
+
 ggplot(df_albo) + 
   geom_point(aes(temp,proportion_surv)) + theme_bw()
 
@@ -47,9 +48,10 @@ plotalb <- ggplot(df_alb) +
 
 # Data frame data taken from Tun-Lin et al 2001 
 # https://resjournals.onlinelibrary.wiley.com/doi/full/10.1046/j.1365-2915.2000.00207.x
+# https://academic.oup.com/jme/article/56/6/1661/5505308
 
-df_aeg <- data.frame(temp = c(10,15,20,25,27,30,35,40),
-      proportion_surv = c(0,0.235,0.9,0.88,0.93,0.88,0.67,0))
+df_aeg <- data.frame(temp = c(10,15,20,25,27,30,35,40,12,14,16),
+      proportion_surv = c(0,0.235,0.9,0.88,0.93,0.88,0.67,0,0.23,0.87,0.93))
 
 plot_aeg <- ggplot(df_aeg) + 
   geom_point(aes(temp,proportion_surv)) + theme_bw()
