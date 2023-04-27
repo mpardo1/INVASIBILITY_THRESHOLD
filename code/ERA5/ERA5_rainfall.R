@@ -11,10 +11,19 @@ library(ncdf4)
 # Link ERA5 data:
 # https://cds.climate.copernicus.eu/cdsapp#!/dataset/reanalysis-cerra-single-levels?tab=overview
 # You need to create a file with the url and API key in (you need to log in first):https://cds.climate.copernicus.eu/api-how-to
+#-----------------------CLUSTER--------------------------#
+conda_create("r-reticulate")
+conda_install("r-reticulate","cdsapi", pip=TRUE)#import python CDS-API
+# indicate that we want to use a specific condaenv
+use_condaenv("r-reticulate")
+cdsapi <- import("cdsapi")
+#-----------------------------------------------------#
+#-------------------LOCAL----------------------------#
 #install the CDS API
 conda_install("r-reticulate","cdsapi", pip=TRUE)#import python CDS-API
 
 cdsapi <- import("cdsapi")
+#-----------------------------------------------------#
 #for this step there must exist the file .cdsapirc
 server = cdsapi$Client() #start the connection
 
