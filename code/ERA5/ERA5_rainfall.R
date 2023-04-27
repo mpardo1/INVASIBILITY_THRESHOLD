@@ -86,7 +86,7 @@ daily_prec <- function(mon, ye){
   return(temp_muni_daily)
 }
 
-y = "2020"
+y = "2019"
 for (i in c(1:12)) {
   m <- ifelse(i<10, paste0("0", as.character(i)),as.character(i))
   df_Jan_2020 <- daily_prec(m,y)
