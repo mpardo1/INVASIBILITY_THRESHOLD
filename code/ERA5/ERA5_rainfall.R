@@ -12,18 +12,18 @@ library(ncdf4)
 # https://cds.climate.copernicus.eu/cdsapp#!/dataset/reanalysis-cerra-single-levels?tab=overview
 # You need to create a file with the url and API key in (you need to log in first):https://cds.climate.copernicus.eu/api-how-to
 #-----------------------CLUSTER--------------------------#
-# Run this the first time in cluster after comment it to dont run it
-conda_create("reticulate")
-conda_install("r-reticulate","cdsapi", pip=TRUE)#import python CDS-API
-# indicate that we want to use a specific condaenv
-use_condaenv("reticulate")
-cdsapi <- import("cdsapi")
+# # Run this the first time in cluster after comment it to dont run it
+# conda_create("reticulate")
+# conda_install("r-reticulate","cdsapi", pip=TRUE)#import python CDS-API
+# # indicate that we want to use a specific condaenv
+# use_condaenv("reticulate")
+# cdsapi <- import("cdsapi")
 #-----------------------------------------------------#
 #-------------------LOCAL----------------------------#
-#install the CDS API
-# conda_install("r-reticulate","cdsapi", pip=TRUE)#import python CDS-API
-# 
-# cdsapi <- import("cdsapi")
+# install the CDS API
+conda_install("r-reticulate","cdsapi", pip=TRUE)#import python CDS-API
+
+cdsapi <- import("cdsapi")
 #-----------------------------------------------------#
 #for this step there must exist the file .cdsapirc
 server = cdsapi$Client() #start the connection
@@ -102,7 +102,47 @@ for (i in c(1:12)) {
   df_Jan_2020 <- daily_prec(m,y)
   df_Jan_2020_t <- df_Jan_2020[,c(1,4:ncol(df_Jan_2020))]
   df_Jan_2020_t <- df_Jan_2020_t[,c(1,seq(2,ncol(df_Jan_2020_t),2))]
-  esp_sf <- st_as_sf(esp) %>%
+  coord_ref <- st_crs(nc_raster)
+  
+  # plot(nc_raster,1)
+  esp_can <- esp_get_munic_siane(moveCAN = FALSE)
+  esp_sf <- st_as_sf(esp_can) %>%
+    mutate(ID := seq_len(nrow(.))) %>%
+    left_join(., df_Jan_2020_t, by = "ID")
+  
+  esp_sf$NATCODE <- as.numeric(paste0("34",esp_sf$codauto,esp_sf$cpro,esp_sf$LAU_CODE))
+  esp_sf <- esp_sf[,c(9:ncol(esp_sf))]
+  esp_sf$geometry <- NULL
+  saveRDS(esp_sf, paste0("~/INVASIBILITY_THRESHOLD/output/ERA5/rainfall/rainfall_",y,"_",m,".Rds"))
+  rm(esp_sf,df_Jan_2020_t, df_Jan_2020)
+}
+
+y = "2018"
+for (i in c(1:12)) {
+  m <- ifelse(i<10, paste0("0", as.character(i)),as.character(i))
+  df_Jan_2020 <- daily_prec(m,y)
+  df_Jan_2020_t <- df_Jan_2020[,c(1,4:ncol(df_Jan_2020))]
+  df_Jan_2020_t <- df_Jan_2020_t[,c(1,seq(2,ncol(df_Jan_2020_t),2))]
+  esp_can <- esp_get_munic_siane(moveCAN = FALSE)
+  esp_sf <- st_as_sf(esp_can) %>%
+    mutate(ID := seq_len(nrow(.))) %>%
+    left_join(., df_Jan_2020_t, by = "ID")
+  
+  esp_sf$NATCODE <- as.numeric(paste0("34",esp_sf$codauto,esp_sf$cpro,esp_sf$LAU_CODE))
+  esp_sf <- esp_sf[,c(9:ncol(esp_sf))]
+  esp_sf$geometry <- NULL
+  saveRDS(esp_sf, paste0("~/INVASIBILITY_THRESHOLD/output/ERA5/rainfall/rainfall_",y,"_",m,".Rds"))
+  rm(esp_sf,df_Jan_2020_t, df_Jan_2020)
+}
+
+y = "2017"
+for (i in c(1:12)) {
+  m <- ifelse(i<10, paste0("0", as.character(i)),as.character(i))
+  df_Jan_2020 <- daily_prec(m,y)
+  df_Jan_2020_t <- df_Jan_2020[,c(1,4:ncol(df_Jan_2020))]
+  df_Jan_2020_t <- df_Jan_2020_t[,c(1,seq(2,ncol(df_Jan_2020_t),2))]
+  esp_can <- esp_get_munic_siane(moveCAN = FALSE)
+  esp_sf <- st_as_sf(esp_can) %>%
     mutate(ID := seq_len(nrow(.))) %>%
     left_join(., df_Jan_2020_t, by = "ID")
   
