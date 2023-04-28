@@ -46,11 +46,11 @@ h_f <- function(hum, rain){
 R0_func_alb <- function(rain,hum,Te){
   a <- a_f_alb(Te)
   f <- TFD_f_alb(Te)
-  deltaa <- 1/lf_f_alb(Te)
+  deltaa <- lf_f_alb(Te)
   probla <- pEA_f_alb(Te)
   h <- h_f(hum,rain)
   deltE = 0.1
-  R0 <- sqrt(f*(a/deltaa)*probla*(h*(h+deltE)))
+  R0 <- sqrt(f*(a*deltaa)*probla*(h/(h+deltE)))
   return(R0)
 }
 # Main functions 
@@ -110,19 +110,19 @@ lf_df_alb <- function(temp){Quad_df(1.43,13.41,31.51,temp)} # Adult life span
 R0_dfunc_alb <- function(rain,hum,Te){
   a <- a_f_alb(Te)
   f <- TFD_f_alb(Te)
-  deltaa <- 1/lf_f_alb(Te)
+  deltaa <- lf_f_alb(Te)
   probla <- pEA_f_alb(Te)
   h <- h_f(hum,rain)
   deltE = 0.1
-  R0 <- f*(a/deltaa)*probla*(h*(h+deltE))
+  R0 <- f*deltaa*a*probla*(h*(h+deltE))
   dffT <- TFD_df_alb(Te)
   dfaT <- a_df_alb(Te)
   dfdeltaAT <- 1/lf_df_alb(Te)
   dfplaT <- pEA_df_alb(Te)
-  dffR0 <- (1/2)*(R0)^(-1/2)*(a*h*probla)/(deltaa*(h+deltE))*dffT
-  dfaR0 <- (1/2)*(R0)^(-1/2)*(f*h*probla)/(deltaa*(h+deltE))*dfaT
-  dfdeltAR0 <- -(1/2)*(R0)^(-1/2)*(f*a*h*probla)/((deltaa^2)*(h+deltE))*dfdeltaAT
-  dfpLAR0 <- (1/2)*(R0)^(-1/2)*(a*h*f)/(deltaa*(h+deltE))*dfplaT
+  dffR0 <- ((1/2)*((R0)^(-1/2))*(deltaa*a*h*probla)/(h+deltE))*dffT
+  dfaR0 <- ((1/2)*((R0)^(-1/2))*(deltaa*f*h*probla)/(h+deltE))*dfaT
+  dfdeltAR0 <- ((1/2)*((R0)^(-1/2))*(f*a*h*probla)/(h+deltE))*dfdeltaAT
+  dfpLAR0 <- ((1/2)*((R0)^(-1/2))*(deltaa*a*h*f)/(h+deltE))*dfplaT
   
   dfR0 <- dffR0 + dfaR0 + dfdeltAR0 + dfpLAR0
   return(dfR0)
@@ -130,10 +130,14 @@ R0_dfunc_alb <- function(rain,hum,Te){
 
 hum_cte <- 500
 rain_cte <- 8
-vec <- seq(13,30,0.1)
+vec <- seq(15,31,0.1)
 R0df_num <- grad(function(x){R0_func_alb(rain_cte,hum_cte,x)}, vec)
 R0df_ana <- sapply(vec, function(x){R0_dfunc_alb(rain_cte,hum_cte,x)} )
-
+R0f_ana <- sapply(vec, function(x){R0_func_alb(rain_cte,hum_cte,x)} )
+df_R0 <- data.frame(vec,R0f_ana)
+ggplot(df_R0) +
+  geom_point(aes(vec,R0f_ana)) +
+  theme_bw()
 df_R0df <- data.frame(vec, R0df_num,R0df_ana)
 df_R0df <- reshape2::melt(df_R0df, id.vars = "vec")
 plot_quad <- ggplot(df_R0df) +
