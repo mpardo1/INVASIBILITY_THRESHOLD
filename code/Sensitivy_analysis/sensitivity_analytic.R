@@ -114,7 +114,7 @@ R0_dfunc_alb <- function(rain,hum,Te){
   probla <- pEA_f_alb(Te)
   h <- h_f(hum,rain)
   deltE = 0.1
-  R0 <- f*deltaa*a*probla*(h*(h+deltE))
+  R0 <- f*deltaa*a*probla*(h/(h+deltE))
   dffT <- TFD_df_alb(Te)
   dfaT <- a_df_alb(Te)
   dfdeltaAT <- 1/lf_df_alb(Te)

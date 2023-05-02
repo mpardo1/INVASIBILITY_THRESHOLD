@@ -80,3 +80,34 @@ plotaeg <- ggplot(df_out) +
 
 library(ggpubr)
 ggarrange(plotalb,plotaeg)
+
+#--------------------Egg Development--------------------#
+df_deltaE <- data.frame(temp = c(15,20,25,30),
+                     develop_time = c(1/38.38,1/19.09,1/13.10,1/10.44))
+
+plot_deltaE <- ggplot(df_deltaE) + 
+  geom_point(aes(temp,develop_time)) + theme_bw()
+plot_deltaE
+
+Fitting_deltaE <- nls(develop_time ~ (-cont*(temp-Tmin)*(temp - Tmax)),
+                   data = df_deltaE,
+                   start = list(cont = 0.001, Tmin = 5, Tmax = 20))
+
+summary(Fitting_deltaE)
+
+mod <- function(te){
+  t0 <- as.numeric(Fitting_deltaE$m$getPars()[2])
+  tm <- as.numeric(Fitting_deltaE$m$getPars()[3])
+  c <- as.numeric(Fitting_deltaE$m$getPars()[1])
+  (-c*(te-t0)*(te - tm))
+}
+
+vec <- seq(0,45,0.001)
+df_out <- data.frame(temp = vec, life_span <- sapply(vec, mod))
+plot_deltaE <- ggplot(df_out) +
+  geom_point(aes(temp,life_span), size = 0.01) +
+  geom_point(data = df_deltaE, aes(temp,develop_time), size = 0.7, color = "red") +
+  ylim(c(0,1)) + xlim(c(0,45)) + 
+  ylab("Egg development time") + xlab("Temperature (Cº)") +
+  theme_bw()
+plot_deltaE
