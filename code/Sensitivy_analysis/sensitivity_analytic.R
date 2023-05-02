@@ -50,7 +50,7 @@ R0_func_alb <- function(rain,hum,Te){
   probla <- pEA_f_alb(Te)
   h <- h_f(hum,rain)
   deltE = 0.1
-  R0 <- sqrt(f*(a*deltaa)*probla*(h/(h+deltE)))
+  R0 <- (f*(a*deltaa)*probla*(h/(h+deltE)))^(1/3)
   return(R0)
 }
 # Main functions 
@@ -119,10 +119,10 @@ R0_dfunc_alb <- function(rain,hum,Te){
   dfaT <- a_df_alb(Te)
   dfdeltaAT <- lf_df_alb(Te)
   dfplaT <- pEA_df_alb(Te)
-  dffR0 <- (1/2)*(1/sqrt(R0))*((deltaa*a*h*probla)/(h+deltE))*dffT
-  dfaR0 <- (1/2)*(1/sqrt(R0))*((deltaa*f*h*probla)/(h+deltE))*dfaT
-  dfdeltAR0 <- (1/2)*(1/sqrt(R0))*((f*a*h*probla)/(h+deltE))*dfdeltaAT
-  dfpLAR0 <- (1/2)*(1/sqrt(R0))*((deltaa*a*h*f)/(h+deltE))*dfplaT
+  dffR0 <- (1/3)*((R0)^(-2/3))*((deltaa*a*h*probla)/(h+deltE))*dffT
+  dfaR0 <- (1/3)*((R0)^(-2/3))*((deltaa*f*h*probla)/(h+deltE))*dfaT
+  dfdeltAR0 <- (1/3)*((R0)^(-2/3))*((f*a*h*probla)/(h+deltE))*dfdeltaAT
+  dfpLAR0 <- (1/3)*((R0)^(-2/3))*((deltaa*a*h*f)/(h+deltE))*dfplaT
   
   dfR0 <- dffR0 + dfaR0 + dfdeltAR0 + dfpLAR0
   return(dfR0)
