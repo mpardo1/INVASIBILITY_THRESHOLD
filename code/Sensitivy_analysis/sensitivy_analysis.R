@@ -57,11 +57,11 @@ h_f <- function(hum, rain){
 R0_func_alb <- function(rain,hum,Te){
   a <- a_f_alb(Te)
   f <- TFD_f_alb(Te)
-  deltaa <- 1/lf_f_alb(Te)
+  deltaa <- lf_f_alb(Te)
   probla <- pEA_f_alb(Te)
   h <- h_f(hum,rain)
   deltE = 0.1
-  R0 <- sqrt(f*(a/deltaa)*probla*(h*(h+deltE)))
+  R0 <- sqrt(f*(a*deltaa)*probla*(h/(h+deltE)))
   return(R0)
 }
 

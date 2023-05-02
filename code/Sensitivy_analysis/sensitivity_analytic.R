@@ -117,12 +117,12 @@ R0_dfunc_alb <- function(rain,hum,Te){
   R0 <- f*deltaa*a*probla*(h/(h+deltE))
   dffT <- TFD_df_alb(Te)
   dfaT <- a_df_alb(Te)
-  dfdeltaAT <- 1/lf_df_alb(Te)
+  dfdeltaAT <- lf_df_alb(Te)
   dfplaT <- pEA_df_alb(Te)
-  dffR0 <- ((1/2)*((R0)^(-1/2))*(deltaa*a*h*probla)/(h+deltE))*dffT
-  dfaR0 <- ((1/2)*((R0)^(-1/2))*(deltaa*f*h*probla)/(h+deltE))*dfaT
-  dfdeltAR0 <- ((1/2)*((R0)^(-1/2))*(f*a*h*probla)/(h+deltE))*dfdeltaAT
-  dfpLAR0 <- ((1/2)*((R0)^(-1/2))*(deltaa*a*h*f)/(h+deltE))*dfplaT
+  dffR0 <- (1/2)*(1/sqrt(R0))*((deltaa*a*h*probla)/(h+deltE))*dffT
+  dfaR0 <- (1/2)*(1/sqrt(R0))*((deltaa*f*h*probla)/(h+deltE))*dfaT
+  dfdeltAR0 <- (1/2)*(1/sqrt(R0))*((f*a*h*probla)/(h+deltE))*dfdeltaAT
+  dfpLAR0 <- (1/2)*(1/sqrt(R0))*((deltaa*a*h*f)/(h+deltE))*dfplaT
   
   dfR0 <- dffR0 + dfaR0 + dfdeltAR0 + dfpLAR0
   return(dfR0)
@@ -130,7 +130,7 @@ R0_dfunc_alb <- function(rain,hum,Te){
 
 hum_cte <- 500
 rain_cte <- 8
-vec <- seq(15,31,0.1)
+vec <- seq(13.5,31,0.1)
 R0df_num <- grad(function(x){R0_func_alb(rain_cte,hum_cte,x)}, vec)
 R0df_ana <- sapply(vec, function(x){R0_dfunc_alb(rain_cte,hum_cte,x)} )
 R0f_ana <- sapply(vec, function(x){R0_func_alb(rain_cte,hum_cte,x)} )
@@ -142,5 +142,5 @@ df_R0df <- data.frame(vec, R0df_num,R0df_ana)
 df_R0df <- reshape2::melt(df_R0df, id.vars = "vec")
 plot_quad <- ggplot(df_R0df) +
   geom_point(aes(vec, value, color=variable, shape = variable)) +
-  ylim(c(-10,10))
+  ylim(c(-10,10)) + theme_bw()
 plot_quad
