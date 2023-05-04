@@ -15,13 +15,20 @@ library(parallel)
 # https://cds.climate.copernicus.eu/cdsapp#!/dataset/reanalysis-cerra-single-levels?tab=overview
 # You need to create a file with the url and API key in (you need to log in first):https://cds.climate.copernicus.eu/api-how-to
 # Install the CDS API
-
+#------------------CLUSTER---------------------------#
 # create a new environment 
-conda_create("r-reticulate")
+# conda_create("r-reticulate")
+# conda_install("r-reticulate","cdsapi", pip=TRUE)#import python CDS-API
+# # indicate that we want to use a specific condaenv
+# use_condaenv("r-reticulate")
+# cdsapi <- import("cdsapi")
+# -----------------------------------------------------#
+#-------------------LOCAL----------------------------#
+# install the CDS API
 conda_install("r-reticulate","cdsapi", pip=TRUE)#import python CDS-API
-# indicate that we want to use a specific condaenv
-use_condaenv("r-reticulate")
+
 cdsapi <- import("cdsapi")
+#-----------------------------------------------------#
 # For this step there must exist the file .cdsapirc
 server = cdsapi$Client() #start the connection
 Cores = 10
