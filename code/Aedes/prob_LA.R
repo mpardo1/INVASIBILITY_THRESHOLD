@@ -1,50 +1,8 @@
 #Compute function Albopictus y Aegypti
-
+rm(list =ls())
 ####Dependencies####
 library(ggplot2)
 require(graphics)
-
-# Data frame data taken from Delatte et al 2009. 
-# https://academic.oup.com/jme/article/46/1/33/902827?login=false
-df_albo <- data.frame(temp = c(5,10,15,20,25,30,35,40),
-          proportion_surv = c(0,0,4/8,62/80,61/80,54/80,3.5/120,0))
-
-ggplot(df_albo) + 
-  geom_point(aes(temp,proportion_surv)) + theme_bw()
-
-### Survival curve Laura:
-Path <- "~/Documentos/PHD/2023/Laura proj/DATA_LARVA_TEM.csv"
-df <- read.csv(file = Path)
-plot_alb <- ggplot(df) + geom_point(aes(temp_chamber,total_lived))
-
-# Linear model:
-linear.model <-lm(df_albo$proportion_surv ~ df_albo$temp)
-plot(df_albo$temp, df_albo$proportion_surv, pch=6, ylab = "Counts ", cex.lab = 1.3, col = "red" )
-abline(lm(df_albo$proportion_surv ~ df_albo$temp), col = "blue")
-
-# My data nls:
-Fitting <- nls(proportion_surv ~ (-cont*(temp-Tmin)*(temp - Tmax)),
-               data = df_albo,
-               start = list(cont = 0.001, Tmin = 5, Tmax = 20))
-
-summary(Fitting)
-
-
-mod <- function(te){
-  t0 <- as.numeric(Fitting$m$getPars()[2])
-  tm <- as.numeric(Fitting$m$getPars()[3])
-  c <- as.numeric(Fitting$m$getPars()[1])
-  (-c*(te-t0)*(te - tm))
-}
-
-vec <- seq(0,40,0.001)
-df_alb <- data.frame(temp = vec, life_span <- sapply(vec, mod))
-plotalb <- ggplot(df_alb) +
-  geom_point(aes(temp,life_span), size = 0.01) +
-  geom_point(data = df_albo,aes(temp,proportion_surv), size = 0.7, color = "red") +
-  ylim(c(0,1)) + xlim(c(0,40)) + 
-  ylab("Total day lived") + xlab("Temperature (Cº)") +
-  theme_bw()
 
 # Data frame data taken from Tun-Lin et al 2001 
 # https://resjournals.onlinelibrary.wiley.com/doi/full/10.1046/j.1365-2915.2000.00207.x
@@ -70,44 +28,95 @@ mod <- function(te){
 }
 
 vec <- seq(0,45,0.001)
-df_out <- data.frame(temp = vec, life_span <- sapply(vec, mod))
-plotaeg <- ggplot(df_out) +
-  geom_point(aes(temp,life_span), size = 0.01) +
-  geom_point(data = df_albo,aes(temp,proportion_surv), size = 0.7, color = "red") +
+df_out_aeg <- data.frame(temp_ae = vec, life_span_ae <- sapply(vec, mod))
+plotaeg <- ggplot(df_out_aeg) +
+  geom_point(aes(temp_ae,life_span_ae), size = 0.01) +
+  geom_point(data = df_aeg,aes(temp,proportion_surv), size = 0.7, color = "red") +
   ylim(c(0,1)) + xlim(c(0,45)) + 
   ylab("Total day lived") + xlab("Temperature (Cº)") +
   theme_bw()
+plotaeg
+
+# Data frame data taken from Delatte et al 2009. 
+# https://academic.oup.com/jme/article/46/1/33/902827?login=false
+df_albo <- data.frame(temp = c(5,10,15,20,25,30,35,40),
+                      proportion_surv = c(0,0,4/8,62/80,61/80,54/80,3.5/120,0))
+
+ggplot(df_albo) + 
+  geom_point(aes(temp,proportion_surv)) + theme_bw()
+
+### Survival curve Laura:
+# Path <- "~/Documentos/PHD/2023/Laura proj/DATA_LARVA_TEM.csv"
+# df <- read.csv(file = Path)
+# plot_alb <- ggplot(df) + geom_point(aes(temp_chamber,total_lived))
+
+# Linear model:
+linear.model <-lm(df_albo$proportion_surv ~ df_albo$temp)
+plot(df_albo$temp, df_albo$proportion_surv, pch=6, ylab = "Counts ", cex.lab = 1.3, col = "red" )
+abline(lm(df_albo$proportion_surv ~ df_albo$temp), col = "blue")
+
+# My data nls:
+Fitting <- nls(proportion_surv ~ (-cont*(temp-Tmin)*(temp - Tmax)),
+               data = df_albo,
+               start = list(cont = 0.001, Tmin = 5, Tmax = 20))
+
+summary(Fitting)
+
+
+mod <- function(te){
+  t0 <- as.numeric(Fitting$m$getPars()[2])
+  tm <- as.numeric(Fitting$m$getPars()[3])
+  c <- as.numeric(Fitting$m$getPars()[1])
+  (-c*(te-t0)*(te - tm))
+}
+
+vec <- seq(0,40,0.001)
+df_alb <- data.frame(temp = vec, life_span <- sapply(vec, mod))
+plotalb <- ggplot(df_alb) +
+  geom_point(aes(temp,life_span), size = 0.01) +
+  geom_point(data = df_albo,aes(temp,proportion_surv),
+             size = 0.7, color = "red") +
+  ylim(c(0,1)) + xlim(c(0,40)) + 
+  ylab("Total day lived") + xlab("Temperature (Cº)") +
+  theme_bw()
+plotalb
 
 library(ggpubr)
-ggarrange(plotalb,plotaeg)
+ggarrange(plotalb  + ggtitle("Aedes Albopictus") + ylab("Probability from Larvae to Adult"),
+          plotaeg + ggtitle("Aedes Aegypti") + ylab(""))
 
 #--------------------Egg Development--------------------#
+## Info taken https://www.scielo.br/j/rsp/a/dvPQ8QMr7Y687hPJxsTxjDg/abstract/?lang=en
 df_deltaE <- data.frame(temp = c(15,20,25,30),
-                     develop_time = c(1/38.38,1/19.09,1/13.10,1/10.44))
+                     develop_rate = c(1/38.38,1/19.09,1/13.10,1/10.44))
 
 plot_deltaE <- ggplot(df_deltaE) + 
-  geom_point(aes(temp,develop_time)) + theme_bw()
+  geom_point(aes(temp,develop_rate)) + theme_bw()
 plot_deltaE
 
-Fitting_deltaE <- nls(develop_time ~ (-cont*(temp-Tmin)*(temp - Tmax)),
+Fitting_deltaE <- nls(develop_rate ~ c*temp + c1,
                    data = df_deltaE,
-                   start = list(cont = 0.001, Tmin = 5, Tmax = 20))
+                   start = list(c = 0.001, c1 = 0 ))
 
 summary(Fitting_deltaE)
 
 mod <- function(te){
-  t0 <- as.numeric(Fitting_deltaE$m$getPars()[2])
-  tm <- as.numeric(Fitting_deltaE$m$getPars()[3])
   c <- as.numeric(Fitting_deltaE$m$getPars()[1])
-  (-c*(te-t0)*(te - tm))
+  c1 <- as.numeric(Fitting_deltaE$m$getPars()[2])
+  c*te+c1
 }
 
 vec <- seq(0,45,0.001)
-df_out <- data.frame(temp = vec, life_span <- sapply(vec, mod))
+df_out <- data.frame(temp = vec, devep_rate <- sapply(vec, mod))
 plot_deltaE <- ggplot(df_out) +
-  geom_point(aes(temp,life_span), size = 0.01) +
-  geom_point(data = df_deltaE, aes(temp,develop_time), size = 0.7, color = "red") +
-  ylim(c(0,1)) + xlim(c(0,45)) + 
+  geom_point(aes(temp,devep_rate), size = 0.01) +
+  geom_point(data = df_deltaE, aes(temp,develop_rate), size = 0.7, color = "red") +
   ylab("Egg development time") + xlab("Temperature (Cº)") +
   theme_bw()
 plot_deltaE
+
+
+### Development rate Albopictus
+dE <- data.frame(Temp = c(15,20,25,30),
+           time_incub = c(38.38,19.09,13.10,10.44))
+

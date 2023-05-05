@@ -11,6 +11,8 @@ library(viridis)
 library(stringr)
 library(gdata)
 library("data.table")
+library("plot3D")
+
 # Spain map municipalities
 esp_can <- esp_get_munic_siane(moveCAN = TRUE)
 esp_can$R0_test <- runif(length(esp_can$codauto),0,5)
@@ -163,6 +165,8 @@ ggplot(weather_dt) +
   geom_line(aes(fecha,R0_tmin))
 
 saveRDS(weather_dt,"~/INVASIBILITY_THRESHOLD/output/weather/Daily/weather_out_R0_rain_2022.Rds")
+
+
 # 
 # weather_df$R0_tmin <- sapply(weather_df$precmed, R0_func_alb,
 #                              hum = weather_df$pop_km, Te = weather_df$tmin)
@@ -194,3 +198,20 @@ saveRDS(weather_dt,"~/INVASIBILITY_THRESHOLD/output/weather/Daily/weather_out_R0
 #   theme_void() +
 #   labs(title = "Month: {current_frame}") +
 #   transition_manual(month)
+
+# Plot 3D function hatching rates
+y <- seq(0, 10, length= 100)
+x <- seq(0, 1000, length= 10000)
+df_xy <- expand.grid(x,y)
+df_xy$z <- 0
+for(i in c(1:nrow(df_xy))){
+  df_xy[i,3] <- h_f(df_xy$Var1[i], df_xy$Var2[i])
+}
+# z <- apply(as.matrix(df_xy), 1, function(x) {h_f(x[1], x[2])} )
+# df_plot = unique(data.frame(x,y,z))
+
+deathgg = ggplot(df_xy) +
+  geom_raster(aes(x=Var1,y=Var2,fill=z)) 
+deathgg
+
+plot_gg(deathgg, multicore=TRUE,height=5,width=6,scale=500)
