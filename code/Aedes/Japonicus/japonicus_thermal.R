@@ -41,7 +41,7 @@ plotdeltaA
 Path <- "~/INVASIBILITY_THRESHOLD/data/japonicus/japonicus_temp_developmenttime.csv"
 developL <- read.csv(Path)
 head(developL)
-developL$First_instar_mean <- as.numeric(gsub(",", ".",developL$First_instar_mean))
+developL$First_instar_mean <- 1/as.numeric(gsub(",", ".",developL$First_instar_mean))
 
 plot_dE <- ggplot(developL) + 
   geom_point(aes(Temp,First_instar_mean)) + theme_bw()
@@ -67,12 +67,12 @@ plotdE <- ggplot(df_out_dE) +
   geom_point(aes(temp_ae,dE_jap), size = 0.01) +
   geom_point(data = developL,aes(Temp,First_instar_mean), size = 0.7, color = "red") +
   xlim(c(0,45)) + 
-  ylab("Adult mortality rate") + xlab("Temperature (Cº)") +
+  ylab("Develop rate from Egg to Larva") + xlab("Temperature (Cº)") +
   theme_bw()
 plotdE
 
 #--------------------------------------------------------
-developL$Pupa_Female_mean <- as.numeric(gsub(",", ".",developL$Pupa_Female_mean))
+developL$Pupa_Female_mean <- 1/as.numeric(gsub(",", ".",developL$Pupa_Female_mean))
 
 plot_dL <- ggplot(developL) + 
   geom_point(aes(Temp,Pupa_Female_mean)) + theme_bw()
@@ -97,7 +97,7 @@ plotdL <- ggplot(df_out_dL) +
   geom_point(aes(temp_ae,dL_jap), size = 0.01) +
   geom_point(data = developL,aes(Temp,Pupa_Female_mean), size = 0.7, color = "red") +
   xlim(c(0,45)) + 
-  ylab("Adult mortality rate") + xlab("Temperature (Cº)") +
+  ylab("Develop rate from Larva to Adult") + xlab("Temperature (Cº)") +
   theme_bw()
 plotdL
 
@@ -131,7 +131,7 @@ df_out_deltaL <- data.frame(temp_ae = vec,
 plotdeltaL <- ggplot(df_out_deltaL) +
   geom_point(aes(temp_ae,deltaL_jap), size = 0.01) +
   geom_point(data = Lmortality,aes(Temp,mean_mort_perc), size = 0.7, color = "red") +
-  ylab("Adult mortality rate") + xlab("Temperature (Cº)") +
+  ylab("Larva mortality rate") + xlab("Temperature (Cº)") +
   theme_bw()
 plotdeltaL
 
