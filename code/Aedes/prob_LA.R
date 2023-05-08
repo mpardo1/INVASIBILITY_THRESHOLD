@@ -85,7 +85,7 @@ library(ggpubr)
 ggarrange(plotalb  + ggtitle("Aedes Albopictus") + ylab("Probability from Larvae to Adult"),
           plotaeg + ggtitle("Aedes Aegypti") + ylab(""))
 
-#--------------------Egg Development--------------------#
+#--------------------Egg Development Aedes Albopictus--------------------#
 ## Info taken https://www.scielo.br/j/rsp/a/dvPQ8QMr7Y687hPJxsTxjDg/abstract/?lang=en
 df_deltaE <- data.frame(temp = c(15,20,25,30),
                      develop_rate = c(1/38.38,1/19.09,1/13.10,1/10.44))
@@ -116,10 +116,37 @@ plot_deltaE <- ggplot(df_out) +
 plot_deltaE
 
 
-### Development rate Albopictus
-dE <- data.frame(Temp = c(15,20,25,30),
-           time_incub = c(38.38,19.09,13.10,10.44))
+### --------------Development Egg Aegypti -----------------------#
+## https://pubmed.ncbi.nlm.nih.gov/19274388/
+df_dE_aeg <- data.frame(temp=c(16,22,25,28,31,35,36),
+           days = c(1/(482/24),1/(95/24),1/(74/24),1/(59.5/24),1/(47.5/24),1/(49.5/24),1/(600/24)))
+ggplot(df_dE_aeg) + 
+  geom_point(aes(temp,days))
 
+library(devRate)
+fitcurve <- devRateModel(eq = lactin1_95, 
+                        temp = df_dE_aeg$temp, 
+                        devRate = df_dE_aeg$days,
+                        startValues =  list(aa = 0.02, Tmax = 24, deltaT = 5))
+resultNLS <- devRatePrint(myNLS = fitcurve)
 
+mod <- function(te){
+  c <- as.numeric(resultNLS$sumNLS$coefficients[1])
+  c1 <- as.numeric(resultNLS$sumNLS$coefficients[2])
+  c2 <- as.numeric(resultNLS$sumNLS$coefficients[3])
+  c*exp(-(1/2)*((te-c1)/c2)^2)
+}
 
-### --------------Hatching plot 3D -----------------------#
+vec <- seq(0,45,0.001)
+df_out <- data.frame(temp = vec, devep_rate <- sapply(vec, mod))
+plot_deltaE <- ggplot(df_out) +
+  geom_point(aes(temp,devep_rate), size = 0.01) +
+  geom_point(data = df_dE_aeg, aes(temp,days), size = 0.7, color = "red") +
+  ylab("Egg development time") + xlab("Temperature (Cº)") +
+  theme_bw()
+plot_deltaE
+
+devRatePlot(eq = taylor_81, 
+            nlsDR = fitcurve, 
+            pch = 16, ylim = c(0, 1))
+

@@ -136,4 +136,6 @@ plotdeltaL <- ggplot(df_out_deltaL) +
 plotdeltaL
 
 ###----------------------------------------------
-
+library(ggpubr)
+ggarrange(plotdE,plotdL,
+          plotdeltaL,plotdeltaA)
