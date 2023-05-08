@@ -77,7 +77,7 @@ plotalb <- ggplot(df_alb) +
   geom_point(data = df_albo,aes(temp,proportion_surv),
              size = 0.7, color = "red") +
   ylim(c(0,1)) + xlim(c(0,40)) + 
-  ylab("Total day lived") + xlab("Temperature (Cº)") +
+  ylab("Prob from Larva to Adult") + xlab("Temperature (Cº)") +
   theme_bw()
 plotalb
 
@@ -120,3 +120,6 @@ plot_deltaE
 dE <- data.frame(Temp = c(15,20,25,30),
            time_incub = c(38.38,19.09,13.10,10.44))
 
+
+
+### --------------Hatching plot 3D -----------------------#

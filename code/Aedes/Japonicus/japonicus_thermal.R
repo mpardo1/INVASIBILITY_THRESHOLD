@@ -1,6 +1,7 @@
 rm(list= ls())
 library(thermPerf)
 library(ggplot2)
+library(tidyverse)
 
 ## Compute the thermal responses for Aedes Japonicus
 ## Data taken from https://parasitesandvectors.biomedcentral.com/articles/10.1186/s13071-018-2659-1

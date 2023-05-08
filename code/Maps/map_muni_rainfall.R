@@ -200,18 +200,31 @@ saveRDS(weather_dt,"~/INVASIBILITY_THRESHOLD/output/weather/Daily/weather_out_R0
 #   transition_manual(month)
 
 # Plot 3D function hatching rates
-y <- seq(0, 10, length= 100)
-x <- seq(0, 1000, length= 10000)
+y <- seq(0, 10, length= 250)
+x <- seq(0, 1000, length= 1500)
 df_xy <- expand.grid(x,y)
 df_xy$z <- 0
 for(i in c(1:nrow(df_xy))){
+  print(i)
   df_xy[i,3] <- h_f(df_xy$Var1[i], df_xy$Var2[i])
 }
-# z <- apply(as.matrix(df_xy), 1, function(x) {h_f(x[1], x[2])} )
-# df_plot = unique(data.frame(x,y,z))
+# 
+# Path <- "~/Documents/PHD/2023//Mosquito\ invasibility/outputhatching.Rds"
+# saveRDS(df_xy,Path)
+df_xy <- readRDS(Path)
 
-deathgg = ggplot(df_xy) +
-  geom_raster(aes(x=Var1,y=Var2,fill=z)) 
-deathgg
+library(rgl)
+library(RColorBrewer)
+# Create a color palette using the color_brewer package
+my_colors <- c("yellow","red", "black")
+my_palette <- colorRampPalette(my_colors)(100)
 
-plot_gg(deathgg, multicore=TRUE,height=5,width=6,scale=500)
+plot3d(x=df_xy$Var1,y=df_xy$Var2,z=df_xy$z, col = my_palette[df_xy$z * 100],
+       cex.lab=10,cex.axis=5,
+       xlab = "Human density (km2)", ylab = "Rainfall(mm)",
+       zlab = "Haching rate") 
+
+
+rgl.postscript("~/Documents/PHD/2023//Mosquito\ invasibility/Plots/my_plot.ps", fmt = "eps")
+
+
