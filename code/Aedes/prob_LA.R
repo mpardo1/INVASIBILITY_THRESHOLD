@@ -29,9 +29,11 @@ mod <- function(te){
 
 vec <- seq(0,45,0.001)
 df_out_aeg <- data.frame(temp_ae = vec, life_span_ae <- sapply(vec, mod))
+colnames(df_out_aeg) <- c("temp_ae", "life_span_ae")
+df_out_aeg[which(df_out_aeg$life_span_ae < 0),2] <- 0
 plotaeg <- ggplot(df_out_aeg) +
-  geom_point(aes(temp_ae,life_span_ae), size = 0.01) +
-  geom_point(data = df_aeg,aes(temp,proportion_surv), size = 0.7, color = "red") +
+  geom_line(aes(temp_ae,life_span_ae), size = 0.7) +
+  geom_point(data = df_aeg,aes(temp,proportion_surv), size = 0.9, color = "red") +
   ylim(c(0,1)) + xlim(c(0,45)) + 
   ylab("Total day lived") + xlab("Temperature (Cº)") +
   theme_bw()
@@ -72,10 +74,13 @@ mod <- function(te){
 
 vec <- seq(0,40,0.001)
 df_alb <- data.frame(temp = vec, life_span <- sapply(vec, mod))
+colnames(df_alb) <- c("temp", "life_span")
+df_alb[which(df_alb$life_span < 0),2] <- 0
+
 plotalb <- ggplot(df_alb) +
-  geom_point(aes(temp,life_span), size = 0.01) +
+  geom_line(aes(temp,life_span), size = 0.7) +
   geom_point(data = df_albo,aes(temp,proportion_surv),
-             size = 0.7, color = "red") +
+             size = 0.9, color = "red") +
   ylim(c(0,1)) + xlim(c(0,40)) + 
   ylab("Prob from Larva to Adult") + xlab("Temperature (Cº)") +
   theme_bw()
@@ -109,8 +114,8 @@ mod <- function(te){
 vec <- seq(0,45,0.001)
 df_out <- data.frame(temp = vec, devep_rate <- sapply(vec, mod))
 plot_deltaE <- ggplot(df_out) +
-  geom_point(aes(temp,devep_rate), size = 0.01) +
-  geom_point(data = df_deltaE, aes(temp,develop_rate), size = 0.7, color = "red") +
+  geom_line(aes(temp,devep_rate), size = 0.7) +
+  geom_point(data = df_deltaE, aes(temp,develop_rate), size = 0.9, color = "red") +
   ylab("Egg development time") + xlab("Temperature (Cº)") +
   theme_bw()
 plot_deltaE
