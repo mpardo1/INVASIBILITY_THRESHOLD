@@ -29,9 +29,11 @@ mod <- function(te){
 vec <- seq(0,45,0.001)
 df_out_deltaA <- data.frame(temp_ae = vec,
                             deltaA_jap <- sapply(vec, mod))
+colnames(df_out_deltaA) <- c("temp_ae","deltaA_jap")
+df_out_deltaA[which(df_out_deltaA$deltaA_jap < 0),2] <- 0
 plotdeltaA <- ggplot(df_out_deltaA) +
-  geom_point(aes(temp_ae,deltaA_jap), size = 0.01) +
-  geom_point(data = Japonicus,aes(Temp,1/Age_adult_death_mean), size = 0.7, color = "red") +
+  geom_line(aes(temp_ae,deltaA_jap), size = 0.7) +
+  geom_point(data = Japonicus,aes(Temp,1/Age_adult_death_mean), size = 0.9, color = "red") +
   xlim(c(0,45)) + 
   ylab("Adult mortality rate") + xlab("Temperature (Cº)") +
   theme_bw()
@@ -63,39 +65,50 @@ mod <- function(te){
 vec <- seq(0,45,0.001)
 df_out_dE  <- data.frame(temp_ae = vec,
                             dE_jap <- sapply(vec, mod))
+colnames(df_out_dE) <- c("temp_ae","dE_jap")
+df_out_dE[which(df_out_dE$dE_jap < 0),2] <- 0
+
 plotdE <- ggplot(df_out_dE) +
-  geom_point(aes(temp_ae,dE_jap), size = 0.01) +
-  geom_point(data = developL,aes(Temp,First_instar_mean), size = 0.7, color = "red") +
+  geom_line(aes(temp_ae,dE_jap), size = 0.7) +
+  geom_point(data = developL,aes(Temp,First_instar_mean), size = 0.9, color = "red") +
   xlim(c(0,45)) + 
   ylab("Develop rate from Egg to Larva") + xlab("Temperature (Cº)") +
   theme_bw()
 plotdE
 
 #--------------------------------------------------------
-developL$Pupa_Female_mean <- 1/as.numeric(gsub(",", ".",developL$Pupa_Female_mean))
-
+Path <- "~/INVASIBILITY_THRESHOLD/data/japonicus/japonicus_temp_developmenttime.csv"
+developL <- read.csv(Path)
+developL$A_Female_mean <- 1/as.numeric(gsub(",", ".",developL$Pupa_Female_mean))
+developL[nrow(developL)+1,]<- c(34,0)
 plot_dL <- ggplot(developL) + 
-  geom_point(aes(Temp,Pupa_Female_mean)) + theme_bw()
+  geom_point(aes(Temp,A_Female_mean)) + theme_bw()
 plot_dL
 
-Fitting_dL <- nls(Pupa_Female_mean ~ cont*Temp + cont1,
+Fitting_dL <- nls(A_Female_mean ~ cont*Temp^2 + T0*Temp + Tm,
                   data = developL,
-                  start = list(cont = 0.001, cont1 = 0))
+                  start = list(cont = 0.001, T0 = 10,Tm=35))
+
 
 summary(Fitting_dL)
 
 mod <- function(te){
   c <- as.numeric(Fitting_dL$m$getPars()[1])
   c1 <- as.numeric(Fitting_dL$m$getPars()[2])
-  c*te+c1
+  c2 <- as.numeric(Fitting_dL$m$getPars()[3])
+  c*te^2+c1*te+c2
 }
 
 vec <- seq(0,45,0.001)
 df_out_dL  <- data.frame(temp_ae = vec,
                          dL_jap <- sapply(vec, mod))
+
+colnames(df_out_dL) <- c("temp_ae","dL_jap")
+df_out_dL[which(df_out_dL$dL_jap < 0),2] <- 0
+
 plotdL <- ggplot(df_out_dL) +
-  geom_point(aes(temp_ae,dL_jap), size = 0.01) +
-  geom_point(data = developL,aes(Temp,Pupa_Female_mean), size = 0.7, color = "red") +
+  geom_line(aes(temp_ae,dL_jap), size = 0.7) +
+  geom_point(data = developL,aes(Temp,A_Female_mean), size = 0.9, color = "red") +
   xlim(c(0,45)) + 
   ylab("Develop rate from Larva to Adult") + xlab("Temperature (Cº)") +
   theme_bw()
@@ -128,9 +141,13 @@ mod <- function(te){
 vec <- seq(0,45,0.001)
 df_out_deltaL <- data.frame(temp_ae = vec,
                             deltaL_jap <- sapply(vec, mod))
+
+colnames(df_out_deltaL) <- c("temp_ae","deltaL_jap")
+df_out_deltaL[which(df_out_deltaL$deltaL_jap < 0),2] <- 0
+
 plotdeltaL <- ggplot(df_out_deltaL) +
-  geom_point(aes(temp_ae,deltaL_jap), size = 0.01) +
-  geom_point(data = Lmortality,aes(Temp,mean_mort_perc), size = 0.7, color = "red") +
+  geom_line(aes(temp_ae,deltaL_jap), size = 0.8) +
+  geom_point(data = Lmortality,aes(Temp,mean_mort_perc), size = 0.9, color = "red") +
   ylab("Larva mortality rate") + xlab("Temperature (Cº)") +
   theme_bw()
 plotdeltaL
