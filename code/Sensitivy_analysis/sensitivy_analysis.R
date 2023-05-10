@@ -233,17 +233,15 @@ Quad <- function(cte, cte1,cte2, temp){
   return(outp)
 }
 
-a_f_jap <- function(temp){Briere_func(0.000193,10.25,38.32,temp)} # Biting rate
-TFD_f_jap <- function(temp){Briere_func(0.0488,8.02,35.65,temp)} # Fecundity
-dE_f_jap <- function(temp){Quad(-0.001073,0.060936,-0.462382,temp)} # Mosquito Development Rate
-dL_f_jap <- function(temp){Quad(-0.0005477,0.0272373,-0.2883089,temp)} # Survival probability Egg-Adult
-deltaA_f_jap <- function(temp){Lin_func(0.003022,-0.01686,temp)} # Adult life span
+dE_f_jap <- function(temp){Briere_func(2.498e-04,5.000e+00,3.596e+01,temp)} # Mosquito Development Rate
+dL_f_jap <- function(temp){Briere_func(7.000e-05,9.705e+00,3.410e+01,temp)} # Survival probability Egg-Adult
+deltaA_f_jap <- function(temp){Lin_func(0.0029535,-0.0179913,temp)} # Adult life span
 deltaL_f_jap <- function(temp){Quad(0.0030183,-0.1099622,1.1617832,temp)} # Adult life span
 
 # R0 function by temperature:
 R0_func_jap <- function(rain,hum,Te){
   a <- 0.2
-  f <- 100#TFD_f_jap(Te)
+  f <- 100
   deltaa <- deltaA_f_jap(Te)
   deltaL <- deltaL_f_jap(Te)
   deltE = 0.1
@@ -330,6 +328,6 @@ df_out_tot <- data.frame(temp = df_out_jap$vec,
 df_plot <- reshape2::melt(df_out_tot,id.vars="temp")
 ggplot(df_plot) +
   geom_line(aes(temp,value,color=variable), size = 0.8) +
-  xlim(c(10,40)) + theme_bw() + ylab("R0") +
+  xlim(c(8,40)) + theme_bw() + ylab("Relative R0") +
   xlab("Temperature(Cº)")
 

@@ -1,6 +1,5 @@
 ## Written using R 4.0.3
 rm(list=ls())
-
 ####Dependencies####
 library(ggplot2)
 library(tidyverse)
@@ -10,7 +9,8 @@ Path <- "~/Documents/PHD/2023/Laura proj/DATA_LARVA_TEM.csv"
 df <- read.csv(file = Path)
 df <- df[which( df$group == "control"),]
 df <- df[which(df$stage_at_end == "Adult" & df$group == "control"),]
-ggplot(df) + geom_point(aes(temp_chamber,time_to_Adult))
+# time_to_Adult: dias desde larva 1 a adulto:
+ ggplot(df) + geom_point(aes(temp_chamber,time_to_Adult))
 
 # Linear model:
 linear.model <-lm(df$time_to_Adult ~ df$temp_chamber)

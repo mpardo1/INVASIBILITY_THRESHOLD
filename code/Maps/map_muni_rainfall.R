@@ -200,8 +200,8 @@ saveRDS(weather_dt,"~/INVASIBILITY_THRESHOLD/output/weather/Daily/weather_out_R0
 #   transition_manual(month)
 
 # Plot 3D function hatching rates
-y <- seq(0, 10, length= 250)
-x <- seq(0, 1000, length= 1500)
+y <- seq(0, 16, length= 200)
+x <- seq(0, 1000, length= 1000)
 df_xy <- expand.grid(x,y)
 df_xy$z <- 0
 for(i in c(1:nrow(df_xy))){
@@ -221,7 +221,7 @@ my_palette <- colorRampPalette(my_colors)(100)
 
 plot3d(x=df_xy$Var1,y=df_xy$Var2,z=df_xy$z, col = my_palette[df_xy$z * 100],
        cex.lab=10,cex.axis=5,
-       xlab = "Human density (km2)", ylab = "Rainfall(mm)",
+       xlab = "Human density (km2)", ylab = "Rainfall(mm day)",
        zlab = "Haching rate") 
 
 

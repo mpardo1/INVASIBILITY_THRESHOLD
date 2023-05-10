@@ -9,12 +9,12 @@ library(tidyverse)
 Path <- "~/INVASIBILITY_THRESHOLD/data/japonicus/adult_larva_lifespan.csv"
 Japonicus <- read.csv(Path)
 head(Japonicus)
-
+Japonicus$FemaledeltaA <- 1/Japonicus$Age_adult_death_mean.1
 plot_deltaA <- ggplot(Japonicus) + 
-  geom_point(aes(Temp,1/Age_adult_death_mean)) + theme_bw()
+  geom_point(aes(Temp,FemaledeltaA)) + theme_bw()
 plot_deltaA
 
-Fitting_deltaA <- nls(1/Age_adult_death_mean ~ cont*Temp + cont1,
+Fitting_deltaA <- nls(FemaledeltaA ~ cont*Temp + cont1,
                    data = Japonicus,
                    start = list(cont = 0.001, cont1 = 0.0))
 
@@ -33,13 +33,14 @@ colnames(df_out_deltaA) <- c("temp_ae","deltaA_jap")
 df_out_deltaA[which(df_out_deltaA$deltaA_jap < 0),2] <- 0
 plotdeltaA <- ggplot(df_out_deltaA) +
   geom_line(aes(temp_ae,deltaA_jap), size = 0.7) +
-  geom_point(data = Japonicus,aes(Temp,1/Age_adult_death_mean), size = 0.9, color = "red") +
+  geom_point(data = Japonicus,aes(Temp,FemaledeltaA), size = 0.9, color = "red") +
   xlim(c(0,45)) + 
   ylab("Adult mortality rate") + xlab("Temperature (Cº)") +
   theme_bw()
 plotdeltaA
 
 ###----------------------------------------------
+######c(0.00035,9.5,36) this looks good
 Path <- "~/INVASIBILITY_THRESHOLD/data/japonicus/japonicus_temp_developmenttime.csv"
 developL <- read.csv(Path)
 head(developL)
@@ -49,9 +50,9 @@ plot_dE <- ggplot(developL) +
   geom_point(aes(Temp,First_instar_mean)) + theme_bw()
 plot_dE
 
-Fitting_dE <- nls(First_instar_mean ~ cont*Temp^2 + cont1*Temp + cont2,
-                      data = developL,
-                      start = list(cont = 0.001, cont1 = 0, cont2 = 0))
+Fitting_dE <- nls(First_instar_mean ~ cont*Temp*(Temp-cont1)*(cont2-Temp)^(1/2) ,
+                  data = developL,
+                  start = list(cont = 0.00035, cont1 = 9.5, cont2 = 36))
 
 summary(Fitting_dE)
 
@@ -59,12 +60,12 @@ mod <- function(te){
   c <- as.numeric(Fitting_dE$m$getPars()[1])
   c1 <- as.numeric(Fitting_dE$m$getPars()[2])
   c2 <- as.numeric(Fitting_dE$m$getPars()[3])
-  c*te^2+c1*te+c2
+  c*te*(te-c1)*(c2-te)^(1/2)
 }
 
 vec <- seq(0,45,0.001)
 df_out_dE  <- data.frame(temp_ae = vec,
-                            dE_jap <- sapply(vec, mod))
+                         dE_jap <- sapply(vec, mod))
 colnames(df_out_dE) <- c("temp_ae","dE_jap")
 df_out_dE[which(df_out_dE$dE_jap < 0),2] <- 0
 
@@ -77,18 +78,26 @@ plotdE <- ggplot(df_out_dE) +
 plotdE
 
 #--------------------------------------------------------
-Path <- "~/INVASIBILITY_THRESHOLD/data/japonicus/japonicus_temp_developmenttime.csv"
-developL <- read.csv(Path)
-developL$A_Female_mean <- 1/as.numeric(gsub(",", ".",developL$Pupa_Female_mean))
-developL[nrow(developL)+1,]<- c(34,0)
-plot_dL <- ggplot(developL) + 
-  geom_point(aes(Temp,A_Female_mean)) + theme_bw()
+# Paper Germany:
+Path <- "~/INVASIBILITY_THRESHOLD/data/japonicus/adult_larva_lifespan.csv"
+Japonicus <- read.csv(Path)
+head(Japonicus)
+Japonicus$FemaledL <- 1/Japonicus$Age_emergence_male_mean.1
+# Thesis Jamesina
+Japonicus <- rbind(Japonicus, c(10,1/140.8))
+Japonicus <- rbind(Japonicus, c(16,1/84))
+Japonicus <- rbind(Japonicus, c(22,1/31.3))
+Japonicus <- rbind(Japonicus, c(28,1/17))
+Japonicus <- rbind(Japonicus, c(34,0))
+
+plot_dL <- ggplot(Japonicus) + 
+  geom_point(aes(Temp,FemaledL)) + theme_bw()
 plot_dL
-
-Fitting_dL <- nls(A_Female_mean ~ cont*Temp^2 + T0*Temp + Tm,
-                  data = developL,
-                  start = list(cont = 0.001, T0 = 10,Tm=35))
-
+                
+Fitting_dL <- nls(FemaledL ~ cont*Temp*(Temp-cont1)*(cont2-Temp)^(1/2) ,
+                  data = Japonicus, algorithm = "port",
+                  start = list(cont = 0.0035, cont1 = 9.5, cont2 = 36), 
+                  lower=c(7e-05,min(developL$Temp)-5,max(developL$Temp)+0.1), upper=c(1,min(developL$Temp)-0.1,max(developL$Temp)+4))
 
 summary(Fitting_dL)
 
@@ -96,7 +105,7 @@ mod <- function(te){
   c <- as.numeric(Fitting_dL$m$getPars()[1])
   c1 <- as.numeric(Fitting_dL$m$getPars()[2])
   c2 <- as.numeric(Fitting_dL$m$getPars()[3])
-  c*te^2+c1*te+c2
+  c*te*(te-c1)*(c2-te)^(1/2)
 }
 
 vec <- seq(0,45,0.001)
@@ -108,7 +117,7 @@ df_out_dL[which(df_out_dL$dL_jap < 0),2] <- 0
 
 plotdL <- ggplot(df_out_dL) +
   geom_line(aes(temp_ae,dL_jap), size = 0.7) +
-  geom_point(data = developL,aes(Temp,A_Female_mean), size = 0.9, color = "red") +
+  geom_point(data = Japonicus,aes(Temp,FemaledL), size = 0.9, color = "red") +
   xlim(c(0,45)) + 
   ylab("Develop rate from Larva to Adult") + xlab("Temperature (Cº)") +
   theme_bw()
@@ -156,3 +165,4 @@ plotdeltaL
 library(ggpubr)
 ggarrange(plotdE,plotdL,
           plotdeltaL,plotdeltaA)
+
