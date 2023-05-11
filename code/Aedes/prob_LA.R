@@ -1,4 +1,4 @@
-#Compute function Albopictus y Aegypti
+# Compute function Albopictus y Aegypti
 rm(list =ls())
 ####Dependencies####
 library(ggplot2)
@@ -51,7 +51,12 @@ ggplot(df_albo) +
 # Path <- "~/Documentos/PHD/2023/Laura proj/DATA_LARVA_TEM.csv"
 # df <- read.csv(file = Path)
 # plot_alb <- ggplot(df) + geom_point(aes(temp_chamber,total_lived))
+# Path <- "~/INVASIBILITY_THRESHOLD/data/pLA_Laura.Rds"
+# albo_lau <- readRDS(Path)[,c(1,5)]
+# colnames(albo_lau) <- colnames(df_albo)
+# df_albo <- rbind(df_albo, albo_lau)
 
+ggplot(df_albo) + geom_point(aes(temp,proportion_surv))
 # Linear model:
 linear.model <-lm(df_albo$proportion_surv ~ df_albo$temp)
 plot(df_albo$temp, df_albo$proportion_surv, pch=6, ylab = "Counts ", cex.lab = 1.3, col = "red" )

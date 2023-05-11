@@ -9,9 +9,17 @@ Path <- "~/Documents/PHD/2023/Laura proj/DATA_LARVA_TEM.csv"
 df <- read.csv(file = Path)
 df <- df[which( df$group == "control"),]
 df <- df[which(df$stage_at_end == "Adult" & df$group == "control"),]
-# time_to_Adult: dias desde larva 1 a adulto:
- ggplot(df) + geom_point(aes(temp_chamber,time_to_Adult))
+df$mort_date <- as.Date(df$end_date, format = c("%d/%m/%y"))
+df$start_date <- as.Date(df$start_date, format = c("%d/%m/%y"))
+df$emerg_date <- as.Date(df$Adult, format = c("%d/%m/%y"))
 
+df$adult_lf <- df$mort_date - df$emerg_date
+df$develop_rate_LA <- 1/(as.numeric(df$emerg_date - df$start_date))
+
+# time_to_Adult: dias desde larva 1 a adulto:
+ ggplot(df) + 
+   geom_point(aes(temp_chamber,develop_rate_LA)) 
+ 
 # Linear model:
 linear.model <-lm(df$time_to_Adult ~ df$temp_chamber)
 plot(df$temp_chamber, df$time_to_Adult, pch=16, ylab = "Counts ", cex.lab = 1.3, col = "red" )
@@ -51,10 +59,11 @@ ggplot(df_out) +
 ### Probability survival
 Path <- "~/Documents/PHD/2023/Laura proj/DATA_LARVA_TEM.csv"
 df <- read.csv(file = Path)
-df <- df[which( df$group == "control"),]
+df <- df[which( df$group == "control" & df$experiment == "starv"),]
 df_group <- df %>%  group_by(temp_chamber,stage_at_end) %>% 
      summarise( n = n())
 
+# df_lau <- data.frame(temp = c(15,20,25,30), percentage_surv = c(8/(42+8),7/(43+7),505/(505+76),4/(4+46)))
 df_group$stagef <- ifelse(df_group$stage_at_end != "Adult", "LP", "Adult")
 df_group <- df_group %>%  group_by(temp_chamber,stagef) %>% 
   summarise( nsum= sum(n), n = n())
@@ -68,6 +77,7 @@ df_group <- df_group_l %>%  group_by(temp_chamber) %>%
 df_group$tot <- df_group$Asum + df_group$LPsum
 df_group$perc_surv <- df_group$Asum/df_group$tot
 
+saveRDS(df_group, "~/INVASIBILITY_THRESHOLD/data/pLA_Laura.Rds")
 ggplot(df_group) + 
   geom_point(aes(temp_chamber,perc_surv ))
 
