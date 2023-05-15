@@ -31,7 +31,7 @@ cdsapi <- import("cdsapi")
 #-----------------------------------------------------#
 # For this step there must exist the file .cdsapirc
 server = cdsapi$Client() #start the connection
-Cores = 10
+Cores = 1
 func_weather <- function(mon, ye){
   date <- as.Date(paste0(ye,"-",mon ,"-23"), "%Y-%m-%d")
   max_day = lubridate::days_in_month(date)
@@ -85,6 +85,11 @@ func_weather <- function(mon, ye){
         mutate(ID := seq_len(nrow(.))) %>%
         left_join(., temp_muni, by = "ID")
       
+      ggplot(esp_sf) +
+        geom_sf(aes(fill = tmean), size = 0.1) +
+        scale_fill_viridis(name = "area") +
+        theme_bw()
+      
       df_temp <- as.data.frame(esp_sf[,c("NATCODE", "tmean")])
       df_temp$geometry <- NULL
       df_temp$date <- as.Date(paste0(ye,"-",mon ,"-",k), "%Y-%m-%d")
@@ -97,8 +102,8 @@ func_weather <- function(mon, ye){
 }
 
 # Select the Year that you want the daily temperatures:
-year_n = "2011"
-month_n = "01"
+year_n = "2018"
+month_n = "05"
 print("Antes de func")
 df_out <- func_weather(month_n, year_n)
 print("Despues de func")

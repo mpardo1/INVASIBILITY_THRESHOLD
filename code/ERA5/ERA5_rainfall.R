@@ -98,7 +98,7 @@ daily_prec <- function(mon, ye){
 
 nc_raster <- era5_rain("01","01","2001","00:00")
 
-y = "2015"
+y = "2013"
 for (i in c(1:12)) {
   m <- ifelse(i<10, paste0("0", as.character(i)),as.character(i))
   df_Jan_2020 <- daily_prec(m,y)
@@ -119,7 +119,7 @@ for (i in c(1:12)) {
   rm(esp_sf,df_Jan_2020_t, df_Jan_2020)
 }
 
-y = "2016"
+y = "2012"
 for (i in c(1:12)) {
   m <- ifelse(i<10, paste0("0", as.character(i)),as.character(i))
   df_Jan_2020 <- daily_prec(m,y)
@@ -137,7 +137,7 @@ for (i in c(1:12)) {
   rm(esp_sf,df_Jan_2020_t, df_Jan_2020)
 }
 
-y = "2017"
+y = "2011"
 for (i in c(1:12)) {
   m <- ifelse(i<10, paste0("0", as.character(i)),as.character(i))
   df_Jan_2020 <- daily_prec(m,y)
@@ -155,7 +155,7 @@ for (i in c(1:12)) {
   rm(esp_sf,df_Jan_2020_t, df_Jan_2020)
 }
 
-y = "2018"
+y = "2010"
 for (i in c(1:12)) {
   m <- ifelse(i<10, paste0("0", as.character(i)),as.character(i))
   df_Jan_2020 <- daily_prec(m,y)
@@ -173,7 +173,7 @@ for (i in c(1:12)) {
   rm(esp_sf,df_Jan_2020_t, df_Jan_2020)
 }
 
-y = "2019"
+y = "2009"
 for (i in c(1:12)) {
   m <- ifelse(i<10, paste0("0", as.character(i)),as.character(i))
   df_Jan_2020 <- daily_prec(m,y)
@@ -191,7 +191,7 @@ for (i in c(1:12)) {
   rm(esp_sf,df_Jan_2020_t, df_Jan_2020)
 }
 
-y = "2020"
+y = "2010"
 for (i in c(1:12)) {
   m <- ifelse(i<10, paste0("0", as.character(i)),as.character(i))
   df_Jan_2020 <- daily_prec(m,y)
@@ -209,8 +209,8 @@ for (i in c(1:12)) {
   rm(esp_sf,df_Jan_2020_t, df_Jan_2020)
 }
 
-y = "2021"
-for (i in c(1:5)) {
+y = "2011"
+for (i in c(1:12)) {
   m <- ifelse(i<10, paste0("0", as.character(i)),as.character(i))
   df_Jan_2020 <- daily_prec(m,y)
   df_Jan_2020_t <- df_Jan_2020[,c(1,4:ncol(df_Jan_2020))]
