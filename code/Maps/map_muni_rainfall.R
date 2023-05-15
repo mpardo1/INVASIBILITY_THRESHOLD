@@ -1,5 +1,5 @@
 rm(list=ls())
-library("mapSpain")
+library(mapSpain)
 library(tidyverse)
 library(sf)
 library(raster)
@@ -12,6 +12,9 @@ library(stringr)
 library(gdata)
 library("data.table")
 library("plot3D")
+library(httr)
+library(tidyr)
+library(jsonlite)
 
 # Spain map municipalities
 esp_can <- esp_get_munic_siane(moveCAN = TRUE)
@@ -45,7 +48,31 @@ Quad_func <- function(cte, tmin, tmax, temp){
   return(outp)
 }
 
+pop_mun_spain <- function(start_year, end_year){
+  
+  url <- paste0("https://servicios.ine.es/wstempus/js/ES/DATOS_TABLA/29005?date=", 
+                start_year, "0101:", end_year, "1231")
+  
+  req <- GET(url)
+  
+  df <- jsonlite::fromJSON(rawToChar(req$content))
+  
+  df_subset <- df[df$Nombre %like% "Total. Total habitantes", ] %>%
+    tidyr::unnest(Data)
+  
+  df_subset_n <- df_subset %>% separate(Nombre, sep = ". Total. Total habitantes.", 
+                                        into = c("Municipality", "Remove")) %>%
+    dplyr:: select(COD,Municipality, Anyo, Valor) %>%
+    rename(
+      COD = COD,
+      municipality = Municipality,
+      year = Anyo,
+      population = Valor)
+  
+  return(df_subset_n)
+}
 
+df_pop <- pop_mun_spain(2010,2010)
 #### -------------------------- Albopictus ------------------------- ####
 ## Thermal responses Aedes Albopictus from Mordecai 2017:
 a_f_alb <- function(temp){Briere_func(0.000193,10.25,38.32,temp)} # Biting rate
