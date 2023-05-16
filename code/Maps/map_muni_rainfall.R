@@ -73,6 +73,7 @@ pop_mun_spain <- function(start_year, end_year){
 }
 
 df_pop <- pop_mun_spain(2010,2010)
+
 #### -------------------------- Albopictus ------------------------- ####
 ## Thermal responses Aedes Albopictus from Mordecai 2017:
 a_f_alb <- function(temp){Briere_func(0.000193,10.25,38.32,temp)} # Biting rate
@@ -80,8 +81,6 @@ TFD_f_alb <- function(temp){Briere_func(0.0488,8.02,35.65,temp)} # Fecundity
 pEA_f_alb <- function(temp){Quad_func(0.00361,9.04,39.33,temp)} # Survival probability Egg-Adult
 MDR_f_alb <- function(temp){Briere_func(0.0000638,8.6,39.66,temp)} # Mosquito Development Rate
 lf_f_alb <- function(temp){Quad_func(1.43,13.41,31.51,temp)} # Adult life span
-
-
 
 ### Incorporating rain and human density:
 h_f <- function(hum, rain){
@@ -110,33 +109,6 @@ R0_func_alb <- function(rain,hum,Te){
   R0 <- sqrt(f*(a/deltaa)*probla*(h*(h+deltE)))
   return(R0)
 }
-
-# R0 with hacthing rate
-vec <- seq(0,30,0.01)
-hum_cte <- 2000
-te_cte <- 15
-out <- sapply(vec,R0_func_alb,hum=hum_cte, Te=te_cte)
-
-df_out <- data.frame(vec, out)
-ggplot(df_out) +
-  geom_line(aes(vec,out))
-
-# hatching rate plot
-out <- sapply(vec,h_f,hum=hum_cte)
-
-df_out <- data.frame(vec, out)
-ggplot(df_out) +
-  geom_line(aes(vec,out))
-
-# Human density versus R0 
-vec <- seq(0,30000,0.01)
-rain_cte <- 8
-te_cte <- 15
-out <- sapply(vec,function(x){R0_func_alb(rain_cte,x,te_cte)})
-
-df_out <- data.frame(vec, out)
-ggplot(df_out) +
-  geom_line(aes(vec,out))
 
 # Population density in each municipality.
 census <- mapSpain::pobmun19

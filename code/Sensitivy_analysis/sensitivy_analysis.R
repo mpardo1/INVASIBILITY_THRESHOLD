@@ -64,6 +64,34 @@ R0_func_alb <- function(rain,hum,Te){
   return(R0)
 }
 
+
+# R0 with hacthing rate
+vec <- seq(0,30,0.01)
+hum_cte <- 2000
+te_cte <- 15
+out <- sapply(vec,R0_func_alb,hum=hum_cte, Te=te_cte)
+
+df_out <- data.frame(vec, out)
+ggplot(df_out) +
+  geom_line(aes(vec,out))
+
+# hatching rate plot
+out <- sapply(vec,h_f,hum=hum_cte)
+
+df_out <- data.frame(vec, out)
+ggplot(df_out) +
+  geom_line(aes(vec,out))
+
+# Human density versus R0 
+vec <- seq(0,30000,0.01)
+rain_cte <- 8
+te_cte <- 15
+out <- sapply(vec,function(x){R0_func_alb(rain_cte,x,te_cte)})
+
+df_out <- data.frame(vec, out)
+ggplot(df_out) +
+  geom_line(aes(vec,out))
+
 # Derivative with respect to Temperature
 vec <- seq(0,40,0.0001)
 hum_cte <- 500
