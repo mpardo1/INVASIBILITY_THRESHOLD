@@ -8,6 +8,7 @@ library(dplyr)
 library(lubridate)
 library("data.table")
 library(tidyr)
+library(parallel)
 
 # Spain map municipalities
 esp_can <- esp_get_munic_siane(moveCAN = TRUE)
