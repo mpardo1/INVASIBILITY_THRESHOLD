@@ -90,15 +90,16 @@ R0_monthly <- function(year){
   listfile2 <- list.files(Path2)
   weather_t <- data.table()
   for(i in c(1:12)){
-    Path = paste0("~/INVASIBILITY_THRESHOLD/output/ERA5/temp/",year,"/")
-    Path <- paste0(Path,listfile[i])
+    Path1 = paste0("~/INVASIBILITY_THRESHOLD/output/ERA5/temp/",year,"/")
+    Path <- paste0(Path1,listfile[i])
     weather <- readRDS(Path)
     weather_df <- as.data.frame(do.call(rbind, weather))
     weather_dt <- setDT(weather_df) # Convert data.frame to data.table
     rm(weather,weather_df)
+    
     Path2 = paste0("~/INVASIBILITY_THRESHOLD/output/ERA5/rainfall/",year,"/")
-    Path <- paste0(Path,listfile2[i])
-    weather <- readRDS(Path)
+    Path3 <- paste0(Path2,listfile2[i])
+    weather <- readRDS(Path3)
     weather_df <- reshape2::melt(weather,id.vars = "NATCODE")
     colnames(weather_df) <- c("NATCODE", "date", "precmed")
     weather_df$date <- as.Date(weather_df$date, "%Y-%m-%d" )
