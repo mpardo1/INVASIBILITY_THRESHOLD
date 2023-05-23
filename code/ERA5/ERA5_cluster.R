@@ -37,8 +37,8 @@ func_weather <- function(mon, ye){
   max_day = lubridate::days_in_month(date)
   min_day = 1
   df_temp = data.frame()
-    for(i in c(min_day:max_day)){
-      print(paste0("day:",i))
+    for(k in c(min_day:max_day)){
+      print(paste0("day:",k))
       query <- r_to_py(list(
         variable= "2m_temperature",
         level_type= "surface_or_atmosphere",
