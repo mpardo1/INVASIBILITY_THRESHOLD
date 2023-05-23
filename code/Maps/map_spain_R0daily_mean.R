@@ -106,20 +106,20 @@ R0_monthly <- function(year){
     weather_dr <- setDT(weather_df) # Convert data.frame to data.table
     rm(weather,weather_df)
     weather_dt <- weather_dt %>% left_join(weather_dr, by = c("NATCODE", "date"))
-    weather_r <- rbind(weather_r,weather_dt)
+    weather_t <- rbind(weather_t,weather_dt)
     rm(weather_dr)
   }
   
-  weather <- weather_r %>% left_join(esp_can_pop, 
+  weather <- weather_t %>% left_join(esp_can_pop, 
                                      by = c("NATCODE"))
   weather$R0 <- 0
   
   Cores = 10
-  weather_df_y <- mclapply(1:nrow(weather), mc.cores = Cores, mc.preschedule = F,function(i){ 
-    print(paste0("i:",i))
-    weather$R0[i] <- R0_func_alb(weather$precmed[i],
-                                     weather$pop_km[i], 
-                                     weather$tmean[i])
+  weather_df_y <- mclapply(1:nrow(weather), mc.cores = Cores, mc.preschedule = F,function(j){ 
+    print(paste0("j:",j))
+    weather$R0[j] <- R0_func_alb(ifelse(is.na(weather$precmed[j]), 0,weather$precmed[j] ),
+                                     weather$pop_km[j], 
+                                     weather$tmean[j])
   })
   return(weather_df_y)
 }
