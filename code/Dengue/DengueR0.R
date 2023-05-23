@@ -71,8 +71,8 @@ te_cte <- 15
 out <- sapply(vec,R0_func_alb,hum=hum_cte)
 
 df_out <- data.frame(vec, out)
-ggplot(df_out) +
-  geom_line(aes(vec,out))
+# ggplot(df_out) +
+#   geom_line(aes(vec,out))
 
 # Population density in each municipality.
 census <- mapSpain::pobmun19
@@ -90,7 +90,6 @@ Path = paste0("~/INVASIBILITY_THRESHOLD/output/ERA5/temp/",year,"/")
 listfile <- list.files(Path)
 weather_t <- data.table()
 for(file in listfile){
-  print(Path1)
   Path1 <- paste0(Path,file)
   weather <- readRDS(Path1)
   weather_df <- as.data.frame(do.call(rbind, weather))
