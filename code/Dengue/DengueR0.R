@@ -99,28 +99,24 @@ for(file in listfile){
   
 }
 
+esp_can_pop <- esp_can_pop[,c("NATCODE","pob19")]
+esp_can_pop$geometry <- NULL
 weather_t <- weather_t %>% left_join(esp_can_pop)
-weather_t$R0_tmin <- 0
-weather_t$R0_tmax <- 0
 weather_t$R0_tmed <- 0
 weather_t <- setDT(weather_t)
 
 ## Function to read all output weather file compute R0 and create a list of df.
-# Cores = 10
-# DengueR0 <- mclapply(1:nrow(weather_t), mc.cores = Cores, mc.preschedule = F,function(j){
-#   print(paste0("j:",j))
-#   weather_t$R0_tmin[j] <- R0_func_alb(weather_t$tmin[j],weather_t$pob19[j])
-#   weather_t$R0_tmax[j] <- R0_func_alb(weather_t$tmax[j],weather_t$pob19[j])
-#   weather_t$R0_tmed[j] <- R0_func_alb(weather_t$tmed[j],weather_t$pob19[j])
-# })
-
-for(j in c(1:nrow(weather_t))){
+Cores = 10
+DengueR0 <- mclapply(1:nrow(weather_t), mc.cores = Cores, mc.preschedule = F,function(j){
   print(paste0("j:",j))
-  weather_t$R0_tmin[j] <- R0_func_alb(weather_t$tmin[j],weather_t$pob19[j])
-  weather_t$R0_tmax[j] <- R0_func_alb(weather_t$tmax[j],weather_t$pob19[j])
-  weather_t$R0_tmed[j] <- R0_func_alb(weather_t$tmed[j],weather_t$pob19[j])
-}
+   weather_t$R0_tmed[j] <- R0_func_alb(weather_t$tmean[j],ifelse(is.na(weather_t$pob19[j]),0,weather_t$pob19[j] ))
+})
 
+# for(j in c(1:nrow(weather_t))){
+#   print(paste0("j:",j))
+#   weather_t$R0_tmed[j] <- R0_func_alb(weather_t$tmean[j],ifelse(is.na(weather_t$pob19[j]),0,weather_t$pob19[j] ))
+# }
+# 
 
 saveRDS(DengueR0,
         "~/INVASIBILITY_THRESHOLD/output/R0/R0_Dengue_2020.Rds")
