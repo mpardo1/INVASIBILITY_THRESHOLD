@@ -11,7 +11,6 @@ library(viridis)
 library(stringr)
 library(gdata)
 library("data.table")
-library("plot3D")
 
 # Spain map municipalities
 esp_can <- esp_get_munic_siane(moveCAN = TRUE)
@@ -73,6 +72,8 @@ R0_func_alb <- function(Te, hum){
   return(R0)
 }
 
+R0_func_alb(20,2000)
+
 # R0 with hacthing rate
 vec <- seq(0,30,0.01)
 hum_cte <- 2000
@@ -83,29 +84,15 @@ df_out <- data.frame(vec, out)
 ggplot(df_out) +
   geom_line(aes(vec,out))
 
-# hatching rate plot
-out <- sapply(vec,h_f,hum=hum_cte)
-
-df_out <- data.frame(vec, out)
-ggplot(df_out) +
-  geom_line(aes(vec,out))
-
-# Human density versus R0 
-vec <- seq(0,30000,0.01)
-rain_cte <- 8
-te_cte <- 15
-out <- sapply(vec,function(x){R0_func_alb(rain_cte,x,te_cte)})
-
-df_out <- data.frame(vec, out)
-ggplot(df_out) +
-  geom_line(aes(vec,out))
-
 # Population density in each municipality.
 census <- mapSpain::pobmun19
 esp_can_pop <- esp_can %>% left_join(census, by = c("cmun" = "cmun","cpro" = "cpro"))
 esp_can_pop$area <- as.numeric(st_area(esp_can_pop))/1000000
 esp_can_pop$pop_km <- esp_can_pop$pob19/esp_can_pop$area
-
+esp_can_pop$NATCODE <- as.numeric(paste0("34",
+                                         esp_can_pop$codauto,
+                                         esp_can_pop$cpro,
+                                         esp_can_pop$LAU_CODE))
 # ggplot(esp_can_pop) +
 #   geom_sf(aes(fill = area), size = 0.1) +
 #   scale_fill_viridis(name = "area") +
@@ -122,40 +109,52 @@ esp_can_pop$pop_km <- esp_can_pop$pob19/esp_can_pop$area
 #   geom_sf(data = can_box) + theme_bw()
 
 #####
-Path <- "~/INVASIBILITY_THRESHOLD/output/weather/Daily/R0_aemet_weather_year_2_22.Rds"
-weather <- readRDS(Path)
-# weather_df <- as.data.frame(do.call(rbind, weather))
-weather_dt <- setDT(weather) # Convert data.frame to data.table
-rm(weather)
-weather_dt$month <- lubridate::month(weather_dt$fecha)
-weather_dt$year <- lubridate::year(weather_dt$fecha)
-weather_dt <- weather_dt[ , .(tmed = mean(tmed),
-                              tmin = min(tmin),
-                              tmax = max(tmax),
-                              precmed = mean(precmed)),by = list(month,year,name)] 
-weather_dt <- weather_dt %>% left_join(esp_can_pop, by = c("name" = "name.x"))
-weather_dt <- weather_dt[,c(1:7,20,22)]
-weather_dt$R0_tmin <- 0
-weather_dt$R0_tmax <- 0
-weather_dt$R0_tmed <- 0
-
-## Function to read all output weather file compute R0 and create a list of df.
-for(i in c(1:nrow(weather_dt))){
-  print(paste0("i:",i))
-  weather_dt$R0_tmin[i] <- R0_func_alb(weather_dt$precmed[i],
-                                       weather_dt$pop_km[i],weather_dt$tmin[i])
-  weather_dt$R0_tmax[i] <- R0_func_alb(weather_dt$precmed[i],
-                                       weather_dt$pop_km[i],weather_dt$tmax[i])
-  weather_dt$R0_tmed[i] <- R0_func_alb(weather_dt$precmed[i],
-                                       weather_dt$pop_km[i],weather_dt$tmed[i])
+year = "2020"
+Path = paste0("~/INVASIBILITY_THRESHOLD/output/ERA5/temp/",year,"/")
+listfile <- list.files(Path)
+weather_t <- data.table()
+for(file in listfile){
+  Path1 <- paste0(Path,file)
+  weather <- readRDS(Path1)
+  weather_df <- as.data.frame(do.call(rbind, weather))
+  weather_dt <- setDT(weather_df) # Convert data.frame to data.table
+  rm(weather,weather_df)
+  weather_dt$month <- lubridate::month(weather_dt$date)
+  weather_dt$year <- lubridate::year(weather_dt$date)
+  weather_dt <- weather_dt[ , .(tmed = mean(tmean),
+                                tmin = min(tmean),
+                                tmax = max(tmean)),by = list(month,year,NATCODE)] 
+  weather_t <- rbind(weather_t,weather_dt)
+  
 }
 
-ggplot(weather_dt) + 
-  geom_line(aes(fecha,R0_tmin))
+weather_t <- weather_t %>% left_join(esp_can_pop)
+weather_t$R0_tmin <- 0
+weather_t$R0_tmax <- 0
+weather_t$R0_tmed <- 0
+
+## Function to read all output weather file compute R0 and create a list of df.
+for(i in c(1:nrow(weather_t))){
+  print(paste0("i:",i))
+  weather_t$R0_tmin[i] <- R0_func_alb(weather_t$pob19[i],weather_t$tmin[i])
+  weather_t$R0_tmax[i] <- R0_func_alb(weather_t$pob19[i],weather_t$tmax[i])
+  weather_t$R0_tmed[i] <- R0_func_alb(weather_t$pob19[i],weather_t$tmed[i])
+}
+
+saveRDS(weather_t,
+        "~/INVASIBILITY_THRESHOLD/output/R0/R0_Dengue_2020.Rds")
+
+# # Create plots:
+ggplot(weather_dt) +
+  geom_sf(aes(fill = R0_tmed), linewidth = 0.01) +
+  scale_fill_viridis(name = "R0(T)", limits = c(0,max(weather_dt$R0_tmed))) +
+  geom_sf(data = can_box) + coord_sf(datum = NA) +
+  theme(plot.margin = margin(0.2, 0.2, 0.2, 0.2, "cm")) +
+  theme_void() +
+  labs(title = "Month: {current_frame}") +
+  transition_manual(month)
 
 saveRDS(weather_dt,"~/INVASIBILITY_THRESHOLD/output/weather/Daily/weather_out_R0_rain_2022.Rds")
-
-
 # 
 # weather_df$R0_tmin <- sapply(weather_df$precmed, R0_func_alb,
 #                              hum = weather_df$pop_km, Te = weather_df$tmin)

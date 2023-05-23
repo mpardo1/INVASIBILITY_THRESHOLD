@@ -11,10 +11,8 @@ library(viridis)
 library(stringr)
 library(gdata)
 library("data.table")
-library("plot3D")
-library(httr)
 library(tidyr)
-library(jsonlite)
+library(gganimate)
 
 # Spain map municipalities
 esp_can <- esp_get_munic_siane(moveCAN = TRUE)
@@ -48,39 +46,40 @@ Quad_func <- function(cte, tmin, tmax, temp){
   return(outp)
 }
 
-pop_mun_spain <- function(start_year, end_year){
-  
-  url <- paste0("https://servicios.ine.es/wstempus/js/ES/DATOS_TABLA/29005?date=", 
-                start_year, "0101:", end_year, "1231")
-  
-  req <- GET(url)
-  
-  df <- jsonlite::fromJSON(rawToChar(req$content))
-  
-  df_subset <- df[df$Nombre %like% "Total. Total habitantes", ] %>%
-    tidyr::unnest(Data)
-  
-  df_subset_n <- df_subset %>% separate(Nombre, sep = ". Total. Total habitantes.", 
-                                        into = c("Municipality", "Remove")) %>%
-    dplyr:: select(COD,Municipality, Anyo, Valor) %>%
-    rename(
-      COD = COD,
-      municipality = Municipality,
-      year = Anyo,
-      population = Valor)
-  
-  return(df_subset_n)
-}
-
-df_pop <- pop_mun_spain(2010,2010)
+# pop_mun_spain <- function(start_year, end_year){
+#   
+#   url <- paste0("https://servicios.ine.es/wstempus/js/ES/DATOS_TABLA/29005?date=", 
+#                 start_year, "0101:", end_year, "1231")
+#   
+#   req <- GET(url)
+#   
+#   df <- jsonlite::fromJSON(rawToChar(req$content))
+#   
+#   df_subset <- df[df$Nombre %like% "Total. Total habitantes", ] %>%
+#     tidyr::unnest(Data)
+#   
+#   df_subset_n <- df_subset %>% separate(Nombre, sep = ". Total. Total habitantes.", 
+#                                         into = c("Municipality", "Remove")) %>%
+#     dplyr:: select(COD,Municipality, Anyo, Valor) %>%
+#     rename(
+#       COD = COD,
+#       municipality = Municipality,
+#       year = Anyo,
+#       population = Valor)
+#   
+#   return(df_subset_n)
+# }
+# 
+# df_pop <- pop_mun_spain(2010,2010)
 
 #### -------------------------- Albopictus ------------------------- ####
 ## Thermal responses Aedes Albopictus from Mordecai 2017:
 a_f_alb <- function(temp){Briere_func(0.000193,10.25,38.32,temp)} # Biting rate
 TFD_f_alb <- function(temp){Briere_func(0.0488,8.02,35.65,temp)} # Fecundity
-pEA_f_alb <- function(temp){Quad_func(0.00361,9.04,39.33,temp)} # Survival probability Egg-Adult
+pLA_f_alb <- function(temp){Quad_func(2.663e-03,6.668e+00,3.892e+01,temp)} # Survival probability Egg-Adult
 MDR_f_alb <- function(temp){Briere_func(0.0000638,8.6,39.66,temp)} # Mosquito Development Rate
 lf_f_alb <- function(temp){Quad_func(1.43,13.41,31.51,temp)} # Adult life span
+dE_f_alb <- function(temp){4.66e-03*temp -4.23e-02} # Adult life span
 
 ### Incorporating rain and human density:
 h_f <- function(hum, rain){
@@ -115,89 +114,173 @@ census <- mapSpain::pobmun19
 esp_can_pop <- esp_can %>% left_join(census, by = c("cmun" = "cmun","cpro" = "cpro"))
 esp_can_pop$area <- as.numeric(st_area(esp_can_pop))/1000000
 esp_can_pop$pop_km <- esp_can_pop$pob19/esp_can_pop$area
-
-# ggplot(esp_can_pop) +
-#   geom_sf(aes(fill = area), size = 0.1) +
-#   scale_fill_viridis(name = "area") +
-#   geom_sf(data = can_box) + theme_bw()
-# 
-# ggplot(esp_can_pop) +
-#   geom_sf(aes(fill = pob29), size = 0.1) +
-#   scale_fill_viridis(name = "Population") +
-#   geom_sf(data = can_box) + theme_bw()
-# 
-# ggplot(esp_can_pop) +
-#   geom_sf(aes(fill = pop_km), size = 0.1) +
-#   scale_fill_viridis(name = "Population per Km2") +
-#   geom_sf(data = can_box) + theme_bw()
+esp_can_pop$NATCODE <- as.numeric(paste0("34",
+                                         esp_can_pop$codauto,
+                                         esp_can_pop$cpro,
+                                         esp_can_pop$LAU_CODE))
+esp_can_pop <- esp_can_pop[,c("pop_km","NATCODE")]
+esp_can_pop$geometry <- NULL
 
 #####
-Path <- "~/INVASIBILITY_THRESHOLD/output/weather/Daily/R0_aemet_weather_year_2_22.Rds"
-weather <- readRDS(Path)
-# weather_df <- as.data.frame(do.call(rbind, weather))
-weather_dt <- setDT(weather) # Convert data.frame to data.table
-rm(weather)
-weather_dt$month <- lubridate::month(weather_dt$fecha)
-weather_dt$year <- lubridate::year(weather_dt$fecha)
-weather_dt <- weather_dt[ , .(tmed = mean(tmed),
-                              tmin = min(tmin),
-                              tmax = max(tmax),
-                              precmed = mean(precmed)),by = list(month,year,name)] 
-weather_dt <- weather_dt %>% left_join(esp_can_pop, by = c("name" = "name.x"))
-weather_dt <- weather_dt[,c(1:7,20,22)]
-weather_dt$R0_tmin <- 0
-weather_dt$R0_tmax <- 0
-weather_dt$R0_tmed <- 0
-
-## Function to read all output weather file compute R0 and create a list of df.
-for(i in c(1:nrow(weather_dt))){
-  print(paste0("i:",i))
-  weather_dt$R0_tmin[i] <- R0_func_alb(weather_dt$precmed[i],
-                                       weather_dt$pop_km[i],weather_dt$tmin[i])
-  weather_dt$R0_tmax[i] <- R0_func_alb(weather_dt$precmed[i],
-                                       weather_dt$pop_km[i],weather_dt$tmax[i])
-  weather_dt$R0_tmed[i] <- R0_func_alb(weather_dt$precmed[i],
-                                       weather_dt$pop_km[i],weather_dt$tmed[i])
+# Path <- "~/INVASIBILITY_THRESHOLD/output/weather/Daily/R0_aemet_weather_year_2_22.Rds"
+R0_monthly <- function(year){
+  Path = paste0("~/INVASIBILITY_THRESHOLD/output/ERA5/temp/",year,"/")
+  listfile <- list.files(Path)
+  weather_t <- data.table()
+  for(file in listfile){
+    Path <- paste0(Path,file)
+    weather <- readRDS(Path)
+    weather_df <- as.data.frame(do.call(rbind, weather))
+    weather_dt <- setDT(weather_df) # Convert data.frame to data.table
+    rm(weather,weather_df)
+    weather_dt$month <- lubridate::month(weather_dt$date)
+    weather_dt$year <- lubridate::year(weather_dt$date)
+    weather_dt <- weather_dt[ , .(tmed = mean(tmean),
+                                  tmin = min(tmean),
+                                  tmax = max(tmean)),by = list(month,year,NATCODE)] 
+    weather_t <- rbind(weather_t,weather_dt)
+    
+  }
+  
+  Path = paste0("~/INVASIBILITY_THRESHOLD/output/ERA5/rainfall/",year,"/")
+  listfile <- list.files(Path)
+  weather_r <- data.table()
+  for(file in listfile){
+    Path <- paste0(Path,file)
+    weather <- readRDS(Path)
+    weather_df <- reshape2::melt(weather,id.vars = "NATCODE")
+    colnames(weather_df) <- c("NATCODE", "date", "precmed")
+    weather_df$date <- as.Date(weather_df$date, "%Y-%m-%d" )
+    weather_dt <- setDT(weather_df) # Convert data.frame to data.table
+    rm(weather,weather_df)
+    weather_dt$month <- lubridate::month(weather_dt$date)
+    weather_dt$year <- lubridate::year(weather_dt$date)
+    weather_dt <- weather_dt[ , .(sumprec = sum(precmed),
+                                  precmin = min(precmed),
+                                  precmax = max(precmed)),
+                              by = list(month,year,NATCODE)] 
+    weather_r <- rbind(weather_r,weather_dt)
+    
+  }
+  
+  weather_w <- weather_t %>% left_join(weather_r, 
+                                       by = c("NATCODE","month","year"))
+  weather <- weather_w %>% left_join(esp_can_pop, 
+                                     by = c("NATCODE"))
+  
+  weather$R0_med <- 0
+  weather$R0_min <- 0
+  weather$R0_max <- 0
+  
+  for(i in c(1:nrow(weather))){
+    print(paste0("i:",i))
+    weather$R0_med[i] <- R0_func_alb(weather$sumprec[i],
+                                     weather$pop_km[i], 
+                                     weather$tmed[i])
+    weather$R0_min[i] <- R0_func_alb(weather$sumprec[i],
+                                     weather$pop_km[i], 
+                                     weather$tmin[i])
+    weather$R0_max[i] <- R0_func_alb(weather$sumprec[i],
+                                     weather$pop_km[i], 
+                                     weather$tmax[i])
+  }
+  return(weather)
 }
 
-ggplot(weather_dt) + 
-  geom_line(aes(fecha,R0_tmin))
+R0_daily_muni <- function(year,muni){
+  Path = paste0("~/INVASIBILITY_THRESHOLD/output/ERA5/temp/",year,"/")
+  listfile <- list.files(Path)
+  weather_t <- data.table()
+  for(file in listfile){
+    Path2 <- paste0(Path,file)
+    weather <- readRDS(Path2)
+    weather_df <- as.data.frame(do.call(rbind, weather))
+    weather_dt <- setDT(weather_df) # Convert data.frame to data.table
+    rm(weather,weather_df)
+    weather_dt <- weather_dt[which(weather_dt$NATCODE == muni),]
+    weather_t <- rbind(weather_t,weather_dt)
+  }
+  
+  rm(weather_dt)
+  Path = paste0("~/INVASIBILITY_THRESHOLD/output/ERA5/rainfall/",year,"/")
+  listfile <- list.files(Path)
+  weather_r <- data.table()
+  for(file in listfile){
+    Path1 <- paste0(Path,file)
+    weather <- readRDS(Path1)
+    weather_df <- reshape2::melt(weather,id.vars = "NATCODE")
+    colnames(weather_df) <- c("NATCODE", "date", "precmed")
+    weather_df$date <- as.Date(weather_df$date, "%Y-%m-%d" )
+    weather_dt <- setDT(weather_df) # Convert data.frame to data.table
+    rm(weather,weather_df)
+    weather_dt <- weather_dt[which(weather_dt$NATCODE == muni),]
+    weather_r <- rbind(weather_r,weather_dt)
+    
+  }
+  rm(weather_dt)
+  weather_w <- weather_t %>% left_join(weather_r, 
+                                       by = c("NATCODE","date"))
+  weather <- weather_w %>% left_join(esp_can_pop, 
+                                     by = c("NATCODE"))
+  
+  weather$R0_med <- 0
+  weather[which(is.na(weather$precmed)),] <- 0
+  for(i in c(1:nrow(weather))){
+    print(paste0("i:",i))
+    weather$R0_med[i] <- R0_func_alb(weather$precmed[i],
+                                     weather$pop_km[i], 
+                                     weather$tmean[i])
+  }
+  return(weather)
+}
 
-saveRDS(weather_dt,"~/INVASIBILITY_THRESHOLD/output/weather/Daily/weather_out_R0_rain_2022.Rds")
+year_n = "2020"
+# R0mon <- R0_monthly(year_n)
+# saveRDS(R0mon,"~/INVASIBILITY_THRESHOLD/output/R0/R0_ERA5_2020.Rds")
+R0mon <- readRDS("~/INVASIBILITY_THRESHOLD/output/R0/R0_ERA5_2020.Rds")
+esp_can <- esp_get_munic_siane(moveCAN = TRUE)
+esp_can$NATCODE <- as.numeric(paste0("34",
+                                     esp_can$codauto,
+                                     esp_can$cpro,
+                                     esp_can$LAU_CODE))
+muni_n = unique(esp_can[which(esp_can$name == "Barcelona"),"NATCODE"])
+R0day_bar <- R0_daily_muni(year_n, muni_n$NATCODE)
+esp_can <- esp_can[,c("NATCODE")]
+weather_esp <- esp_can %>% left_join(weather)
 
-
-# 
-# weather_df$R0_tmin <- sapply(weather_df$precmed, R0_func_alb,
-#                              hum = weather_df$pop_km, Te = weather_df$tmin)
-# weather_df$R0_tmed <- sapply(weather_df$precmed, R0_func_alb)
-# weather_df$R0_tmax <- sapply(weather_df$precmed, R0_func_alb)
-
-# colnames(esp_can) <- c(colnames(esp_can)[1:5], "muni_name",colnames(esp_can)[7:length(colnames(esp_can))])
-# 
-# # Merge the municipalities shapefile with the weather data:
-# weather_df$month <- lubridate::month(weather_df$date)
-# weather_df$year <- lubridate::year(weather_df$date)
-# 
-# weather_municip_R01_dt <- setDT(weather_df) # Convert data.frame to data.table
-# data_sum <- weather_municip_R01_dt[ , .(R0_med = mean(R0_tmed),
-#                                         R0_min = min(R0_tmin),
-#                                         R0_max = mean(R0_tmax)), by = list(month,muni_name)]     # Aggregate data
-# 
-# plot_df <-  esp_can %>%  left_join(data_sum)
-# weather_municip_R01_monthly <- weather_municip_R01_dt %>% group_by(month,muni_name) %>% 
-#     summarise(R0_med = mean(R0_tmed),R0_min = min(R0_tmin),R0_max = mean(R0_tmax))
-
-# 
 # # Create plots:
-# ggplot(plot_df) +
-#   geom_sf(aes(fill = R0_max), size = 0.01) + 
-#   scale_fill_viridis(name = "R0(T)", limits = c(0,max(plot_df$R0_max))) +
-#   geom_sf(data = can_box) + coord_sf(datum = NA) +
-#   theme(plot.margin = margin(0.2, 0.2, 0.2, 0.2, "cm")) + 
-#   theme_void() +
-#   labs(title = "Month: {current_frame}") +
-#   transition_manual(month)
+ggplot(weather_esp) +
+  geom_sf(aes(fill = R0_med), linewidth = 0.01) +
+  scale_fill_viridis(name = "R0(T)", limits = c(0,max(weather_esp$R0_med))) +
+  geom_sf(data = can_box) + coord_sf(datum = NA) +
+  theme(plot.margin = margin(0.2, 0.2, 0.2, 0.2, "cm")) +
+  theme_void() +
+  labs(title = "Month: {current_frame}") +
+  transition_manual(month)
 
+weather_esp$bool <- ifelse(weather_esp$R0_med >=1,1,0)
+weather_bool <- weather_esp %>% group_by(NATCODE,year) %>%
+  summarize(sum_bool = sum(bool),
+            avg_temp = mean(tmed),
+            avg_R0 = mean(R0_med))
+
+plot_sum_albo <- ggplot(weather_bool) +
+  geom_sf(aes(fill = sum_bool), lwd = 0) +
+  scale_fill_viridis(name = "Nº of months with R0>1",
+                     limits = c(0, 12), option="turbo") +
+  geom_sf(data = can_box) + coord_sf(datum = NA)  +
+  ggtitle("Aedes Albopictus 2020") +
+  theme_bw()
+plot_sum_albo
+
+
+R0day_bar$year <- lubridate::year(R0day_bar$date)
+R0_bar <- R0day_bar[which(R0day_bar$year == "2020"),]
+ggplot(R0_bar) + 
+  geom_line(aes(date,R0_med), size = 0.5) +
+  theme_bw()
+
+##---------------------------Hatching Rate-----------------------------------#
 # Plot 3D function hatching rates
 y <- seq(0, 16, length= 200)
 x <- seq(0, 1000, length= 1000)
