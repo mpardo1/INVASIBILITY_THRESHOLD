@@ -6,13 +6,8 @@ library(raster)
 library(ggplot2)
 library(dplyr)
 library(lubridate)
-library("ggpubr")
-library(viridis)
-library(stringr)
-library(gdata)
 library("data.table")
 library(tidyr)
-library(gganimate)
 
 # Spain map municipalities
 esp_can <- esp_get_munic_siane(moveCAN = TRUE)
