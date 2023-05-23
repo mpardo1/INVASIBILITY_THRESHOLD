@@ -11,7 +11,6 @@ library(viridis)
 library(stringr)
 library(gdata)
 library("data.table")
-library(gganimate)
 library(parallel)
 
 # Spain map municipalities
