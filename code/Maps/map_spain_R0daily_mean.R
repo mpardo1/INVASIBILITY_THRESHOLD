@@ -117,7 +117,7 @@ R0_monthly <- function(year){
                                      by = c("NATCODE"))
   weather$R0 <- 0
   
-  num_cores <- 2
+  num_cores <- 12
   df_chunks <- split(weather, 0:(nrow(weather) - 1) %% num_cores)
   modify_column <- function(chunk) {
     # Modify the values in the desired column

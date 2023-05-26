@@ -103,7 +103,7 @@ esp_can_pop <- esp_can_pop[,c("NATCODE","pob19")]
 esp_can_pop$geometry <- NULL
 weather_t <- weather_t %>% left_join(esp_can_pop)
 weather_t$R0_tmed <- 0
-weather_t <- setDT(weather_t)
+weather_t <- DetDT(weather_t)
 
 ## Function to read all output weather file compute R0 and create a list of df.
 num_cores <- 12

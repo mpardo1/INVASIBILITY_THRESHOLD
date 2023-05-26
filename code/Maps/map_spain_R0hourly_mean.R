@@ -119,8 +119,6 @@ R0_monthly <- function(year){
     weather_dt <- weather_dt %>% left_join(esp_can_pop, 
                                        by = c("NATCODE"))
     weather_dt$R0 <- -1
-    
-    weather_dt <- weather_dt[c(1:1000),]
     num_cores <- 12
     df_chunks <- split(weather_dt, 0:(nrow(weather_dt) - 1) %% num_cores)
     modify_column <- function(chunk) {
