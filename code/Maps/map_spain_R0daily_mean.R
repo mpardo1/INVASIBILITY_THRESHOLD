@@ -82,7 +82,7 @@ esp_can_pop$NATCODE <- as.numeric(paste0("34",
                                          esp_can_pop$LAU_CODE))
 esp_can_pop <- esp_can_pop[,c("pop_km","NATCODE")]
 esp_can_pop$geometry <- NULL
-
+rm(esp_can)
 #####
 # Path <- "~/INVASIBILITY_THRESHOLD/output/weather/Daily/R0_aemet_weather_year_2_22.Rds"
 R0_monthly <- function(year){
@@ -92,6 +92,7 @@ R0_monthly <- function(year){
   listfile2 <- list.files(Path2)
   weather_t <- data.table()
   for(i in c(1:12)){
+    print(paste0("i:",i))
     Path1 = paste0("~/INVASIBILITY_THRESHOLD/output/ERA5/temp/",year,"/")
     Path <- paste0(Path1,listfile[i])
     weather <- readRDS(Path)
@@ -116,7 +117,7 @@ R0_monthly <- function(year){
                                      by = c("NATCODE"))
   weather$R0 <- 0
   
-  num_cores <- 12
+  num_cores <- 2
   df_chunks <- split(weather, 0:(nrow(weather) - 1) %% num_cores)
   modify_column <- function(chunk) {
     # Modify the values in the desired column
@@ -124,7 +125,7 @@ R0_monthly <- function(year){
       print(paste0("j:",j))
       chunk$R0[j] <- R0_func_alb(ifelse(is.na(chunk$precmed[j]), 0,chunk$precmed[j] ),
                                  chunk$pop_km[j], 
-                                 chunk$temp[j])
+                                 chunk$tmean[j])
       
     }
     

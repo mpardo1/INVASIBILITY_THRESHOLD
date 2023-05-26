@@ -140,11 +140,7 @@ R0_monthly <- function(year){
     weather_t <- rbind(weather_t,modified_df)
     rm(weather_dr)
   }
-  
-  
-  
-  
-  return(weather_df_y)
+  return(weather_t)
 }
 
 year_n = "2020"
