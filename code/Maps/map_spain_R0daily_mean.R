@@ -34,14 +34,6 @@ Quad_func <- function(cte, tmin, tmax, temp){
 
 
 #### -------------------------- Albopictus ------------------------- ####
-## Thermal responses Aedes Albopictus from Mordecai 2017:
-a_f_alb <- function(temp){Briere_func(0.000193,10.25,38.32,temp)} # Biting rate
-TFD_f_alb <- function(temp){Briere_func(0.0488,8.02,35.65,temp)} # Fecundity
-pLA_f_alb <- function(temp){Quad_func(2.663e-03,6.668e+00,3.892e+01,temp)} # Survival probability Egg-Adult
-MDR_f_alb <- function(temp){Briere_func(0.0000638,8.6,39.66,temp)} # Mosquito Development Rate
-lf_f_alb <- function(temp){Quad_func(1.43,13.41,31.51,temp)} # Adult life span
-dE_f_alb <- function(temp){4.66e-03*temp -4.23e-02} # Adult life span
-
 ### Incorporating rain and human density:
 h_f <- function(hum, rain){
   # Constants: 
@@ -58,15 +50,24 @@ h_f <- function(hum, rain){
   return(hatch)
 }
 
+## Thermal responses Aedes Albopictus from Mordecai 2017:
+a_f_alb <- function(temp){Briere_func(0.000193,10.25,38.32,temp)} # Biting rate
+TFD_f_alb <- function(temp){Briere_func(0.0488,8.02,35.65,temp)} # Fecundity
+pLA_f_alb <- function(temp){Quad_func(2.663e-03,6.668e+00,3.892e+01,temp)} # Survival probability Egg-Adult
+MDR_f_alb <- function(temp){Briere_func(0.0000638,8.6,39.66,temp)} # Mosquito Development Rate
+lf_f_alb <- function(temp){Quad_func(1.43,13.41,31.51,temp)} # Adult life span
+dE_f_alb <- function(temp){4.66e-03*temp -4.23e-02} # Adult life span
+
 # R0 function by temperature:
 R0_func_alb <- function(rain,hum,Te){
   a <- a_f_alb(Te)
   f <- TFD_f_alb(Te)
-  deltaa <- 1/lf_f_alb(Te)
-  probla <- pEA_f_alb(Te)
+  deltaa <- lf_f_alb(Te)
+  dE <- dE_f_alb(Te)
+  probla <- pLA_f_alb(Te)
   h <- h_f(hum,rain)
-  deltE = 0.1
-  R0 <- sqrt(f*(a/deltaa)*probla*(h*(h+deltE)))
+  deltaE = 0.1
+  R0 <- sqrt(f*(a*deltaa)*probla*(h*dE/(h*dE+deltaE)))
   return(R0)
 }
 

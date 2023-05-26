@@ -93,6 +93,10 @@ func_weather <- function(mon, ye){
       esp_s <- esp_sf[,c(8,10:ncol(esp_sf))]
       esp_s$geometry <- NULL
       esp_s <- reshape2::melt(esp_s,id.vars = "NATCODE")
+      colnames(esp_s) <- c("NATCODE","date","temp")
+      esp_s <- esp_s %>% group_by(NATCODE,date) %>%
+        summarise(temp=mean(temp))
+      
       df_temp <- rbind(df_temp,esp_s)
     }
   # Save output file
