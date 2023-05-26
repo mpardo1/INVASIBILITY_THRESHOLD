@@ -118,18 +118,26 @@ R0_monthly <- function(year){
     
     weather_dt <- weather_dt %>% left_join(esp_can_pop, 
                                        by = c("NATCODE"))
-    weather_dt$R0 <- 0
+    weather_dt$R0 <- -1
     
-    Cores = 1
-    weather_df_y <- mclapply(1:nrow(weather_dt), mc.cores = Cores, mc.preschedule = F,function(j){ 
-      print(paste0("j:",j))
-      weather_dt$R0[j] <- R0_func_alb(ifelse(is.na(weather_dt$precmed[j]), 0,weather_dt$precmed[j] ),
-                                   weather_dt$pop_km[j], 
-                                   weather_dt$temp[j])
-    })
-    
-    
-    weather_t <- rbind(weather_t,weather_dt)
+    weather_dt <- weather_dt[c(1:1000),]
+    num_cores <- 12
+    df_chunks <- split(weather_dt, 0:(nrow(weather_dt) - 1) %% num_cores)
+    modify_column <- function(chunk) {
+      # Modify the values in the desired column
+      for (j in c(1:nrow(chunk))){ 
+        print(paste0("j:",j))
+        chunk$R0[j] <- R0_func_alb(ifelse(is.na(chunk$precmed[j]), 0,chunk$precmed[j] ),
+                                   chunk$pop_km[j], 
+                                   chunk$temp[j])
+        
+      }
+      
+      return(chunk)
+    }
+    modified_chunks <- mclapply(df_chunks, modify_column, mc.cores = num_cores)
+    modified_df <- do.call(rbind, modified_chunks)
+    weather_t <- rbind(weather_t,modified_df)
     rm(weather_dr)
   }
   
@@ -141,5 +149,5 @@ R0_monthly <- function(year){
 
 year_n = "2020"
 R0mon <- R0_monthly(year_n)
-saveRDS(R0mon,"~/INVASIBILITY_THRESHOLD/output/R0/R0_ERA5_daily_2020.Rds")
+saveRDS(R0mon,"~/INVASIBILITY_THRESHOLD/output/R0/R0_ERA5_hourly_to_daily_2020.Rds")
 

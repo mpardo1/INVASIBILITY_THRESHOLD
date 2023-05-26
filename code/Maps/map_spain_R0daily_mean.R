@@ -116,14 +116,23 @@ R0_monthly <- function(year){
                                      by = c("NATCODE"))
   weather$R0 <- 0
   
-  Cores = 10
-  weather_df_y <- mclapply(1:nrow(weather), mc.cores = Cores, mc.preschedule = F,function(j){ 
-    print(paste0("j:",j))
-    weather$R0[j] <- R0_func_alb(ifelse(is.na(weather$precmed[j]), 0,weather$precmed[j] ),
-                                     weather$pop_km[j], 
-                                     weather$tmean[j])
-  })
-  return(weather_df_y)
+  num_cores <- 12
+  df_chunks <- split(weather, 0:(nrow(weather) - 1) %% num_cores)
+  modify_column <- function(chunk) {
+    # Modify the values in the desired column
+    for (j in c(1:nrow(chunk))){ 
+      print(paste0("j:",j))
+      chunk$R0[j] <- R0_func_alb(ifelse(is.na(chunk$precmed[j]), 0,chunk$precmed[j] ),
+                                 chunk$pop_km[j], 
+                                 chunk$temp[j])
+      
+    }
+    
+    return(chunk)
+  }
+  modified_chunks <- mclapply(df_chunks, modify_column, mc.cores = num_cores)
+  modified_df <- do.call(rbind, modified_chunks)
+  return(modified_df)
 }
 
 year_n = "2020"

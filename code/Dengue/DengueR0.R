@@ -106,11 +106,22 @@ weather_t$R0_tmed <- 0
 weather_t <- setDT(weather_t)
 
 ## Function to read all output weather file compute R0 and create a list of df.
-Cores = 10
-DengueR0 <- mclapply(1:nrow(weather_t), mc.cores = Cores, mc.preschedule = F,function(j){
-  print(paste0("j:",j))
-   weather_t$R0_tmed[j] <- R0_func_alb(weather_t$tmean[j],ifelse(is.na(weather_t$pob19[j]),0,weather_t$pob19[j] ))
-})
+num_cores <- 12
+df_chunks <- split(weather_t, 0:(nrow(weather_t) - 1) %% num_cores)
+modify_column <- function(chunk) {
+  # Modify the values in the desired column
+  for (j in c(1:nrow(chunk))){ 
+    print(paste0("j:",j))
+    chunk$R0[j] <- R0_func_alb(ifelse(is.na(chunk$precmed[j]), 0,chunk$precmed[j] ),
+                               chunk$pop_km[j], 
+                               chunk$temp[j])
+    
+  }
+  
+  return(chunk)
+}
+modified_chunks <- mclapply(df_chunks, modify_column, mc.cores = num_cores)
+DengueR0 <- do.call(rbind, modified_chunks)
 
 # for(j in c(1:nrow(weather_t))){
 #   print(paste0("j:",j))
