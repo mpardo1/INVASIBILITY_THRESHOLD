@@ -64,12 +64,15 @@ R0_func_alb <- function(Te, rain, hum){
 }
 
 func_R0 <- function(ind){
+  print(paste0("ind:",ind))
   # Specify desired single point (within the bounds of your .nc file) 
   x <- esp_can$centroid[ind][[1]][1]
   y <- esp_can$centroid[ind][[1]][2]
   
   # Gather all hourly variables, with spatial and temporal dimensions
   # matching the extent, or a subset, of data in one downloaded file 
+  st_time <- lubridate::ymd("2020:01:01")
+  en_time <- lubridate::ymd("2020:12:31")
   point_out <- extract_clim(nc = my_nc, long = x,
                             lat = y, start_time = st_time,
                             end_time = en_time) 
@@ -95,32 +98,32 @@ func_R0 <- function(ind){
 }
 
 ## Test package mcera5
-uid <- "187470"
-cds_api_key <- "fbef7343-1aef-44c1-a7c3-573285248e5d"
-
-ecmwfr::wf_set_key(user = uid,
-                   key = cds_api_key,
-                   service = "cds")
-# Designate your desired bounding coordinates (in WGS84 / EPSG:4326)
-xmn <- -19
-xmx <- 4.5
-ymn <- 27
-ymx <- 44
-
-# Temporal grid
-st_time <- lubridate::ymd("2020:01:01")
-en_time <- lubridate::ymd("2020:12:31")
-
-file_prefix <- "era5_Spain_2020"
-file_path <- getwd()
-
-req <- build_era5_request(xmin = xmn, xmax = xmx,
-                          ymin = ymn, ymax = ymx,
-                          start_time = st_time,
-                          end_time = en_time,
-                          outfile_name = file_prefix)
-
-request_era5(request = req, uid = uid, out_path = file_path)
+# uid <- "187470"
+# cds_api_key <- "fbef7343-1aef-44c1-a7c3-573285248e5d"
+# 
+# ecmwfr::wf_set_key(user = uid,
+#                    key = cds_api_key,
+#                    service = "cds")
+# # Designate your desired bounding coordinates (in WGS84 / EPSG:4326)
+# xmn <- -19
+# xmx <- 4.5
+# ymn <- 27
+# ymx <- 44
+# 
+# # Temporal grid
+# st_time <- lubridate::ymd("2020:01:01")
+# en_time <- lubridate::ymd("2020:12:31")
+# 
+# file_prefix <- "era5_Spain_2020"
+# file_path <- getwd()
+# 
+# req <- build_era5_request(xmin = xmn, xmax = xmx,
+#                           ymin = ymn, ymax = ymx,
+#                           start_time = st_time,
+#                           end_time = en_time,
+#                           outfile_name = file_prefix)
+# 
+# request_era5(request = req, uid = uid, out_path = file_path)
 
 # List the path of an .nc file that was downloaded via
 # `request_era5()` 
@@ -139,7 +142,7 @@ esp_can <- esp_can %>% left_join(census,
                                  by = c("cmun" = "cmun","cpro" = "cpro"))
 esp_can <- esp_can[,c("NATCODE", "centroid", "pob19")]
 # Number of cores used in the parallelization
-num_cores = 12
+num_cores = 1
 # Parallelize function in order to obtain value R0 for each municipality
 R0_each_muni <- mclapply(c(1:nrow(esp_can)), 
                          func_R0, 
