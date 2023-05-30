@@ -122,7 +122,6 @@ R0_monthly <- function(year){
   modify_column <- function(chunk) {
     # Modify the values in the desired column
     for (j in c(1:nrow(chunk))){ 
-      print(paste0("j:",j))
       chunk$R0[j] <- R0_func_alb(ifelse(is.na(chunk$precmed[j]), 0,chunk$precmed[j] ),
                                  chunk$pop_km[j], 
                                  chunk$tmean[j])
