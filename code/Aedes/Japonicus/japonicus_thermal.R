@@ -2,6 +2,7 @@ rm(list= ls())
 library(thermPerf)
 library(ggplot2)
 library(tidyverse)
+library(nls2)
 
 ## Compute the thermal responses for Aedes Japonicus
 ## Data taken from https://parasitesandvectors.biomedcentral.com/articles/10.1186/s13071-018-2659-1
@@ -33,12 +34,31 @@ colnames(df_out_deltaA) <- c("temp_ae","deltaA_jap")
 df_out_deltaA[which(df_out_deltaA$deltaA_jap < 0),2] <- 0
 plotdeltaA <- ggplot(df_out_deltaA) +
   geom_line(aes(temp_ae,deltaA_jap), size = 0.7) +
-  geom_point(data = Japonicus,aes(Temp,FemaledeltaA), size = 0.9, color = "red") +
-  xlim(c(0,45)) + 
+  geom_point(data = Japonicus,aes(x = Temp,y = FemaledeltaA), size = 0.9, color = "red") +
+  xlim(c(0,45))  +
   ylab("Adult mortality rate") + xlab("Temperature (Cº)") +
   theme_bw()
 plotdeltaA
-
+# 
+# library(investr)
+# new.data <- data.frame(Temp=seq(1, 40, by = 0.1))
+# interval <- as_tibble(predFit(Fitting_deltaA, newdata = new.data,
+#                               interval = "confidence", level= 0.9)) %>% 
+#   mutate(Temp = new.data$Temp)
+# 
+# p1 <-  ggplot(data = Japonicus, 
+#              aes(x = Temp,y = FemaledeltaA)) +
+#   geom_point(size = 0.7)  
+# 
+# plotdeltaA <- p1 +
+#   geom_line(data=interval, aes(x = Temp, y = fit ))+
+#   geom_ribbon(data=interval, aes(x=Temp, ymin=lwr, ymax=upr),
+#               alpha=0.5, inherit.aes=F, fill="blue") +
+#   xlim(c(0,40))  +
+#   ylab("Adult mortality rate") + xlab("Temperature (Cº)") +
+#   theme_bw()
+# 
+# plotdeltaA
 ###----------------------------------------------
 ######c(0.00035,9.5,36) this looks good
 Path <- "~/INVASIBILITY_THRESHOLD/data/japonicus/japonicus_temp_developmenttime.csv"
@@ -76,7 +96,25 @@ plotdE <- ggplot(df_out_dE) +
   ylab("Develop rate from Egg to Larva") + xlab("Temperature (Cº)") +
   theme_bw()
 plotdE
-
+# 
+# new.data <- data.frame(Temp=seq(5, 35.9, by = 0.1))
+# interval <- as_tibble(predFit(Fitting_dE, newdata = new.data,
+#                               interval = "confidence", level= 0.9)) %>% 
+#   mutate(Temp = new.data$Temp)
+# 
+# p1 <-  ggplot(data = developL, 
+#               aes(x = Temp,y = First_instar_mean)) +
+#   geom_point(size = 0.7)  
+# 
+# plotdeltaA <- p1 +
+#   geom_line(data = df_out_dE, aes(temp_ae,dE_jap), size = 0.7) +
+#   geom_ribbon(data=interval, aes(x=Temp, ymin=lwr, ymax=upr),
+#               alpha=0.5, inherit.aes=F, fill="blue") +
+#   xlim(c(0,40))  + ylim(c(0,0.5)) +
+#   ylab("Adult mortality rate") + xlab("Temperature (Cº)") +
+#   theme_bw()
+# 
+# plotdeltaA
 #--------------------------------------------------------
 # Paper Germany:
 Path <- "~/INVASIBILITY_THRESHOLD/data/japonicus/adult_larva_lifespan.csv"
