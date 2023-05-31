@@ -150,7 +150,7 @@ dengue_df_g_bool <- dengue_df_g_m[, .(R0_sum=sum(bool_r0),
                                    tmean = mean(tmean)), 
                                by=list(NATCODE)]
 
-cols = paletteer::paletteer_c("grDevices::Fall", 13)
+cols = paletteer::paletteer_c("grDevices::Zissou 1", 13)
 dengue_df_g_bool <- esp_can %>% 
   left_join(dengue_df_g_bool)
 
