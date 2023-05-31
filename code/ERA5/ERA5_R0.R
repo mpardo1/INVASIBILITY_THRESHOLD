@@ -5,6 +5,7 @@ library(sf)
 library(ggplot2)
 library(tidyverse)
 library(parallel)
+library(data.table)
 
 #------------------------FUNCTIONS---------------------------#
 # Main functions 
@@ -98,35 +99,35 @@ func_R0 <- function(ind){
 }
 
 ## Test package mcera5
-# uid <- "187470"
-# cds_api_key <- "fbef7343-1aef-44c1-a7c3-573285248e5d"
-# 
-# ecmwfr::wf_set_key(user = uid,
-#                    key = cds_api_key,
-#                    service = "cds")
-# # Designate your desired bounding coordinates (in WGS84 / EPSG:4326)
-# xmn <- -19
-# xmx <- 4.5
-# ymn <- 27
-# ymx <- 44
-# 
-# # Temporal grid
-# st_time <- lubridate::ymd("2020:01:01")
-# en_time <- lubridate::ymd("2020:12:31")
-# 
-# file_prefix <- "era5_Spain_2020"
-# file_path <- getwd()
-# 
-# req <- build_era5_request(xmin = xmn, xmax = xmx,
-#                           ymin = ymn, ymax = ymx,
-#                           start_time = st_time,
-#                           end_time = en_time,
-#                           outfile_name = file_prefix)
-# 
-# request_era5(request = req, uid = uid, out_path = file_path)
+ uid <- "187470"
+ cds_api_key <- "fbef7343-1aef-44c1-a7c3-573285248e5d"
+
+ ecmwfr::wf_set_key(user = uid,
+                    key = cds_api_key,
+                    service = "cds")
+ # Designate your desired bounding coordinates (in WGS84 / EPSG:4326)
+ xmn <- -19
+ xmx <- 4.5
+ ymn <- 27
+ ymx <- 44
+
+ # Temporal grid
+ st_time <- lubridate::ymd("2020:01:01")
+ en_time <- lubridate::ymd("2020:12:31")
+
+ file_prefix <- "era5_Spain_2020"
+ file_path <- getwd()
+
+ req <- build_era5_request(xmin = xmn, xmax = xmx,
+                           ymin = ymn, ymax = ymx,
+                          start_time = st_time,
+                           end_time = en_time,
+                           outfile_name = file_prefix)
+
+request_era5(request = req, uid = uid, out_path = file_path)
 
 # List the path of an .nc file that was downloaded via
-# `request_era5()` 
+# request_era5()
 my_nc <- paste0(getwd(), "/era5_Spain_2020.nc")
 # my_nc = "/home/marta/era5_Spain_2020.nc"
 
@@ -151,3 +152,55 @@ R0_each_muni <- mclapply(c(1:nrow(esp_can)),
 saveRDS(R0_each_muni,
         "~/INVASIBILITY_THRESHOLD/output/R0/R0_ERA5_hourly_mcera_2020.Rds")
 # modified_df <- do.call(rbind, R0_each_muni)
+rm(census)
+head(R0_each_muni[[1000]])
+
+df_group <- data.table()
+for(i in c(1:length(R0_each_muni))){
+  print(paste0("i:",i))
+  dt_aux <- setDT(R0_each_muni[[i]])
+  dt_aux$date <- as.Date(dt_aux$obs_time)
+  dt_aux <- dt_aux[, .(temp=mean(temperature),
+                       min_temp = min(temperature),
+                       max_temp =max(temperature),
+                                     prec = sum(prec), 
+                                     pop=min(pop),
+                       R0_mean_hourly = mean(R0)), 
+                       by=list(NATCODE,date)]
+  dt_aux[, R0_daily_comp := mapply(R0_func_alb, temp, prec, pop)]
+  df_group <- rbind(dt_aux,df_group)
+}
+saveRDS(df_group,
+        "~/INVASIBILITY_THRESHOLD/output/R0/R0_ERA5_daily_mcera_2020.Rds")
+
+#-----------------------------Create plots------------------------#
+library("viridis")
+library("gganimate")
+
+esp_can <- esp_get_munic_siane(moveCAN = FALSE)
+esp_can$NATCODE <- as.numeric(paste0("34",esp_can$codauto,
+                                     esp_can$cpro,
+                                     esp_can$LAU_CODE))
+df_group$month <- lubridate::month(df_group$date)
+df_group <- esp_can %>% left_join(df_group)
+
+ggplot(df_group) +
+  geom_sf(aes(fill = R0_mean_hourly), linewidth = 0.01) +
+  geom_sf(data = can_box) + coord_sf(datum = NA) +
+  theme(plot.margin = margin(0.2, 0.2, 0.2, 0.2, "cm")) +
+  theme_void() +
+  labs(title = "Month: {current_frame}") +
+  transition_manual(as.factor(month))
+
+df_group$bool_R0 <- ifelse(df_group$R0_mean_hourly < 1,0,1)
+df_group_y <- df_group %>% group_by(NATCODE) %>%
+  summarise(R0_sum = sum(bool_R0))
+
+library(RColorBrewer)
+
+ggplot(df_group_y) +
+  geom_sf(aes(fill = R0_sum), linewidth = 0.01) +
+  geom_sf(data = can_box) + coord_sf(datum = NA) +
+  scale_fill_distiller(palette = "Spectral") +
+  theme(plot.margin = margin(0.2, 0.2, 0.2, 0.2, "cm")) +
+  theme_void()
