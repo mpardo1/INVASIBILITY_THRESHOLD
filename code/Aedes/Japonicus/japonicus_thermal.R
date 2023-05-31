@@ -39,7 +39,60 @@ plotdeltaA <- ggplot(df_out_deltaA) +
   ylab("Adult mortality rate") + xlab("Temperature (Cº)") +
   theme_bw()
 plotdeltaA
-# 
+
+####----------- +/- SD-------------####
+# Mean - sd
+mod_min <- function(te){
+  c <- as.numeric(Fitting_deltaA$m$getPars()[1]) - 
+    summary(Fitting_deltaA)$coefficients[1,2]
+  c1 <- as.numeric(Fitting_deltaA$m$getPars()[2])-
+    summary(Fitting_deltaA)$coefficients[2,2]
+  c*te+c1
+}
+
+vec <- seq(0,45,0.001)
+df_out_deltaA_min <- data.frame(temp_ae = vec,
+                            deltaA_jap <- sapply(vec, mod_min))
+colnames(df_out_deltaA_min) <- c("temp_ae","deltaA_jap")
+df_out_deltaA_min[which(df_out_deltaA_min$deltaA_jap < 0),2] <- 0
+df_out_deltaA_min$group <- "min"
+
+### Mean + sd
+mod_max <- function(te){
+  c <- as.numeric(Fitting_deltaA$m$getPars()[1]) +
+    summary(Fitting_deltaA)$coefficients[1,2]
+  c1 <- as.numeric(Fitting_deltaA$m$getPars()[2]) + 
+    summary(Fitting_deltaA)$coefficients[2,2]
+  c*te+c1
+}
+
+vec <- seq(0,45,0.001)
+df_out_deltaA_max <- data.frame(temp_ae = vec,
+                                deltaA_jap <- sapply(vec, mod_max))
+colnames(df_out_deltaA_max) <- c("temp_ae","deltaA_jap")
+df_out_deltaA_max[which(df_out_deltaA_max$deltaA_jap < 0),2] <- 0
+df_out_deltaA_max$group <- "max"
+df_out_deltaA$group <- "mean"
+# Plot all three curves together
+df_out_deltaA <- rbind(df_out_deltaA_max,
+                       df_out_deltaA_min,
+                       df_out_deltaA)
+
+plotdeltaA <- ggplot(df_out_deltaA) +
+  geom_line(aes(temp_ae,deltaA_jap,
+                color = group,
+                group = group, 
+                alpha = group), size = 0.7) +
+  geom_point(data = Japonicus,aes(x = Temp,y = FemaledeltaA),
+             size = 0.9, color = "black") +
+  scale_color_manual(values=c("red", "blue", "red")) + 
+  scale_alpha_manual(values = c(0.5,1,0.5)) +
+  xlim(c(5,35)) + ylim(c(0,0.09)) +
+  guides( color =FALSE, alpha = FALSE) +
+  ylab("Adult mortality rate") + xlab("Temperature (Cº)") +
+  theme_bw()
+plotdeltaA 
+
 # library(investr)
 # new.data <- data.frame(Temp=seq(1, 40, by = 0.1))
 # interval <- as_tibble(predFit(Fitting_deltaA, newdata = new.data,
@@ -83,12 +136,13 @@ mod <- function(te){
   c*te*(te-c1)*(c2-te)^(1/2)
 }
 
+
 vec <- seq(0,45,0.001)
 df_out_dE  <- data.frame(temp_ae = vec,
                          dE_jap <- sapply(vec, mod))
 colnames(df_out_dE) <- c("temp_ae","dE_jap")
 df_out_dE[which(df_out_dE$dE_jap < 0),2] <- 0
-
+df_out_dE$group <- "mean"
 plotdE <- ggplot(df_out_dE) +
   geom_line(aes(temp_ae,dE_jap), size = 0.7) +
   geom_point(data = developL,aes(Temp,First_instar_mean), size = 0.9, color = "red") +
@@ -96,15 +150,64 @@ plotdE <- ggplot(df_out_dE) +
   ylab("Develop rate from Egg to Larva") + xlab("Temperature (Cº)") +
   theme_bw()
 plotdE
-# 
+
+####----------- +/- SD-------------####
+# Mean - sd
+mod_min <- function(te){
+  c <- as.numeric(Fitting_dE$m$getPars()[1]) - summary(Fitting_dE)$coefficients[1,2]
+  c1 <- as.numeric(Fitting_dE$m$getPars()[2])- summary(Fitting_dE)$coefficients[2,2]
+  c2 <- as.numeric(Fitting_dE$m$getPars()[3])- summary(Fitting_dE)$coefficients[3,2]
+  c*te*(te-c1)*(c2-te)^(1/2)
+}
+
+vec <- seq(0,45,0.001)
+df_out_dE_min  <- data.frame(temp_ae = vec,
+                         dE_jap <- sapply(vec, mod_min))
+colnames(df_out_dE_min) <- c("temp_ae","dE_jap")
+df_out_dE_min[which(df_out_dE_min$dE_jap < 0),2] <- 0
+df_out_dE_min$group <- "min"
+
+### Mean + sd
+mod_max <- function(te){
+  c <- as.numeric(Fitting_dE$m$getPars()[1]) + summary(Fitting_dE)$coefficients[1,2]
+  c1 <- as.numeric(Fitting_dE$m$getPars()[2]) + summary(Fitting_dE)$coefficients[2,2]
+  c2 <- as.numeric(Fitting_dE$m$getPars()[3]) + summary(Fitting_dE)$coefficients[3,2]
+  c*te*(te-c1)*(c2-te)^(1/2)
+}
+
+vec <- seq(0,45,0.001)
+df_out_dE_max  <- data.frame(temp_ae = vec,
+                             dE_jap <- sapply(vec, mod_max))
+colnames(df_out_dE_max) <- c("temp_ae","dE_jap")
+df_out_dE_max[which(df_out_dE_max$dE_jap < 0),2] <- 0
+df_out_dE_max$group <- "max"
+
+# Plot all three curves together
+df_out_dE <- rbind(df_out_dE_max,df_out_dE_min, df_out_dE)
+plotdE <- ggplot(df_out_dE) +
+  geom_line(aes(temp_ae,dE_jap,
+                color = group,
+                group = group, 
+                alpha = group), size = 0.7) +
+  geom_point(data = developL,aes(Temp,First_instar_mean),
+             size = 0.9, color = "black") +
+  scale_color_manual(values=c("red", "blue", "red")) + 
+  scale_alpha_manual(values = c(0.5,1,0.5)) +
+  xlim(c(5,36)) + 
+  guides( color =FALSE, alpha = FALSE) +
+  ylab("Develop rate from Egg to Larva") + xlab("Temperature (Cº)") +
+  theme_bw()
+plotdE
+
+# ####-----------CI-------------####
 # new.data <- data.frame(Temp=seq(5, 35.9, by = 0.1))
 # interval <- as_tibble(predFit(Fitting_dE, newdata = new.data,
-#                               interval = "confidence", level= 0.9)) %>% 
+#                               interval = "confidence", level= 0.9)) %>%
 #   mutate(Temp = new.data$Temp)
 # 
-# p1 <-  ggplot(data = developL, 
+# p1 <-  ggplot(data = developL,
 #               aes(x = Temp,y = First_instar_mean)) +
-#   geom_point(size = 0.7)  
+#   geom_point(size = 0.7)
 # 
 # plotdeltaA <- p1 +
 #   geom_line(data = df_out_dE, aes(temp_ae,dE_jap), size = 0.7) +
@@ -161,6 +264,67 @@ plotdL <- ggplot(df_out_dL) +
   theme_bw()
 plotdL
 
+####----------- +/- SD-------------####
+# Mean - sd
+mod_min <- function(te){
+  c <- as.numeric(Fitting_dL$m$getPars()[1]) - 
+    summary(Fitting_dL)$coefficients[1,2]
+  c1 <- as.numeric(Fitting_dL$m$getPars()[2])- 
+    summary(Fitting_dL)$coefficients[2,2]
+  c2 <- as.numeric(Fitting_dL$m$getPars()[3])- 
+    summary(Fitting_dL)$coefficients[3,2]
+  c*te*(te-c1)*(c2-te)^(1/2)
+}
+
+vec <- seq(0,45,0.001)
+df_out_dL_min  <- data.frame(temp_ae = vec,
+                         dL_jap <- sapply(vec, mod_min))
+
+colnames(df_out_dL_min) <- c("temp_ae","dL_jap")
+df_out_dL_min[which(df_out_dL_min$dL_jap < 0),2] <- 0
+df_out_dL_min$group <- "min"
+
+### Mean + sd
+mod_max <- function(te){
+  c <- as.numeric(Fitting_dL$m$getPars()[1]) + 
+    summary(Fitting_dL)$coefficients[1,2]
+  c1 <- as.numeric(Fitting_dL$m$getPars()[2]) +
+    summary(Fitting_dL)$coefficients[2,2]
+  c2 <- as.numeric(Fitting_dL$m$getPars()[3]) + 
+    summary(Fitting_dL)$coefficients[3,2]
+  c*te*(te-c1)*(c2-te)^(1/2)
+}
+
+vec <- seq(0,45,0.001)
+df_out_dL_max  <- data.frame(temp_ae = vec,
+                             dL_jap <- sapply(vec, 
+                                              mod_max))
+
+colnames(df_out_dL_max) <- c("temp_ae","dL_jap")
+df_out_dL_max[which(df_out_dL_max$dL_jap < 0),2] <- 0
+df_out_dL_max$group <- "max"
+df_out_dL$group <- "mean"
+
+# Plot all three curves together
+df_out_dL <- rbind(df_out_dL_min,
+                   df_out_dL_max,
+                   df_out_dL)
+plotdL <- ggplot(df_out_dL) +
+  geom_line(aes(temp_ae,dL_jap,
+                color = group,
+                group = group, 
+                alpha = group), size = 0.7) +
+  geom_point(data = Japonicus,aes(Temp,FemaledL),
+             size = 0.9, color = "black") +
+  scale_color_manual(values=c("red", "blue", "red")) + 
+  scale_alpha_manual(values = c(0.5,1,0.5)) +
+  xlim(c(0,45)) + 
+  ylab("Develop rate from Larva to Adult") +
+  guides(color = FALSE, alpha = FALSE) +
+  xlab("Temperature (Cº)") + ylab("Develop rate from Egg to Larva") + xlab("Temperature (Cº)") +
+  theme_bw()
+plotdL
+
 ###----------------------------------------------
 Lmortality <- data.frame(Temp = c(0,5,10,12,14,15,17,19,20,23,25,26,27,28,29,31),
                          mean_mort_perc = c(100,99.5,16,38.5,18,15,19,29.5,11.3,48.5,13.8,6,41.5,12.5,70.5,87.5),
@@ -196,6 +360,67 @@ plotdeltaL <- ggplot(df_out_deltaL) +
   geom_line(aes(temp_ae,deltaL_jap), size = 0.8) +
   geom_point(data = Lmortality,aes(Temp,mean_mort_perc), size = 0.9, color = "red") +
   ylab("Larva mortality rate") + xlab("Temperature (Cº)") +
+  theme_bw()
+plotdeltaL
+
+####----------- +/- SD-------------####
+# Mean - sd
+mod_min <- function(te){
+  c <- as.numeric(Fitting_deltaL$m$getPars()[1]) - 
+    summary(Fitting_deltaL)$coefficients[1,2]
+  c1 <- as.numeric(Fitting_deltaL$m$getPars()[2])- 
+    summary(Fitting_deltaL)$coefficients[2,2]
+  c2 <- as.numeric(Fitting_deltaL$m$getPars()[3])- 
+    summary(Fitting_deltaL)$coefficients[3,2]
+  c*te^2+c1*te+c2
+}
+
+vec <- seq(0,45,0.001)
+df_out_deltaL_min <- data.frame(temp_ae = vec,
+                            deltaL_jap <- sapply(vec,
+                                                 mod_min))
+
+colnames(df_out_deltaL_min) <- c("temp_ae","deltaL_jap")
+df_out_deltaL_min$group <- "min"
+
+### Mean + sd
+mod_max <- function(te){
+  c <- as.numeric(Fitting_deltaL$m$getPars()[1]) + 
+    summary(Fitting_deltaL)$coefficients[1,2]
+  c1 <- as.numeric(Fitting_deltaL$m$getPars()[2])+ 
+    summary(Fitting_deltaL)$coefficients[2,2]
+  c2 <- as.numeric(Fitting_deltaL$m$getPars()[3])+ 
+    summary(Fitting_deltaL)$coefficients[3,2]
+  c*te^2+c1*te+c2
+}
+
+vec <- seq(0,45,0.001)
+df_out_deltaL_max <- data.frame(temp_ae = vec,
+                                deltaL_jap <- sapply(vec,
+                                                     mod_max))
+
+colnames(df_out_deltaL_max) <- c("temp_ae","deltaL_jap")
+df_out_deltaL_max[which(df_out_deltaL_max$deltaL_jap < 0),2] <- 0
+df_out_deltaL_max$group <- "max"
+df_out_deltaL$group <- "mean"
+
+# Plot all three curves together
+df_out_deltaL <- rbind(df_out_deltaL_min,
+                   df_out_deltaL_max,
+                   df_out_deltaL)
+
+plotdeltaL <- ggplot(df_out_deltaL) +
+  geom_line(aes(temp_ae,deltaL_jap,
+                color = group,
+                group = group, 
+                alpha = group), size = 0.8) +
+  geom_point(data = Lmortality,aes(Temp,mean_mort_perc),
+             size = 0.9, color = "black") +
+  ylab("Larva mortality rate") + xlab("Temperature (Cº)") +
+  scale_color_manual(values=c("red", "blue", "red")) + 
+  scale_alpha_manual(values = c(0.5,1,0.5)) +
+  xlim(c(5,35)) + ylim(c(-1,2)) + 
+  guides(color = FALSE, alpha = FALSE) +
   theme_bw()
 plotdeltaL
 
