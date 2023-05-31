@@ -149,8 +149,9 @@ R0_each_muni <- mclapply(c(1:nrow(esp_can)),
                          func_R0, 
                          mc.cores = num_cores)
 
-saveRDS(R0_each_muni,
-        "~/INVASIBILITY_THRESHOLD/output/R0/R0_ERA5_hourly_mcera_2020.Rds")
+# saveRDS(R0_each_muni,
+        # "~/INVASIBILITY_THRESHOLD/output/R0/R0_ERA5_hourly_mcera_2020.Rds")
+R0_each_muni <- readRDS("~/INVASIBILITY_THRESHOLD/output/R0/R0_ERA5_hourly_mcera_2020.Rds")
 # modified_df <- do.call(rbind, R0_each_muni)
 rm(census)
 head(R0_each_muni[[1000]])
@@ -168,34 +169,69 @@ for(i in c(1:length(R0_each_muni))){
                        R0_mean_hourly = mean(R0)), 
                        by=list(NATCODE,date)]
   dt_aux[, R0_daily_comp := mapply(R0_func_alb, temp, prec, pop)]
+  dt_aux[, R0_daily_comp_min := mapply(R0_func_alb, min_temp, prec, pop)]
+  dt_aux[, R0_daily_comp_max := mapply(R0_func_alb, max_temp, prec, pop)]
+  
   df_group <- rbind(dt_aux,df_group)
 }
-saveRDS(df_group,
-        "~/INVASIBILITY_THRESHOLD/output/R0/R0_ERA5_daily_mcera_2020.Rds")
+# saveRDS(df_group,
+#         "~/INVASIBILITY_THRESHOLD/output/R0/R0_ERA5_daily_mcera_2020.Rds")
+rm(R0_each_muni,dt_aux,esp_can)
+df_group <- readRDS("~/INVASIBILITY_THRESHOLD/output/R0/R0_ERA5_daily_mcera_2020.Rds")
 
 #-----------------------------Create plots------------------------#
 library("viridis")
 library("gganimate")
 
-esp_can <- esp_get_munic_siane(moveCAN = FALSE)
+esp_can <- esp_get_munic_siane(moveCAN = TRUE)
+can_box <- esp_get_can_box()
 esp_can$NATCODE <- as.numeric(paste0("34",esp_can$codauto,
                                      esp_can$cpro,
                                      esp_can$LAU_CODE))
 df_group$month <- lubridate::month(df_group$date)
-df_group <- esp_can %>% left_join(df_group)
 
-ggplot(df_group) +
-  geom_sf(aes(fill = R0_mean_hourly), linewidth = 0.01) +
+# Temporal R0 for Barcelona
+NATCODE_BCN <- esp_can$NATCODE[which(esp_can$name == "Barcelona")]
+df_BCN <- df_group[which(df_group$NATCODE == NATCODE_BCN),
+                   c("NATCODE","date", "R0_daily_comp",
+                     "R0_daily_comp_min","R0_daily_comp_max")]
+colnames(df_BCN) <- c("NATCODE","date", "R0 mean temp",
+                      "R0 min temp","R0 max temp")
+df_BCN <- reshape2::melt(df_BCN, id.vars = c("NATCODE", "date"))
+df_BCN <- esp_can %>%
+  left_join(df_BCN)
+df_BCN <- df_BCN[which(df_BCN$name =="Barcelona"),]
+
+ggplot(df_BCN) + 
+  geom_line(aes(date,value, color = variable)) +
+  scale_x_date(date_breaks = "1 month", date_labels =  "%b %Y") +
+  ylab("Vector Suitability Indes (VSI)") +
+  xlab("Date") + ggtitle("Barcelona 2020") +
+  theme_bw()
+
+## Whole map moving monthly
+df_group_mon <- df_group[, .(temp=mean(temp),
+                     prec = sum(prec), 
+                     pop=min(pop),
+                     R0_mean_monthly = mean(R0_mean_hourly)), 
+                 by=list(NATCODE,month)]
+df_group_mon <- esp_can %>%
+  left_join(df_group_mon)
+
+ggplot(df_group_mon) +
+  geom_sf(aes(fill = R0_mean_monthly), linewidth = 0.01) +
   geom_sf(data = can_box) + coord_sf(datum = NA) +
   theme(plot.margin = margin(0.2, 0.2, 0.2, 0.2, "cm")) +
+  scale_fill_viridis_c() +
   theme_void() +
   labs(title = "Month: {current_frame}") +
   transition_manual(as.factor(month))
 
-df_group$bool_R0 <- ifelse(df_group$R0_mean_hourly < 1,0,1)
-df_group_y <- df_group %>% group_by(NATCODE) %>%
+df_group_mon$bool_R0 <- ifelse(df_group_mon$R0_mean_monthly < 1,0,1)
+df_group_y <- df_group_mon %>% group_by(NATCODE) %>%
   summarise(R0_sum = sum(bool_R0))
 
+# Whole map group by number of months suitable
 library(RColorBrewer)
 
 ggplot(df_group_y) +
