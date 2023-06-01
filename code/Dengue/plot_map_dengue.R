@@ -103,8 +103,11 @@ dengue_df_g <- dengue_df[, .(R0_tmed=mean(R0_mean),
                              pop = min(pop_km)), 
                          by=list(NATCODE,month)]
 
+
 # Plot the histogram of R0
-hist(dengue_df_g$R0_tmed)
+ggplot(dengue_df_g, aes(R0_tmed)) +
+  geom_histogram(color="black", fill="lightblue") 
+
 # Plot R0
 esp_can <- esp_get_munic_siane(moveCAN = TRUE)
 esp_can$NATCODE <- as.numeric(paste0("34",
@@ -112,22 +115,49 @@ esp_can$NATCODE <- as.numeric(paste0("34",
                                      esp_can$cpro,
                                      esp_can$LAU_CODE))
 dengue_df_g_m <- esp_can %>% left_join(dengue_df_g)
+
+dengue_df_g_m <- setDT(dengue_df_g_m)
+ind <- is.na(dengue_df_g_m$R0_tmed)
+R0_cpro <- dengue_df_g_m[which(dengue_df_g_m$cpro %in%
+                                 dengue_df_g_m$cpro[ind] & 
+                                 is.na(dengue_df_g_m$R0_tmed) == FALSE),] %>%
+  group_by(cpro,month) %>%
+  summarise(R0_tmed1 = mean(R0_tmed))
+
+dengue_df_g_m  <- dengue_df_g_m %>% left_join(R0_cpro)
+dengue_df_g_m  <- dengue_df_g_m[,c("NATCODE", "month", "R0_tmed",
+                                   "tmean", "pop", "R0_tmed1")]
+rm(R0_cpro)
+dengue_df_g_m$R0_tmed <- ifelse(is.na(dengue_df_g_m$R0_tmed),
+                                dengue_df_g_m$R0_tmed1,
+                                dengue_df_g_m$R0_tmed)
+dengue_df_g_m <- esp_can %>% left_join(dengue_df_g_m)
+
 # See the map for R0
 ggplot(dengue_df_g_m) +
   geom_sf(aes(fill = R0_tmed), linewidth = 0.01) +
   scale_fill_viridis_c()
+
 # Create ranges:
-dengue_df_g_m$group_R0 <- ifelse(dengue_df_g_m$R0_tmed<1 | is.na(dengue_df_g_m$R0_tmed), 0,
+dengue_df_g_m$group_R0 <- ifelse(dengue_df_g_m$R0_tmed<1, 0,
                                  ifelse(dengue_df_g_m$R0_tmed<25 & dengue_df_g_m$R0_tmed>=1, 1,
                                  ifelse(dengue_df_g_m$R0_tmed<50 & dengue_df_g_m$R0_tmed>=25, 2,
                                  ifelse(dengue_df_g_m$R0_tmed<100 & dengue_df_g_m$R0_tmed>=50, 3,
                                  ifelse(dengue_df_g_m$R0_tmed<200 & dengue_df_g_m$R0_tmed>=100, 4,
                                  ifelse(dengue_df_g_m$R0_tmed<=400 & dengue_df_g_m$R0_tmed>=200,5,6))))))
+mymonths <- c("Jan","Feb","Mar",
+              "Apr","May","Jun",
+              "Jul","Aug","Sep",
+              "Oct","Nov","Dec")
+#add abbreviated month name
+dengue_df_g_m$month_name <- mymonths[ dengue_df_g_m$month ]
 
 #-----------------FINAL MAPS--------------------#
 library(gganimate)
 library(RColorBrewer)
 cols = brewer.pal(n = 7, name = "YlOrBr")
+rm(dengue_df)
+
 # # Create plots:
 ggplot(dengue_df_g_m) +
   geom_sf(aes(fill = as.factor(group_R0)), linewidth = 0.01) +
@@ -139,7 +169,7 @@ ggplot(dengue_df_g_m) +
   theme(plot.margin = margin(0.2, 0.2, 0.2, 0.2, "cm")) +
   theme_void() +
   labs(title = "Month: {current_frame}") +
-  transition_manual(as.factor(month))
+  transition_manual(as.factor(month), duration = rep(1000,12))
 
 # Data frame with number of months R0 >1
 rm(dengue_df)
@@ -166,9 +196,36 @@ ggplot(dengue_df_g_bool) +
 dengue_df_g_p <- dengue_df_g_m[, .(R0_tmed=mean(R0_tmed),
                              tmean = mean(tmean)), 
                          by=list(month, cpro)]
-rm(dengue_df_g_m,dengue_df)
 
-prov_esp <- esp_get_munic_siane() %>%
-  mutate(
-    Provincia = esp_dict_translate(ine.prov.name, "es")
-  )
+
+# Map for provinces
+dengue_df_g_m <- setDT(dengue_df_g_m[,c("NATCODE", "month", "R0_tmed",
+                                        "tmean", "pop", "cpro")])
+dengue_df_g_m_prov <- dengue_df_g_m[, .(R0_tmed=mean(R0_tmed),
+                                        tmean = mean(tmean),
+                                        pop = sum(pop)), 
+                                    by=list(cpro,month)]
+dengue_df_g_m_prov$group_R0 <- ifelse(dengue_df_g_m_prov$R0_tmed<1, 0,
+                                 ifelse(dengue_df_g_m_prov$R0_tmed<25 & dengue_df_g_m_prov$R0_tmed>=1, 1,
+                                        ifelse(dengue_df_g_m_prov$R0_tmed<50 & dengue_df_g_m_prov$R0_tmed>=25, 2,
+                                               ifelse(dengue_df_g_m_prov$R0_tmed<100 & dengue_df_g_m_prov$R0_tmed>=50, 3,
+                                                      ifelse(dengue_df_g_m_prov$R0_tmed<200 & dengue_df_g_m_prov$R0_tmed>=100, 4,
+                                                             ifelse(dengue_df_g_m_prov$R0_tmed<=400 & dengue_df_g_m_prov$R0_tmed>=200,5,6))))))
+
+dengue_df_g_m_prov <- esp_can %>% 
+  left_join(dengue_df_g_m_prov)
+
+# # Create plots:
+ggplot(dengue_df_g_m_prov) +
+  geom_sf(aes(fill = as.factor(group_R0)), linewidth = 0.01) +
+  scale_fill_manual(values = cols,
+                    labels = c("<1", "[1,25)", "[25,50)",
+                               "[50,100)", "[100,200)", "[200,400]", ">400"),
+                    name = "R0 Dengue") +
+  geom_sf(data = can_box) + coord_sf(datum = NA) +
+  theme(plot.margin = margin(0.2, 0.2, 0.2, 0.2, "cm")) +
+  theme_void() +
+  labs(title = "Month: {current_frame}") +
+  transition_manual(as.factor(month), duration = rep(1000,12))
+
+rm(dengue_df_g_m,dengue_df)
