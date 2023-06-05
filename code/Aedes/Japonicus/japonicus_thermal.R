@@ -90,7 +90,8 @@ plotdeltaA <- ggplot(df_out_deltaA) +
   xlim(c(5,35)) + ylim(c(0,0.09)) +
   guides( color =FALSE, alpha = FALSE) +
   ylab("Adult mortality rate") + xlab("Temperature (Cº)") +
-  theme_bw()
+  theme_bw() 
+
 plotdeltaA 
 
 # library(investr)
@@ -117,7 +118,25 @@ plotdeltaA
 Path <- "~/INVASIBILITY_THRESHOLD/data/japonicus/japonicus_temp_developmenttime.csv"
 developL <- read.csv(Path)
 head(developL)
-developL$First_instar_mean <- 1/as.numeric(gsub(",", ".",developL$First_instar_mean))
+
+n_points <- 8
+r1 <- rnorm(n_points,as.numeric(gsub(",", ".",developL$First_instar_mean[1])),
+                   as.numeric(gsub(",", ".",developL$First_instar_sd[1])) )
+r2 <- rnorm(n_points,as.numeric(gsub(",", ".",developL$First_instar_mean[2])),
+            as.numeric(gsub(",", ".",developL$First_instar_sd[2])) )
+r3 <- rnorm(n_points,as.numeric(gsub(",", ".",developL$First_instar_mean[3])),
+            as.numeric(gsub(",", ".",developL$First_instar_sd[3])) )
+r4 <- rnorm(n_points,as.numeric(gsub(",", ".",developL$First_instar_mean[4])),
+            as.numeric(gsub(",", ".",developL$First_instar_sd[4])) )
+r5 <- rnorm(n_points,as.numeric(gsub(",", ".",developL$First_instar_mean[5])),
+            as.numeric(gsub(",", ".",developL$First_instar_sd[5])) )
+
+developL <- data.frame(Temp = sort(rep(developL[,1],n_points)),
+                       First_instar_mean = c(r1,r2,r3,r4,r5))
+
+# saveRDS(developL, "~/INVASIBILITY_THRESHOLD/data/japonicus/developL.Rds")
+developL <- readRDS( "~/INVASIBILITY_THRESHOLD/data/japonicus/developL.Rds")
+developL$First_instar_mean <- 1/developL$First_instar_mean
 
 plot_dE <- ggplot(developL) + 
   geom_point(aes(Temp,First_instar_mean)) + theme_bw()
@@ -146,7 +165,7 @@ df_out_dE$group <- "mean"
 plotdE <- ggplot(df_out_dE) +
   geom_line(aes(temp_ae,dE_jap), size = 0.7) +
   geom_point(data = developL,aes(Temp,First_instar_mean), size = 0.9, color = "red") +
-  xlim(c(0,45)) + 
+  xlim(c(0,40)) + ylim(c(0,0.7)) +  
   ylab("Develop rate from Egg to Larva") + xlab("Temperature (Cº)") +
   theme_bw()
 plotdE
@@ -193,7 +212,7 @@ plotdE <- ggplot(df_out_dE) +
              size = 0.9, color = "black") +
   scale_color_manual(values=c("red", "blue", "red")) + 
   scale_alpha_manual(values = c(0.5,1,0.5)) +
-  xlim(c(5,36)) + 
+  xlim(c(5,36)) + ylim(c(0,0.7)) + 
   guides( color =FALSE, alpha = FALSE) +
   ylab("Develop rate from Egg to Larva") + xlab("Temperature (Cº)") +
   theme_bw()
@@ -426,6 +445,12 @@ plotdeltaL
 
 ###----------------------------------------------
 library(ggpubr)
-ggarrange(plotdE,plotdL,
-          plotdeltaL,plotdeltaA)
+ggarrange(plotdE  +
+            theme(text = element_text(size = 15)) + xlab("") ,
+          plotdL +
+            theme(text = element_text(size = 15)) + xlab(""),
+          plotdeltaL +
+            theme(text = element_text(size = 15)),
+          plotdeltaA  +
+            theme(text = element_text(size = 15)))
 
