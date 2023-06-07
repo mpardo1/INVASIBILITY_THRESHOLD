@@ -112,15 +112,15 @@ func_R0 <- function(ind){
  ymx <- 44
 
  # Temporal grid
- st_time <- lubridate::ymd("2020:01:01")
- en_time <- lubridate::ymd("2020:12:31")
+ st_time <- lubridate::ymd("2022:01:01")
+ en_time <- lubridate::ymd("2022:12:31")
 
- file_prefix <- "era5_Spain_2020"
+ file_prefix <- "era5_Spain_2022"
  file_path <- getwd()
 
  req <- build_era5_request(xmin = xmn, xmax = xmx,
                            ymin = ymn, ymax = ymx,
-                          start_time = st_time,
+                           start_time = st_time,
                            end_time = en_time,
                            outfile_name = file_prefix)
 
