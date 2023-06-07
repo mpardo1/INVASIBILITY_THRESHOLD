@@ -73,6 +73,7 @@ colnames(df_out_deltaA_max) <- c("temp_ae","deltaA_jap")
 df_out_deltaA_max[which(df_out_deltaA_max$deltaA_jap < 0),2] <- 0
 df_out_deltaA_max$group <- "max"
 df_out_deltaA$group <- "mean"
+
 # Plot all three curves together
 df_out_deltaA <- rbind(df_out_deltaA_max,
                        df_out_deltaA_min,
@@ -94,49 +95,34 @@ plotdeltaA <- ggplot(df_out_deltaA) +
 
 plotdeltaA 
 
-# library(investr)
-# new.data <- data.frame(Temp=seq(1, 40, by = 0.1))
-# interval <- as_tibble(predFit(Fitting_deltaA, newdata = new.data,
-#                               interval = "confidence", level= 0.9)) %>% 
-#   mutate(Temp = new.data$Temp)
-# 
-# p1 <-  ggplot(data = Japonicus, 
-#              aes(x = Temp,y = FemaledeltaA)) +
-#   geom_point(size = 0.7)  
-# 
-# plotdeltaA <- p1 +
-#   geom_line(data=interval, aes(x = Temp, y = fit ))+
-#   geom_ribbon(data=interval, aes(x=Temp, ymin=lwr, ymax=upr),
-#               alpha=0.5, inherit.aes=F, fill="blue") +
-#   xlim(c(0,40))  +
-#   ylab("Adult mortality rate") + xlab("Temperature (Cº)") +
-#   theme_bw()
-# 
-# plotdeltaA
 ###----------------------------------------------
-######c(0.00035,9.5,36) this looks good
-Path <- "~/INVASIBILITY_THRESHOLD/data/japonicus/japonicus_temp_developmenttime.csv"
-developL <- read.csv(Path)
-head(developL)
-
-n_points <- 8
-r1 <- rnorm(n_points,as.numeric(gsub(",", ".",developL$First_instar_mean[1])),
-                   as.numeric(gsub(",", ".",developL$First_instar_sd[1])) )
-r2 <- rnorm(n_points,as.numeric(gsub(",", ".",developL$First_instar_mean[2])),
-            as.numeric(gsub(",", ".",developL$First_instar_sd[2])) )
-r3 <- rnorm(n_points,as.numeric(gsub(",", ".",developL$First_instar_mean[3])),
-            as.numeric(gsub(",", ".",developL$First_instar_sd[3])) )
-r4 <- rnorm(n_points,as.numeric(gsub(",", ".",developL$First_instar_mean[4])),
-            as.numeric(gsub(",", ".",developL$First_instar_sd[4])) )
-r5 <- rnorm(n_points,as.numeric(gsub(",", ".",developL$First_instar_mean[5])),
-            as.numeric(gsub(",", ".",developL$First_instar_sd[5])) )
-
-developL <- data.frame(Temp = sort(rep(developL[,1],n_points)),
-                       First_instar_mean = c(r1,r2,r3,r4,r5))
-
+# Path <- "~/INVASIBILITY_THRESHOLD/data/japonicus/japonicus_temp_developmenttime.csv"
+# developL <- read.csv(Path)
+# head(developL)
+# 
+# n_points <- 8
+# r1 <- rnorm(n_points,as.numeric(gsub(",", ".",developL$First_instar_mean[1])),
+#                    as.numeric(gsub(",", ".",developL$First_instar_sd[1])) )
+# r2 <- rnorm(n_points,as.numeric(gsub(",", ".",developL$First_instar_mean[2])),
+#             as.numeric(gsub(",", ".",developL$First_instar_sd[2])) )
+# r3 <- rnorm(n_points,as.numeric(gsub(",", ".",developL$First_instar_mean[3])),
+#             as.numeric(gsub(",", ".",developL$First_instar_sd[3])) )
+# r4 <- rnorm(n_points,as.numeric(gsub(",", ".",developL$First_instar_mean[4])),
+#             as.numeric(gsub(",", ".",developL$First_instar_sd[4])) )
+# r5 <- rnorm(n_points,as.numeric(gsub(",", ".",developL$First_instar_mean[5])),
+#             as.numeric(gsub(",", ".",developL$First_instar_sd[5])) )
+# 
+# developL <- data.frame(Temp = sort(rep(developL[,1],n_points)),
+#                        First_instar_mean = c(r1,r2,r3,r4,r5))
+#
 # saveRDS(developL, "~/INVASIBILITY_THRESHOLD/data/japonicus/developL.Rds")
+# developL$First_instar_mean <- 1/developL$First_instar_mean
+
+###### Random sample from a gaussian distribution, since if we take the mean
+# thre are only 4 points in the data, and the fit it is overfitting
+# We do it once since each iteration the curves are different. So we save the random sample.
+
 developL <- readRDS( "~/INVASIBILITY_THRESHOLD/data/japonicus/developL.Rds")
-developL$First_instar_mean <- 1/developL$First_instar_mean
 
 plot_dE <- ggplot(developL) + 
   geom_point(aes(Temp,First_instar_mean)) + theme_bw()
@@ -449,7 +435,7 @@ ggarrange(plotdE  +
             theme(text = element_text(size = 15)) + xlab("") ,
           plotdL +
             theme(text = element_text(size = 15)) + xlab(""),
-          plotdeltaL +
+          plotdeltaL + ylim(c(-0.5,1.3)) +
             theme(text = element_text(size = 15)),
           plotdeltaA  +
             theme(text = element_text(size = 15)))
