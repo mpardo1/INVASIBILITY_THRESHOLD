@@ -21,7 +21,6 @@ unique(esp_can_filt)
 
 can_box <- esp_get_can_box()
 
-
 ### Read RDS with R0
 Path <- "~/INVASIBILITY_THRESHOLD/output/weather/Daily/R0/R0_aemet_weather_year_2_22.Rds"
 weather_R0 <- readRDS(Path)

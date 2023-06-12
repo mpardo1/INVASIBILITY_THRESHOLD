@@ -363,7 +363,8 @@ df_out_deltaL[which(df_out_deltaL$deltaL_jap < 0),2] <- 0
 
 plotdeltaL <- ggplot(df_out_deltaL) +
   geom_line(aes(temp_ae,deltaL_jap), size = 0.8) +
-  geom_point(data = Lmortality,aes(Temp,mean_mort_perc), size = 0.9, color = "red") +
+  geom_point(data = Lmortality,aes(Temp,mean_mort_perc),
+             size = 0.9, color = "red") +
   ylab("Larva mortality rate") + xlab("Temperature (Cº)") +
   theme_bw()
 plotdeltaL

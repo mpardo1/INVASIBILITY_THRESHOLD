@@ -26,6 +26,23 @@ Quad_func <- function(cte, tmin, tmax, temp){
   return(outp)
 }
 
+Lin_func <- function(cte, cte1, temp){
+  outp <- temp*cte + cte1
+  if(outp < 0 | is.na(outp)){
+    outp <- 0.00001
+  }
+  return(outp)
+}
+
+
+Quad <- function(cte, cte1,cte2, temp){
+  outp <- cte*temp^2 + cte1*temp + cte2
+  if(outp < 0 | is.na(outp)){
+    outp <- 0
+  }
+  return(outp)
+}
+
 ### Incorporating rain and human density:
 h_f <- function(hum, rain){
   # Constants: 
@@ -157,10 +174,10 @@ ggarrange(plot_t,plot_r,plot_h)
 ####------------------------------Aegypti------------------------####
 a_f_aeg <- function(temp){Briere_func(0.000202,13.35,40.08,temp)} # Biting rate
 EFD_f_aeg <- function(temp){Briere_func(0.00856,14.58,34.61,temp)} # Fecundity
-pLA_f_aeg <- function(temp){Quad_func(4.186e-03,9.373e+00,4.026e+01,temp)} # Survival probability Egg-Adult
+pLA_f_aeg <- function(temp){Quad_func(0.004186,9.373,40.26,temp)} # Survival probability Egg-Adult
 MDR_f_aeg <- function(temp){Briere_func(0.0000786,11.36,39.17,temp)} # Mosquito Development Rate
 lf_f_aeg <- function(temp){Quad_func(0.148,9.16,37.73,temp)} # Adult life span
-dE_f_aeg <- function(temp){1/8} # Adult life span
+dE_f_aeg <- function(temp){Briere_func(0.0003775 ,14.88,37.42,temp)} # Adult life span
 
 # R0 function by temperature:
 R0_func_aeg <- function(rain,hum,Te){
@@ -237,31 +254,8 @@ ggarrange(dev_t,dev_r,dev_h)
 ggarrange(plot_t,plot_r,plot_h)
 
 #####----------------Japonicus-----------------####
-Lin_func <- function(cte, cte1, temp){
-  outp <- temp*cte + cte1
-  if(outp < 0 | is.na(outp)){
-    outp <- 0.00001
-  }
-  return(outp)
-}
 
-Lin1_func <- function(cte, cte1, temp){
-  outp <- temp*cte + cte1
-  if(outp < 0 | is.na(outp)){
-    outp <- 0
-  }
-  return(outp)
-}
-
-Quad <- function(cte, cte1,cte2, temp){
-  outp <- cte*temp^2 + cte1*temp + cte2
-  if(outp < 0 | is.na(outp)){
-    outp <- 0
-  }
-  return(outp)
-}
-
-dE_f_jap <- function(temp){Briere_func(2.498e-04,5.000e+00,3.596e+01,temp)} # Mosquito Development Rate
+dE_f_jap <- function(temp){Briere_func(0.0002859,6.360,35.53 ,temp)} # Mosquito Development Rate
 dL_f_jap <- function(temp){Briere_func(7.000e-05,9.705e+00,3.410e+01,temp)} # Survival probability Egg-Adult
 deltaA_f_jap <- function(temp){Lin_func(0.0029535,-0.0179913,temp)} # Adult life span
 deltaL_f_jap <- function(temp){Quad(0.0030183,-0.1099622,1.1617832,temp)} # Adult life span
