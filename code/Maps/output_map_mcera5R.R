@@ -140,9 +140,14 @@ plot_sum_alb <- ggplot(df_group_y) +
   geom_sf(aes(fill = R0_sum_alb), linewidth = 0.01) +
   geom_sf(data = can_box) + coord_sf(datum = NA) +
   scale_fill_distiller(palette = "Spectral",
-                       name = "Nº months suitable",
+                       name = "Nº months\n suitable",
                        limits=c(0,12)) +
-  theme_bw()
+  # scale_fill_viridis_c(option = "magma",
+  #                      name = "Nº months\n suitable",
+  #                      direction = -1,
+  #                      limits=c(0,12)) +
+  theme_bw() 
+plot_sum_alb
 
 plot_sum_aeg <- ggplot(df_group_y) +
   geom_sf(aes(fill = R0_sum_aeg), linewidth = 0.01) +
@@ -483,6 +488,7 @@ gg_sum <- ggplot(df_sum) +
   ylab("P/A") + theme_bw()
 
 ggarrange(gg_range , gg_sum, common.legend = TRUE)
+
 #-----------------------------------------------------------------------#
 #### The same for Girona ####
 NATCODE_GN <- esp_can[which(esp_can$ine.prov.name == "Girona"),"NATCODE"]

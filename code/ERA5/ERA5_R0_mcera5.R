@@ -34,7 +34,7 @@ QuadN_func <- function(cte, c1, c2, temp){
 }
 
 Lin_func <- function(cte, c1, temp){
-  outp <- cte^temp + c1
+  outp <- cte*temp + c1
   if(outp < 0 | is.na(outp)){
     outp <- 0
   }
@@ -74,10 +74,18 @@ R0_func_alb <- function(Te, rain, hum){
   probla <- pLA_f_alb(Te)
   h <- h_f(hum,rain)
   deltaE = 0.1
-  R0 <- sqrt(f*(a*deltaa)*probla*(h*dE/(h*dE+deltaE)))
+  R0 <- (f*(a*deltaa)*probla*(h*dE/(h*dE+deltaE)))^(1/3)
   return(R0)
 }
 
+vec <- seq(0,40,0.01)
+out <- sapply(vec,R0_func_alb, rain = 6, hum = 500)
+
+df_out <- data.frame(vec, out)
+ggplot(df_out) +
+  geom_line(aes(vec,out))
+
+df_out[which(df_out$out == max(df_out$out)),"vec"]
 ####------------------------------Aegypti------------------------####
 a_f_aeg <- function(temp){Briere_func(0.000202,13.35,40.08,temp)} # Biting rate
 EFD_f_aeg <- function(temp){Briere_func(0.00856,14.58,34.61,temp)} # Fecundity
@@ -95,9 +103,18 @@ R0_func_aeg <- function(Te, rain,hum){
   probla <- pLA_f_aeg(Te)
   h <- h_f(hum,rain)
   deltE = 0.1
-  R0 <- sqrt((f*deltaa)*probla*(h*dE/(h*dE+deltE)))
+  R0 <- ((f*deltaa)*probla*(h*dE/(h*dE+deltE)))^(1/3)
   return(R0)
 }
+
+vec <- seq(0,40,0.01)
+out <- sapply(vec,R0_func_aeg, rain = 6, hum = 500)
+
+df_out <- data.frame(vec, out)
+ggplot(df_out) +
+  geom_line(aes(vec,out))
+
+df_out[which(df_out$out == max(df_out$out)),"vec"]
 
 ####---------------------------Japonicus------------------------####
 dE_f_jap <- function(temp){Briere_func(0.0002859,6.360,35.53 ,temp)} # Mosquito Development Rate
@@ -125,11 +142,19 @@ R0_func_jap <- function(Te, rain,hum){
   if(dL == 0){
     R0 <- 0
   }else{
-    R0 <- sqrt(f*a*(dL/(dL+deltaL))*(h*dE/(h*dE+deltE)))
+    R0 <- (f*a*(dL/(dL+deltaL))*(h*dE/(h*dE+deltE)))^(1/3)
   }
   return(R0)
 }
 
+vec <- seq(0,40,0.01)
+out <- sapply(vec,R0_func_jap, rain = 6, hum = 500)
+
+df_out <- data.frame(vec, out)
+ggplot(df_out) +
+  geom_line(aes(vec,out))
+
+df_out[which(df_out$out == max(df_out$out)),"vec"]
 ## Test that the function works and make sense the values should go
 # from bigger to smaller
 R0_func_jap(30,5,400)
