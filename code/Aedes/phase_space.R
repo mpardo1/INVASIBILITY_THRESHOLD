@@ -85,8 +85,7 @@ df_out_alb <- data.frame(vec, out)
 ggplot(df_out_alb) +
   geom_line(aes(vec,out))
 
-df_out_alb[which(df_out_alb$out == max(df_out_alb$out)),"vec"]
-
+df_out[which(df_out$out == max(df_out$out)),"vec"]
 ####------------------------------Aegypti------------------------####
 a_f_aeg <- function(temp){Briere_func(0.000202,13.35,40.08,temp)} # Biting rate
 EFD_f_aeg <- function(temp){Briere_func(0.00856,14.58,34.61,temp)} # Fecundity
@@ -143,7 +142,7 @@ R0_func_jap <- function(Te, rain,hum){
   if(dL == 0){
     R0 <- 0
   }else{
-    R0 <- ((f*a/deltaa)*(dL/(dL+deltaL))*(h*dE/(h*dE+deltE)))^(1/3)
+    R0 <- (f*a*(dL/(dL+deltaL))*(h*dE/(h*dE+deltE)))^(1/3)
   }
   return(R0)
 }
@@ -173,64 +172,30 @@ ggplot(df_out) +
   theme(legend.position = c(0.1,0.6),
         text = element_text(size = 14),
         legend.title=element_blank())  
-  
 
 
-## Test that the function works and make sense the values should go
-# from bigger to smaller
-R0_func_jap(30,5,400)
-R0_func_alb(15,5,400)
-R0_func_aeg(15,5,400)
+#### Phase space for all three species
+temperature <- seq(5, 40, by = 0.1)
+rainfall <- seq(0, 18, by = 0.1)
+dt_ps <- setDT(expand.grid(temperature = temperature, rainfall = rainfall))
+dt_ps$hum = 0
+dt_ps[, Albopictus := mapply(R0_func_alb, temperature, rainfall, hum)]
+dt_ps[, Japonicus := mapply(R0_func_jap, temperature, rainfall, hum)]
+dt_ps[, Aegypti := mapply(R0_func_aeg, temperature, rainfall, hum)]
 
-# Use data taken from MCERA5 Package R from ERA5 data set Copernicus
-R0_each_muni <- readRDS("~/INVASIBILITY_THRESHOLD/output/R0/R0_ERA5_hourly_mcera_2020.Rds")
-# modified_df <- do.call(rbind, R0_each_muni)
-rm(census)
-head(R0_each_muni[[1000]])
+albo <- ggplot(dt_ps) +
+  geom_point(aes(temperature,rainfall,color = Albopictus)) +
+  scale_color_viridis_c(option = "magma") + theme_bw()
 
-df_group <- data.table()
-for(i in c(1:length(R0_each_muni))){
-  print(paste0("i:",i))
-  dt_aux <- setDT(R0_each_muni[[i]])
-  dt_aux$date <- as.Date(dt_aux$obs_time)
-  
-  ## Albopictus
-  dt_aux[, R0_hourly_alb := mapply(R0_func_alb, temperature, prec, pop)]
-  
-  ## Aegypti
-  dt_aux[, R0_hourly_aeg := mapply(R0_func_aeg, temperature, prec, pop)]
-  
-  ## Japonicus
-  dt_aux[, R0_hourly_jap := mapply(R0_func_jap, temperature, prec, pop)]
-  
-  
-  dt_aux <- dt_aux[, .(temp=mean(temperature),
-                       min_temp = min(temperature),
-                       max_temp = max(temperature),
-                       prec = sum(prec), 
-                       pop= min(pop),
-                       R0_hourly_alb = mean(R0_hourly_alb),
-                       R0_hourly_aeg = mean(R0_hourly_aeg),
-                       R0_hourly_jap = mean(R0_hourly_jap)), 
-                   by=list(NATCODE,date)]
-  
-  ## Albopictus
-  dt_aux[, R0_min_alb := mapply(R0_func_alb, min_temp, prec, pop)]
-  dt_aux[, R0_max_alb := mapply(R0_func_alb, max_temp, prec, pop)]
-  dt_aux[, R0_dai_alb := mapply(R0_func_alb, temp, prec, pop)]
-  
-  ## Aegypti
-  dt_aux[, R0_min_aeg := mapply(R0_func_aeg, min_temp, prec, pop)]
-  dt_aux[, R0_max_aeg := mapply(R0_func_aeg, max_temp, prec, pop)]
-  dt_aux[, R0_dai_aeg := mapply(R0_func_alb, temp, prec, pop)]
-  
-  ## Japonicus
-  dt_aux[, R0_min_jap := mapply(R0_func_jap, min_temp, prec, pop)]
-  dt_aux[, R0_max_jap := mapply(R0_func_jap, max_temp, prec, pop)]
-  dt_aux[, R0_dai_jap := mapply(R0_func_alb, temp, prec, pop)]
-  
-  df_group <- rbind(dt_aux,df_group)
-}
+aeg <- ggplot(dt_ps) +
+  geom_point(aes(temperature,rainfall,color = Aegypti)) +
+  scale_color_viridis_c(option = "magma") + theme_bw()
 
-saveRDS(df_group,
-        "~/INVASIBILITY_THRESHOLD/output/R0/R0_ERA5_daily_mcera_2020.Rds")
+jap <- ggplot(dt_ps) +
+  geom_point(aes(temperature,rainfall,color = Japonicus)) +
+  scale_color_viridis_c(option = "magma") + theme_bw()
+
+library(ggpubr)
+ggarrange(jap + xlab(""),albo + xlab(""),aeg , ncol =1)
+
+

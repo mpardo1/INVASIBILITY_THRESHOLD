@@ -10,7 +10,7 @@ library(gganimate)
 library(viridis)
 library("data.table")
 
-Path = "~/INVASIBILITY_THRESHOLD/data/PresenceAbsence_MA_BG2.Rds"
+Path = "~/INVASIBILITY_THRESHOLD/data/PA/PresenceAbsence_MA_BG2.Rds"
 df_pa <- readRDS(Path)
 
 esp_can <- esp_get_munic_siane(moveCAN = TRUE)

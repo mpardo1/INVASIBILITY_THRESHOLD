@@ -43,6 +43,13 @@ Quad <- function(cte, cte1,cte2, temp){
   return(outp)
 }
 
+QuadN_func <- function(cte, c1, c2, temp){
+  outp <- cte*temp^2 + c1*temp + c2
+  if(outp < 0 | is.na(outp)){
+    outp <- 0
+  }
+  return(outp)
+}
 ### Incorporating rain and human density:
 h_f <- function(hum, rain){
   # Constants: 
@@ -63,25 +70,175 @@ h_f <- function(hum, rain){
 ## Thermal responses Aedes Albopictus from Mordecai 2017:
 a_f_alb <- function(temp){Briere_func(0.000193,10.25,38.32,temp)} # Biting rate
 TFD_f_alb <- function(temp){Briere_func(0.0488,8.02,35.65,temp)} # Fecundity
-pLA_f_alb <- function(temp){Quad_func(2.663e-03,6.668e+00,3.892e+01,temp)} # Survival probability Egg-Adult
+pLA_f_alb <- function(temp){Quad_func(0.002663,6.668,38.92,temp)} # Survival probability Egg-Adult
 MDR_f_alb <- function(temp){Briere_func(0.0000638,8.6,39.66,temp)} # Mosquito Development Rate
 lf_f_alb <- function(temp){Quad_func(1.43,13.41,31.51,temp)} # Adult life span
-dE_f_alb <- function(temp){4.66e-03*temp -4.23e-02} # Adult life span
+dE_f_alb <- function(temp){Briere_func(0.00006881,8.869,35.09,temp)} # Adult life span
 
 # R0 function by temperature:
-R0_func_alb <- function(rain,hum,Te){
+R0_func_alb <- function(Te, rain, hum){
   a <- a_f_alb(Te)
-  f <- TFD_f_alb(Te)
+  f <- (1/2)*TFD_f_alb(Te)
   deltaa <- lf_f_alb(Te)
   dE <- dE_f_alb(Te)
   probla <- pLA_f_alb(Te)
   h <- h_f(hum,rain)
   deltaE = 0.1
-  R0 <- sqrt(f*(a*deltaa)*probla*(h*dE/(h*dE+deltaE)))
+  R0 <- (f*(a*deltaa)*probla*(h*dE/(h*dE+deltaE)))^(1/3)
   return(R0)
 }
 
 
+####------------------------------Aegypti------------------------####
+a_f_aeg <- function(temp){Briere_func(0.000202,13.35,40.08,temp)} # Biting rate
+EFD_f_aeg <- function(temp){Briere_func(0.00856,14.58,34.61,temp)} # Fecundity
+pLA_f_aeg <- function(temp){Quad_func(0.004186,9.373,40.26,temp)} # Survival probability Egg-Adult
+MDR_f_aeg <- function(temp){Briere_func(0.0000786,11.36,39.17,temp)} # Mosquito Development Rate
+lf_f_aeg <- function(temp){Quad_func(0.148,9.16,37.73,temp)} # Adult life span
+dE_f_aeg <- function(temp){Briere_func(0.0003775 ,14.88,37.42,temp)} # Adult life span
+
+# R0 function by temperature:
+R0_func_aeg <- function(Te, rain,hum){
+  a <- a_f_aeg(Te)
+  f <- (1/2)*EFD_f_aeg(Te)
+  deltaa <- lf_f_aeg(Te)
+  dE <- dE_f_aeg(Te)
+  probla <- pLA_f_aeg(Te)
+  h <- h_f(hum,rain)
+  deltE = 0.1
+  R0 <- ((f*deltaa)*probla*(h*dE/(h*dE+deltE)))^(1/3)
+  return(R0)
+}
+#####----------------Japonicus-----------------####
+dE_f_jap <- function(temp){Briere_func(0.0002859,6.360,35.53 ,temp)} # Mosquito Development Rate
+dL_f_jap <- function(temp){Briere_func(7.000e-05,9.705e+00,3.410e+01,temp)} # Survival probability Egg-Adult
+deltaA_f_jap <- function(temp){Lin_func(0.0029535,-0.0179913,temp)} # Adult life span
+deltaL_f_jap <- function(temp){QuadN_func(0.0030183,-0.1099622,1.1617832,temp)} # Adult life span
+
+# R0 function by temperature:
+R0_func_jap <- function(Te, rain,hum){
+  a <- 0.3
+  f <- 183/2
+  deltaa <- deltaA_f_jap(Te)
+  deltaL <- deltaL_f_jap(Te)
+  deltE = 0.1
+  dE <- dE_f_jap(Te)
+  dL <- dL_f_jap(Te)
+  h <- h_f(hum,rain)
+  if(dL == 0){
+    R0 <- 0
+  }else{
+    R0 <- ((f*a/deltaa)*(dL/(dL+deltaL))*(h*dE/(h*dE+deltE)))^(1/3)
+  }
+  return(R0)
+}
+
+### Difference between fecundity and bitting rate:
+# bitting rate
+vec <- seq(0,40,0.01)
+aegypti <- sapply(vec,a_f_aeg)
+albopictus <- sapply(vec,a_f_alb)
+df_out <- data.frame(vec, aegypti, albopictus)
+df_out <- reshape2::melt( df_out, id.vars = "vec")
+
+ggplot(df_out) + 
+  geom_point(aes(vec,value, color=variable)) +
+  ylab("bitting rate") +
+  theme_bw()
+ 
+# Fecundity
+vec <- seq(0,40,0.01)
+aegypti <- sapply(vec,EFD_f_aeg)
+albopictus <- sapply(vec,TFD_f_alb)
+df_out <- data.frame(vec, aegypti, albopictus)
+df_out <- reshape2::melt( df_out, id.vars = "vec")
+
+ggplot(df_out) + 
+  geom_point(aes(vec,value, color=variable)) +
+  ylab("Fecundity") +
+  theme_bw()
+
+# Fecundity*bittinh
+vec <- seq(10,40,0.01)
+aegypti <- sapply(vec,EFD_f_aeg)
+albopictus1 <- sapply(vec,a_f_alb)
+albopictus <- sapply(vec,TFD_f_alb)
+df_out <- data.frame(vec, aegypti = aegypti, albopictus = albopictus*albopictus1)
+df_out <- reshape2::melt( df_out, id.vars = "vec")
+
+ggplot(df_out) + 
+  geom_point(aes(vec,value, color=variable)) +
+  ylab("Fecundity*bitting") +
+  theme_bw()
+
+# Life span
+vec <- seq(10,40,0.01)
+aegypti <- sapply(vec,lf_f_aeg)
+albopictus <- sapply(vec,lf_f_alb)
+japonicus <- sapply(vec,deltaA_f_jap)
+
+df_out <- data.frame(vec, aegypti = 1/aegypti,
+                     albopictus = 1/albopictus,
+                     japonicus = japonicus)
+df_out <- reshape2::melt( df_out, id.vars = "vec")
+
+ggplot(df_out) + 
+  geom_point(aes(vec,value, color=variable)) +
+  ylab("deltaA") + ylim(c(0,0.2)) +
+  theme_bw()
+
+# p_LA
+vec <- seq(10,40,0.01)
+aegypti <- sapply(vec,pLA_f_aeg)
+albopictus <- sapply(vec,pLA_f_alb)
+japo1 <- sapply(vec,dL_f_jap)
+japo2 <- sapply(vec,deltaL_f_jap)
+
+df_out <- data.frame(vec, aegypti = aegypti,
+                     albopictus = albopictus,
+                     japonicus = japo1/(japo1+japo2))
+df_out <- reshape2::melt( df_out, id.vars = "vec")
+
+ggplot(df_out) + 
+  geom_point(aes(vec,value, color=variable)) +
+  ylab("pLA") +
+  theme_bw()
+
+# dE
+vec <- seq(10,40,0.01)
+aegypti <- sapply(vec,dE_f_aeg)
+albopictus <- sapply(vec,dE_f_alb) 
+japonicus <- sapply(vec,dE_f_jap) 
+
+df_out <- data.frame(vec, aegypti = aegypti,
+                     albopictus = albopictus,
+                     japonicus = japonicus)
+df_out <- reshape2::melt( df_out, id.vars = "vec")
+
+ggplot(df_out) + 
+  geom_point(aes(vec,value, color=variable)) +
+  ylab("dE") +
+  theme_bw()
+
+# R0
+vec <- seq(5,40,0.001)
+aegypti <- sapply(vec,R0_func_aeg, hum = 500,rain = 8)
+albopictus <- sapply(vec,R0_func_alb, hum = 500,rain = 8) 
+japonicus <- sapply(vec,R0_func_jap, hum = 500,rain = 8) 
+
+df_out <- data.frame(vec, aegypti = aegypti,
+                     albopictus = albopictus,
+                     japonicus = japonicus)
+df_out <- reshape2::melt( df_out, id.vars = "vec")
+
+ggplot(df_out) + 
+  geom_line(aes(vec,value, color=variable)) +
+  geom_hline(yintercept = 1, linetype = "dashed", color = "red") +
+  ylab("R0") +
+  theme_bw()
+
+
+#------------------------------Albopictus------------------------------------#
 # R0 with hacthing rate
 vec <- seq(0,30,0.01)
 hum_cte <- 2000
@@ -121,6 +278,7 @@ plot_t <- ggplot(df_out_alb) +
   xlab("Temperature(Cº)") + ylab("R0") +
   theme_bw()
 plot_t
+
 ind <- df_out_alb[which(df_out_alb$out_alb != 0),1]
 numd1_t <- grad(function(x){R0_func_alb(rain_cte,hum_cte,x)}, ind)
 devf_t <- data.frame(ind,numd1_t)
@@ -171,27 +329,7 @@ library(ggpubr)
 ggarrange(dev_t,dev_r,dev_h)
 ggarrange(plot_t,plot_r,plot_h)
 
-####------------------------------Aegypti------------------------####
-a_f_aeg <- function(temp){Briere_func(0.000202,13.35,40.08,temp)} # Biting rate
-EFD_f_aeg <- function(temp){Briere_func(0.00856,14.58,34.61,temp)} # Fecundity
-pLA_f_aeg <- function(temp){Quad_func(0.004186,9.373,40.26,temp)} # Survival probability Egg-Adult
-MDR_f_aeg <- function(temp){Briere_func(0.0000786,11.36,39.17,temp)} # Mosquito Development Rate
-lf_f_aeg <- function(temp){Quad_func(0.148,9.16,37.73,temp)} # Adult life span
-dE_f_aeg <- function(temp){Briere_func(0.0003775 ,14.88,37.42,temp)} # Adult life span
-
-# R0 function by temperature:
-R0_func_aeg <- function(rain,hum,Te){
-  a <- a_f_aeg(Te)
-  f <- EFD_f_aeg(Te)
-  deltaa <- lf_f_aeg(Te)
-  dE <- dE_f_aeg(Te)
-  probla <- pLA_f_aeg(Te)
-  h <- h_f(hum,rain)
-  deltE = 0.1
-  R0 <- sqrt((f*deltaa)*probla*(h*dE/(h*dE+deltE)))
-  return(R0)
-}
-
+#####------ Aegypti ------------##
 # Derivative with respect to Temperature
 vec <- seq(0,40,0.0001)
 hum_cte <- 500
@@ -203,6 +341,7 @@ plot_t <- ggplot(df_out_aeg) +
   geom_line(aes(vec,out_aeg)) + 
   xlab("Temperature(Cº)") + ylab("R0") +
   theme_bw()
+plot_t
 
 ind <- df_out_aeg[which(df_out_aeg$out_aeg != 0),1]
 numd1_t <- grad(function(x){R0_func_aeg(rain_cte,hum_cte,x)}, ind)
@@ -253,28 +392,8 @@ library(ggpubr)
 ggarrange(dev_t,dev_r,dev_h)
 ggarrange(plot_t,plot_r,plot_h)
 
-#####----------------Japonicus-----------------####
-
-dE_f_jap <- function(temp){Briere_func(0.0002859,6.360,35.53 ,temp)} # Mosquito Development Rate
-dL_f_jap <- function(temp){Briere_func(7.000e-05,9.705e+00,3.410e+01,temp)} # Survival probability Egg-Adult
-deltaA_f_jap <- function(temp){Lin_func(0.0029535,-0.0179913,temp)} # Adult life span
-deltaL_f_jap <- function(temp){Quad(0.0030183,-0.1099622,1.1617832,temp)} # Adult life span
-
-# R0 function by temperature:
-R0_func_jap <- function(rain,hum,Te){
-  a <- 0.2
-  f <- 100
-  deltaa <- deltaA_f_jap(Te)
-  deltaL <- deltaL_f_jap(Te)
-  deltE = 0.1
-  dE <- dE_f_jap(Te)
-  dL <- dL_f_jap(Te)
-  h <- h_f(hum,rain)
-  R0 <- sqrt(f*a*(dL/(dL+deltaL))*(h*dE/(h*dE+deltE)))
-  return(R0)
-}
-
-vec = seq(0,40,0.1)
+##### --------------------- JAPONICUS---------------------#
+vec = seq(0,40,0.001)
 df <- data.frame(vec, out <- sapply(vec,dL_f_jap))
 ggplot(df) +
   geom_point(aes(vec,out))

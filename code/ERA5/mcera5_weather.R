@@ -49,10 +49,11 @@ ymn <- 27
 ymx <- 44
 
 # Temporal grid
-st_time <- lubridate::ymd("2022:01:01")
-en_time <- lubridate::ymd("2022:12:31")
+year = 2021
+st_time <- lubridate::ymd(paste0(year,":01:01"))
+en_time <- lubridate::ymd(paste0(year,":12:31"))
 
-file_prefix <- "era5_Spain_2022"
+file_prefix <- paste0("era5_Spain_",year)
 file_path <- getwd()
 
 req <- build_era5_request(xmin = xmn, xmax = xmx,
@@ -65,7 +66,7 @@ request_era5(request = req, uid = uid, out_path = file_path)
 
 # List the path of an .nc file that was downloaded via
 # request_era5()
-my_nc <- paste0(getwd(), "/era5_Spain_2020.nc")
+my_nc <- paste0(getwd(),paste0("era5_Spain_",year,".nc"))
 # my_nc = "/home/marta/era5_Spain_2020.nc"
 
 # Compute centroid for each municipality
@@ -79,10 +80,13 @@ census <- mapSpain::pobmun19
 esp_can <- esp_can %>% left_join(census,
                                  by = c("cmun" = "cmun","cpro" = "cpro"))
 esp_can <- esp_can[,c("NATCODE", "centroid", "pob19")]
+
 # Number of cores used in the parallelization
-num_cores = 1
+num_cores = 10
 # Parallelize function in order to obtain value R0 for each municipality
-R0_each_muni <- mclapply(c(1:nrow(esp_can)), 
+climat_each_muni <- mclapply(c(1:nrow(esp_can)), 
                          extract_weather, 
                          mc.cores = num_cores)
 
+saveRDS(climat_each_muni,
+        paste0("~/INVASIBILITY_THRESHOLD/output/R0/ERA5_daily_mcera_",year,".Rds"))

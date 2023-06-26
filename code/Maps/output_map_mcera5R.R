@@ -133,6 +133,18 @@ df_group_y <- df_group_mon %>% group_by(NATCODE) %>%
             avg_temp = mean(temp),
             sum_prec = sum(prec))
 
+df_sum <- df_group_mon[which(df_group_mon$month >3 &
+                     df_group_mon$month <11 ),]
+df_group_sum <- df_sum %>%group_by(NATCODE) %>%
+  summarise(R0_sum_alb = sum(bool_R0_alb),
+            R0_sum_aeg = sum(bool_R0_aeg),
+            R0_sum_jap = sum(bool_R0_jap),
+            R0_avg_alb = mean(R0_monthly_alb),
+            R0_avg_aeg = mean(R0_monthly_aeg),
+            R0_avg_jap = mean(R0_monthly_jap),
+            avg_temp = mean(temp),
+            sum_prec = sum(prec))
+
 # Whole map group by number of months suitable
 library(RColorBrewer)
 library(ggpubr)
@@ -171,6 +183,35 @@ ggarrange(plot_sum_alb + ggtitle("Aedes Albopictus"),
           plot_sum_jap + ggtitle("Aedes Japonicus"),
           common.legend = TRUE)
 
+##-------------------- AVG maps -----------------------
+plot_avg_aeg <- ggplot(df_group_sum) +
+  geom_sf(aes(fill = R0_avg_aeg), linewidth = 0.01) +
+  geom_sf(data = can_box) + coord_sf(datum = NA) +
+  scale_fill_distiller(palette = "Spectral",
+                       name = "Annual R0") +
+  theme_bw()
+
+plot_avg_jap <- ggplot(df_group_sum) +
+  geom_sf(aes(fill = R0_avg_jap), linewidth = 0.01) +
+  geom_sf(data = can_box) + coord_sf(datum = NA) +
+  scale_fill_distiller(palette = "Spectral",
+                       name = "Annual R0") +
+  theme_bw()
+
+plot_avg_alb <- ggplot(df_group_sum) +
+  geom_sf(aes(fill = R0_avg_alb), linewidth = 0.01) +
+  geom_sf(data = can_box) + coord_sf(datum = NA) +
+  scale_fill_distiller(palette = "Spectral",
+                       name = "Annual R0") +
+  theme_bw()
+
+
+
+ggarrange(plot_avg_alb + ggtitle("Aedes Albopictus"),
+          plot_avg_aeg + ggtitle("Aedes Aegypti"),
+          plot_avg_jap + ggtitle("Aedes Japonicus"),
+          common.legend = TRUE)
+
 ### Plot of average temperature and rainfall
 plot_temp <- ggplot(df_group_y) +
   geom_sf(aes(fill = avg_temp), linewidth = 0.01) +
@@ -188,6 +229,7 @@ plot_rain <- ggplot(df_group_y) +
 
 ggarrange(plot_temp,plot_rain)
 
+###----------------- VALIDATION -----------------------#
 ## MAp Spain -------
 esp_can <- esp_get_munic_siane(moveCAN = TRUE)
 esp_can$NATCODE <- as.numeric(paste0("34",
@@ -415,7 +457,13 @@ df_r_CAT <- df_range(df_pa_CAT)
 df_r_CAT$ccaa <- "Catalunya"
 df_sum_CAT <- df_num_months(df_pa_CAT)
 df_sum_CAT$ccaa <- "Catalunya"
-
+df_sum_CAT[which(is.na(df_sum_CAT$num_0)),"num_0"] = 0
+df_sum_CAT$prop_presence <- df_sum_CAT$num_1/(df_sum_CAT$num_1 +df_sum_CAT$num_0)
+ggplot(df_sum_CAT) +
+  geom_point(aes(R0_sum_alb,prop_presence)) + 
+  scale_x_continuous(breaks = seq(0,12,1)) + 
+  ylab("Proportion presence") + xlab("Number of months suitable") +
+  theme_bw()
 ## Compute the plots for Andalucoa
 df_pa <- df_pa[, c("NATCODE", "PA")]
 df_pa$geometry <- NULL
@@ -432,6 +480,13 @@ df_r_AND <- df_range(df_pa_AND)
 df_r_AND$ccaa <- "Andalucía"
 df_sum_AND <- df_num_months(df_pa_AND)
 df_sum_AND$ccaa <- "Andalucía"
+df_sum_AND[which(is.na(df_sum_AND$num_0)),"num_0"] = 0
+df_sum_AND$prop_presence <- df_sum_AND$num_1/(df_sum_AND$num_1 +df_sum_AND$num_0)
+ggplot(df_sum_AND) +
+  geom_point(aes(R0_sum_alb,prop_presence)) + 
+  scale_x_continuous(breaks = seq(5,12,1)) + 
+  ylab("Proportion presence") + xlab("Number of months suitable") +
+  theme_bw()
 
 ## Compute the plots for Valencia
 df_pa <- df_pa[, c("NATCODE", "PA")]
@@ -447,8 +502,18 @@ df_pa_VAL <- df_pa[which(as.numeric(df_pa$NATCODE) %in%
 
 df_r_VAL <- df_range(df_pa_VAL)
 df_sum_VAL <- df_num_months(df_pa_VAL)
+df_sum_VAL[which(is.na(df_sum_VAL$num_0)),"num_0"] = 0
+df_sum_VAL$prop_presence <- df_sum_VAL$num_1/(df_sum_VAL$num_1 +df_sum_VAL$num_0)
+
 df_r_VAL$ccaa <- "Comunitat Valenciana"
 df_sum_VAL$ccaa <- "Comunitat Valenciana"
+
+ggplot(df_sum_VAL) +
+  geom_point(aes(R0_sum_alb,prop_presence)) + 
+  scale_x_continuous(breaks = seq(1,12,1)) + 
+  ylab("Proportion presence") + xlab("Number of months suitable") +
+  ylim(c(0,1)) +
+  theme_bw()
 
 ## Compute the plots for Pais Vasco
 df_pa <- df_pa[, c("NATCODE", "PA")]
@@ -516,17 +581,15 @@ ggarrange(plot_pa_hourly,plot_pa_daily)
 
 ## Comparsion with average R0 annual
 plot_pa_hourly_avg <- ggplot(df_pa) + 
-  geom_point(aes(R0_avg, PA), size = 0.7) + 
+  geom_point(aes(R0_avg_alb, PA), size = 0.7) + 
   geom_vline(aes(xintercept = 1),
              linetype = "dashed", color = "red") +
   xlab("Annual average R0") + 
   theme_bw()
-
+plot_pa_hourly_avg
 plot_pa_daily_avg <- ggplot(df_pa) + 
-  geom_point(aes(R0_avg_comp, PA), size = 0.7) + 
-  geom_vline(aes(xintercept = 1), 
-             linetype = "dashed", color = "red") +
-  xlab("Annual average R0") + 
+  geom_point(aes(R0_sum_alb, PA), size = 0.7) + 
+  xlab("Sum months R0>1") + 
   theme_bw()
 
 ggarrange(plot_pa_hourly_avg,plot_pa_daily_avg)
@@ -571,9 +634,10 @@ PA_esp <- ggplot(PA) +
   geom_sf(aes(fill = as.factor(esp)), linewidth = 0.05) +
   scale_fill_manual(values = c("#ffa62b","#ee4266",  "#0ead69","white") , 
                     name = "") +
-  geom_sf(data = can_box) + coord_sf(datum = NA) +
-  theme(legend.position = c(0.8, 0.2)) +
-  theme_bw()
+  geom_sf(data = can_box) + coord_sf(datum = NA) + theme_bw() +
+  theme(legend.position = c(0.8, 0.2),
+        text = element_text(size = letsize),
+        legend.text=element_text(size=letsize)) 
 PA_esp
 
 legend <- cowplot::get_legend(PA_esp)

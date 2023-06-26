@@ -6,7 +6,7 @@ library(ggplot2)
 library(tidyverse)
 library(parallel)
 library(data.table)
-
+library(latex2exp)
 #------------------------FUNCTIONS---------------------------#
 # Main functions 
 Briere_func <- function(cte, tmin, tmax, temp){
@@ -69,11 +69,9 @@ R0_func_cul <- function(Te, rain, hum){
   a <- a_f_cul(Te)
   f <- TFD_f_cul(Te)
   deltaa <- lf_f_cul(Te)
-  dE <- 0.1 #dE_f_cul(Te)
+  dE <- dE_f_cul(Te)
   probla <- pLA_f_cul(Te)
-  h <- h_f(hum,rain)
-  deltaE = 0.1
-  R0 <- sqrt(f*(a*deltaa)*probla*(h*dE/(h*dE+deltaE)))
+  R0 <- sqrt(f*(a*deltaa)*probla)
   return(R0)
 }
 
@@ -121,10 +119,41 @@ ggplot(df_out) +
 vec <- seq(0,40,0.01)
 out <- sapply(vec,R0_func_cul, rain = 6, hum = 500)
 
+letsize = 14
 df_out <- data.frame(vec, out)
 ggplot(df_out) +
   geom_line(aes(vec,out)) + 
-  xlab("Temperature, Cº") + ylab("R0") + xlim(c(5,35)) +
-  theme_bw()
+  xlab("Temperature, Cº") + ylab(TeX("$R_M$")) + xlim(c(5,35)) +
+  theme_bw() + theme(text = element_text(size = letsize)) 
 
 df_out[which(df_out$out == max(df_out$out)),"vec"]
+
+#### -------------------------- Albopictus ------------------------- ####
+## Thermal responses Aedes Albopictus from Mordecai 2017:
+a_f_alb <- function(temp){Briere_func(0.000193,10.25,38.32,temp)} # Biting rate
+TFD_f_alb <- function(temp){Briere_func(0.0488,8.02,35.65,temp)} # Fecundity
+pLA_f_alb <- function(temp){Quad_func(0.002663,6.668,38.92,temp)} # Survival probability Egg-Adult
+MDR_f_alb <- function(temp){Briere_func(0.0000638,8.6,39.66,temp)} # Mosquito Development Rate
+lf_f_alb <- function(temp){Quad_func(1.43,13.41,31.51,temp)} # Adult life span
+dE_f_alb <- function(temp){Briere_func(0.00006881,8.869,35.09,temp)} # Adult life span
+
+# R0 function by temperature:
+R0_func_alb <- function(Te, rain, hum){
+  a <- a_f_alb(Te)
+  f <- TFD_f_alb(Te)
+  deltaa <- lf_f_alb(Te)
+  dE <- dE_f_alb(Te)
+  probla <- pLA_f_alb(Te)
+  R0 <- sqrt(f*(a*deltaa)*probla)
+  return(R0)
+}
+
+## R0
+vec <- seq(0,40,0.01)
+out <- sapply(vec,R0_func_alb, rain = 6, hum = 500)
+
+df_out <- data.frame(vec, out)
+ggplot(df_out) +
+  geom_line(aes(vec,out)) + 
+  xlab("Temperature, Cº") + ylab(TeX("$R_M$")) + xlim(c(5,35)) +
+  theme_bw() +theme(text = element_text(size = letsize)) 
