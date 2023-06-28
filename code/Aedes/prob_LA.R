@@ -20,6 +20,12 @@ Fitting_aeg <- nls(proportion_surv ~ (-cont*(temp-Tmin)*(temp - Tmax)),
 
 summary(Fitting_aeg)
 
+# Fitting_aeg <- nls(proportion_surv ~ cont*temp+cont1,
+#                    data = df_aeg,
+#                    start = list(cont = 0.001, cont1 = 0))
+# 
+# summary(Fitting_aeg)
+
 mod <- function(te){
   t0 <- as.numeric(Fitting_aeg$m$getPars()[2])
   tm <- as.numeric(Fitting_aeg$m$getPars()[3])
@@ -86,7 +92,7 @@ plotaeg <- ggplot(df_out_aeg) +
              size = 0.9, color = "black") +
   scale_color_manual(values=c("red", "blue", "red")) + 
   scale_alpha_manual(values = c(0.5,1,0.5)) +
-  xlim(c(5,42)) + ylim(c(0,2)) +
+  xlim(c(5,42)) + ylim(c(0,1.3)) +
   guides( color =FALSE, alpha = FALSE) +
   ylab("Development rate from Larvae to Adult") + xlab("Temperature (Cº)") +
   theme_bw() 
@@ -118,6 +124,11 @@ Fitting <- nls(proportion_surv ~ (-cont*(temp-Tmin)*(temp - Tmax)),
 
 summary(Fitting)
 
+# Fitting <- nls(proportion_surv ~ cont*temp+cont1,
+#                data = df_albo,
+#                start = list(cont = 0.001, cont1 = 0))
+# 
+# summary(Fitting)
 
 mod <- function(te){
   t0 <- as.numeric(Fitting$m$getPars()[2])
@@ -235,6 +246,12 @@ Fitting_dE <- nls(develop_rate ~ c*temp*(temp-c1)*(c2-temp)^(1/2),
 
 summary(Fitting_dE)
 
+# Fitting_dE <- nls(develop_rate ~ c*temp+c1,
+#                   data = df_dE,
+#                   start = list(c = 0.001, c1 = 0))
+# 
+# summary(Fitting_dE)
+
 mod <- function(te){
   c <- as.numeric(Fitting_dE$m$getPars()[1])
   c1 <- as.numeric(Fitting_dE$m$getPars()[2])
@@ -290,7 +307,7 @@ plotdE <- ggplot(df_out) +
                 color = group,
                 group = group, 
                 alpha = group), size = 0.7) +
-  geom_point(data = df_deltaE, aes(temp,develop_rate),
+  geom_point(data = df_dE, aes(temp,develop_rate),
              size = 0.9, color = "black") +
   scale_color_manual(values=c("red", "blue", "red")) + 
   scale_alpha_manual(values = c(0.5,1,0.5)) +
@@ -342,6 +359,13 @@ Fitting_dE_aeg <- nls(develop_rate ~ c*temp*(temp-c1)*(c2-temp)^(1/2),
                       lower=c(0.00001,7,30), upper = c(0.04,15,50))
 
 summary(Fitting_dE_aeg)
+
+# Fitting_dE_aeg <- nls(develop_rate ~ c*temp + c1,
+#                       data = df_dE_aeg,
+#                       start = list(c = 0.0003, c1 = 0))
+# 
+# summary(Fitting_dE_aeg)
+
 
 mod <- function(te){
   c <- as.numeric(Fitting_dE_aeg$m$getPars()[1])
@@ -424,3 +448,102 @@ ggarrange( plotdE +
             theme(text = element_text(size = 15)) +
             ylab("Probability from Larvae to Adult")
          )
+
+### Gonotrophic cycle aegypti:
+## Eggs per femae paper: https://onlinelibrary.wiley.com/doi/full/10.1111/jvec.12187
+fec <- data.frame(Temp = c(16,22,28,33,36,16,22,28,33,36,16,22,28,33,36, 20,26,30,35), 
+           Number.eggs  = c(3.5,79.22,64.42,40.4,16.12,2.75,161.5,262.3,51.3,30.57,1.46,126,181.3,52.92,22.27,43,80,70,22))
+
+ggplot(fec) + geom_point(aes(Temp, Number.eggs))
+
+Fitting_Egg_aeg <- nls(Number.eggs ~ -c*(Temp - c1)*(Temp - c2),
+                      data = fec, algorithm = "port",
+                      start = list(c = 0.0001, c1 = 14, c2 = 20), 
+                      lower=c(0.00001,14,10), upper = c(0.5,25,38))
+
+summary(Fitting_Egg_aeg)
+
+mod <- function(te){
+  c <- as.numeric(Fitting_Egg_aeg$m$getPars()[1])
+  c1 <- as.numeric(Fitting_Egg_aeg$m$getPars()[2])
+  c2 <- as.numeric(Fitting_Egg_aeg$m$getPars()[3])
+  -c*(te-c1)*(te-c2)
+}
+
+vec <- seq(0,45,0.001)
+df_out_aeg <- data.frame(temp = vec,
+                         egg = sapply(vec, mod))
+
+ggplot(fec) + geom_point(aes(Temp, Number.eggs)) + 
+  geom_line(data =df_out_aeg,aes(temp, egg)) + ylim (c(0,100))
+
+### Linear function
+Fitting_Egg_aeg <- nls(Number.eggs ~ -c*Temp + c1,
+                       data = fec,
+                       start = list(c = 0.0001, c1 = 0))
+
+summary(Fitting_Egg_aeg)
+
+
+mod <- function(te){
+  c <- as.numeric(Fitting_Egg_aeg$m$getPars()[1])
+  c1 <- as.numeric(Fitting_Egg_aeg$m$getPars()[2])
+  -c*te+c1
+}
+
+vec <- seq(0,45,0.001)
+df_out_aeg <- data.frame(temp = vec,
+                         egg = sapply(vec, mod))
+
+ggplot(fec) + geom_point(aes(Temp, Number.eggs)) + 
+  geom_line(data =df_out_aeg,aes(temp, egg))
+
+### Gonotrophic cycle
+Path <- "~/INVASIBILITY_THRESHOLD/data/Aedes/gono_aegypti.csv"
+gono <- read.csv(Path, sep = ",")
+gono$Dur_gono <- as.numeric(gsub(pattern = ",",
+                                 replacement = ".",
+                                 gono$Dur_gono))
+head(gono)
+ggplot(gono) + geom_point(aes(Temp, Dur_gono))
+
+Fitting_gono_aeg <- nls(Dur_gono ~ -c*(Temp - c1)*(Temp - c2),
+                       data = gono, 
+                       start = list(c = 0.0001, c1 = 10, c2 = 40))
+
+summary(Fitting_gono_aeg)
+
+mod <- function(te){
+  c <- as.numeric(Fitting_gono_aeg$m$getPars()[1])
+  c1 <- as.numeric(Fitting_gono_aeg$m$getPars()[2])
+  c2 <- as.numeric(Fitting_gono_aeg$m$getPars()[3])
+  -c*(te-c1)*(te-c2)
+}
+
+vec <- seq(0,45,0.001)
+df_out_aeg <- data.frame(temp = vec,
+                         egg = sapply(vec, mod))
+
+ggplot(gono) + geom_point(aes(Temp, Dur_gono)) + 
+  geom_line(data =df_out_aeg,aes(temp, egg)) + ylim (c(0,100))
+
+## Briere function
+Fitting_gono_aeg <- nls(Dur_gono ~ c*Temp*(Temp - c1)*(c2-Temp)^(1/2),
+                        data = gono, 
+                        start = list(c = 0.0001, c1 = 13, c2 = 40))
+
+summary(Fitting_gono_aeg)
+
+mod <- function(te){
+  c <- as.numeric(Fitting_gono_aeg$m$getPars()[1])
+  c1 <- as.numeric(Fitting_gono_aeg$m$getPars()[2])
+  c2 <- as.numeric(Fitting_gono_aeg$m$getPars()[3])
+  -c*(te-c1)*(te-c2)
+}
+
+vec <- seq(0,45,0.001)
+df_out_aeg <- data.frame(temp = vec,
+                         egg = sapply(vec, mod))
+
+ggplot(gono) + geom_point(aes(Temp, Dur_gono)) + 
+  geom_line(data =df_out_aeg,aes(temp, egg)) + ylim (c(0,100))

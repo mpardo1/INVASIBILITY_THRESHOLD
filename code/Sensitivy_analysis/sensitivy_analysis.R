@@ -84,10 +84,9 @@ R0_func_alb <- function(Te, rain, hum){
   probla <- pLA_f_alb(Te)
   h <- h_f(hum,rain)
   deltaE = 0.1
-  R0 <- (f*(a*deltaa)*probla*(h*dE/(h*dE+deltaE)))^(1/3)
+  R0 <- ((0.3365391*f*a*deltaa)*probla*(h*dE/(h*dE+deltaE)))^(1/3)
   return(R0)
 }
-
 
 ####------------------------------Aegypti------------------------####
 a_f_aeg <- function(temp){Briere_func(0.000202,13.35,40.08,temp)} # Biting rate
@@ -109,29 +108,32 @@ R0_func_aeg <- function(Te, rain,hum){
   R0 <- ((f*deltaa)*probla*(h*dE/(h*dE+deltE)))^(1/3)
   return(R0)
 }
+
+
 #####----------------Japonicus-----------------####
 dE_f_jap <- function(temp){Briere_func(0.0002859,6.360,35.53 ,temp)} # Mosquito Development Rate
 dL_f_jap <- function(temp){Briere_func(7.000e-05,9.705e+00,3.410e+01,temp)} # Survival probability Egg-Adult
-deltaA_f_jap <- function(temp){Lin_func(0.0029535,-0.0179913,temp)} # Adult life span
+lf_f_jap <- function(temp){QuadN_func(0.0113,-0.9308,21.5214,temp)} # Adult life span
 deltaL_f_jap <- function(temp){QuadN_func(0.0030183,-0.1099622,1.1617832,temp)} # Adult life span
 
 # R0 function by temperature:
 R0_func_jap <- function(Te, rain,hum){
   a <- 0.3
   f <- 183/2
-  deltaa <- deltaA_f_jap(Te)
+  lf <- lf_f_jap(Te)
   deltaL <- deltaL_f_jap(Te)
   deltE = 0.1
   dE <- dE_f_jap(Te)
   dL <- dL_f_jap(Te)
   h <- h_f(hum,rain)
-  if(dL == 0){
+  if(dL == 0 | f == 0 | a == 0 | dE == 0 | h == 0 | Te<0){
     R0 <- 0
   }else{
-    R0 <- ((f*a/deltaa)*(dL/(dL+deltaL))*(h*dE/(h*dE+deltE)))^(1/3)
+    R0 <- ((f*a*lf)*(dL/(dL+deltaL))*(h*dE/(h*dE+deltE)))^(1/3)
   }
   return(R0)
 }
+
 
 ### Difference between fecundity and bitting rate:
 # bitting rate
@@ -139,6 +141,9 @@ vec <- seq(0,40,0.01)
 aegypti <- sapply(vec,a_f_aeg)
 albopictus <- sapply(vec,a_f_alb)
 df_out <- data.frame(vec, aegypti, albopictus)
+ggplot(df_out) + 
+  geom_point(aes(vec,albopictus))
+
 df_out <- reshape2::melt( df_out, id.vars = "vec")
 
 ggplot(df_out) + 
@@ -151,6 +156,9 @@ vec <- seq(0,40,0.01)
 aegypti <- sapply(vec,EFD_f_aeg)
 albopictus <- sapply(vec,TFD_f_alb)
 df_out <- data.frame(vec, aegypti, albopictus)
+ggplot(df_out) + 
+  geom_point(aes(vec,albopictus))
+
 df_out <- reshape2::melt( df_out, id.vars = "vec")
 
 ggplot(df_out) + 
@@ -158,12 +166,16 @@ ggplot(df_out) +
   ylab("Fecundity") +
   theme_bw()
 
-# Fecundity*bittinh
+# Fecundity*bitting
 vec <- seq(10,40,0.01)
 aegypti <- sapply(vec,EFD_f_aeg)
 albopictus1 <- sapply(vec,a_f_alb)
 albopictus <- sapply(vec,TFD_f_alb)
 df_out <- data.frame(vec, aegypti = aegypti, albopictus = albopictus*albopictus1)
+scale <- max(df_out$albopictus)/max(df_out$aegypti)
+df_out <- data.frame(vec, aegypti = aegypti,
+                     albopictus = (1/scale)*albopictus*albopictus1)
+
 df_out <- reshape2::melt( df_out, id.vars = "vec")
 
 ggplot(df_out) + 

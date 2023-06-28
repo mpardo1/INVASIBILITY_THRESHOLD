@@ -20,27 +20,27 @@ esp_can$NATCODE <- as.numeric(paste0("34",esp_can$codauto,
 df_group$month <- lubridate::month(df_group$date)
 
 # Temporal R0 for Barcelona
-NATCODE_BCN <- esp_can$NATCODE[which(esp_can$name == "Barcelona")]
-df_BCN <- df_group[which(df_group$NATCODE == NATCODE_BCN),
-                   c("NATCODE","date", "R0_hourly_alb",
-                     "R0_hourly_aeg","R0_hourly_jap"
-                     )]
-colnames(df_BCN) <- c("NATCODE","date", "SVI Albopictus",
-                      "SVI Aegypti","SVI Japonicus")
-
-df_BCN <- reshape2::melt(df_BCN, id.vars = c("NATCODE", "date"))
-df_BCN <- esp_can %>%
-  left_join(df_BCN)
-df_BCN <- df_BCN[which(df_BCN$name =="Barcelona"),]
-
-ggplot(df_BCN) + 
-  geom_line(aes(date,value, color = variable)) +
-  scale_x_date(date_breaks = "1 month", date_labels =  "%b %Y") +
-  ylab("Vector Suitability Indes (VSI)") +
-  xlab("Date") + ggtitle("Barcelona 2020") +
-  theme_bw()
-
-rm(df_BCN)
+# NATCODE_BCN <- esp_can$NATCODE[which(esp_can$name == "Barcelona")]
+# df_BCN <- df_group[which(df_group$NATCODE == NATCODE_BCN),
+#                    c("NATCODE","date", "R0_hourly_alb",
+#                      "R0_hourly_aeg","R0_hourly_jap"
+#                      )]
+# colnames(df_BCN) <- c("NATCODE","date", "SVI Albopictus",
+#                       "SVI Aegypti","SVI Japonicus")
+# 
+# df_BCN <- reshape2::melt(df_BCN, id.vars = c("NATCODE", "date"))
+# df_BCN <- esp_can %>%
+#   left_join(df_BCN)
+# df_BCN <- df_BCN[which(df_BCN$name =="Barcelona"),]
+# 
+# ggplot(df_BCN) + 
+#   geom_line(aes(date,value, color = variable)) +
+#   scale_x_date(date_breaks = "1 month", date_labels =  "%b %Y") +
+#   ylab("Vector Suitability Indes (VSI)") +
+#   xlab("Date") + ggtitle("Barcelona 2020") +
+#   theme_bw()
+# 
+# rm(df_BCN)
 # Plot R0
 esp_can <- esp_get_munic_siane(moveCAN = TRUE)
 esp_can$NATCODE <- as.numeric(paste0("34",

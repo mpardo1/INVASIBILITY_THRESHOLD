@@ -24,13 +24,15 @@ extract_weather <- function(ind){
   point_out <- point_out[,c("obs_time", "temperature")]
   point_out$NATCODE <- esp_can$NATCODE[ind]
   point_out$pop <- esp_can$pob19[ind]
+  point_out$area <- esp_can$area[ind]
   # You can then inspect the data frame
   # Gather daily precipitation 
-  point_out_precip <- extract_precip(nc = my_nc, long = x, 
+  point_out_precip <- extract_precip(nc =  my_nc, long = x, 
                                      lat = y, start_time = st_time, 
                                      end_time = en_time, convert_daily = FALSE)
   
-  point_out$prec <- point_out_precip
+  point_out$prec1 <- point_out_precip
+  point_out$prec <- point_out$prec1/point_out$area 
   
   return(point_out)
 }
@@ -66,12 +68,14 @@ request_era5(request = req, uid = uid, out_path = file_path)
 
 # List the path of an .nc file that was downloaded via
 # request_era5()
-my_nc <- paste0(getwd(),paste0("era5_Spain_",year,".nc"))
+my_nc <- paste0(getwd(),"/era5_Spain_",year,".nc")
+
 # my_nc = "/home/marta/era5_Spain_2020.nc"
 
 # Compute centroid for each municipality
 esp_can <- esp_get_munic_siane(moveCAN = FALSE)
 esp_can$centroid <- st_centroid(esp_can$geometry)
+esp_can$area <- st_area(esp_can$geometry)
 esp_can$NATCODE <- as.numeric(paste0("34",esp_can$codauto,
                                      esp_can$cpro,
                                      esp_can$LAU_CODE))
@@ -82,7 +86,7 @@ esp_can <- esp_can %>% left_join(census,
 esp_can <- esp_can[,c("NATCODE", "centroid", "pob19")]
 
 # Number of cores used in the parallelization
-num_cores = 10
+num_cores = 1
 # Parallelize function in order to obtain value R0 for each municipality
 climat_each_muni <- mclapply(c(1:nrow(esp_can)), 
                          extract_weather, 

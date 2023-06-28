@@ -10,21 +10,32 @@ library(nls2)
 Path <- "~/INVASIBILITY_THRESHOLD/data/japonicus/adult_larva_lifespan.csv"
 Japonicus <- read.csv(Path)
 head(Japonicus)
-Japonicus$FemaledeltaA <- 1/Japonicus$Age_adult_death_mean.1
+Japonicus$lifespan <- Japonicus$Age_adult_death_mean.1 - Japonicus$Age_emergence_male_mean.1
 plot_deltaA <- ggplot(Japonicus) + 
-  geom_point(aes(Temp,FemaledeltaA)) + theme_bw()
+  geom_point(aes(Temp,lifespan)) + theme_bw()
 plot_deltaA
 
-Fitting_deltaA <- nls(FemaledeltaA ~ cont*Temp + cont1,
-                   data = Japonicus,
-                   start = list(cont = 0.001, cont1 = 0.0))
+# Fitting_deltaA <- nls(lifespan ~ cont*Temp + cont1,
+#                    data = Japonicus,
+#                    start = list(cont = 0.001, cont1 = 0.0))
+# summary(Fitting_deltaA)
+Fitting_deltaA <- nls(lifespan ~ cont*Temp^2 + cont1*Temp +cont2,
+                      data = Japonicus,
+                      start = list(cont = 0.001, cont1 = 0.0, cont2 = 0.0))
 
 summary(Fitting_deltaA)
+
+# mod <- function(te){
+#   c <- as.numeric(Fitting_deltaA$m$getPars()[1])
+#   c1 <- as.numeric(Fitting_deltaA$m$getPars()[2])
+#   c*te+c1
+# }
 
 mod <- function(te){
   c <- as.numeric(Fitting_deltaA$m$getPars()[1])
   c1 <- as.numeric(Fitting_deltaA$m$getPars()[2])
-  c*te+c1
+  c2 <- as.numeric(Fitting_deltaA$m$getPars()[3])
+  c*te^2+c1*te+c2
 }
 
 vec <- seq(0,45,0.001)
@@ -34,7 +45,9 @@ colnames(df_out_deltaA) <- c("temp_ae","deltaA_jap")
 df_out_deltaA[which(df_out_deltaA$deltaA_jap < 0),2] <- 0
 plotdeltaA <- ggplot(df_out_deltaA) +
   geom_line(aes(temp_ae,deltaA_jap), size = 0.7) +
-  geom_point(data = Japonicus,aes(x = Temp,y = FemaledeltaA), size = 0.9, color = "red") +
+  geom_point(data = Japonicus,
+             aes(x = Temp,y = lifespan),
+             size = 0.9, color = "red") +
   xlim(c(0,45))  +
   ylab("Adult mortality rate") + xlab("Temperature (Cº)") +
   theme_bw()
@@ -47,15 +60,20 @@ mod_min <- function(te){
     summary(Fitting_deltaA)$coefficients[1,2]
   c1 <- as.numeric(Fitting_deltaA$m$getPars()[2])-
     summary(Fitting_deltaA)$coefficients[2,2]
-  c*te+c1
+  c2 <- as.numeric(Fitting_deltaA$m$getPars()[3])-
+    summary(Fitting_deltaA)$coefficients[3,2]
+  c*te^2+c1*te+c2
 }
 
 vec <- seq(0,45,0.001)
 df_out_deltaA_min <- data.frame(temp_ae = vec,
                             deltaA_jap <- sapply(vec, mod_min))
 colnames(df_out_deltaA_min) <- c("temp_ae","deltaA_jap")
-df_out_deltaA_min[which(df_out_deltaA_min$deltaA_jap < 0),2] <- 0
+# df_out_deltaA_min[which(df_out_deltaA_min$deltaA_jap < 0),2] <- 0
 df_out_deltaA_min$group <- "min"
+
+ggplot(df_out_deltaA_min) + 
+  geom_line(aes(temp_ae,deltaA_jap))
 
 ### Mean + sd
 mod_max <- function(te){
@@ -63,14 +81,16 @@ mod_max <- function(te){
     summary(Fitting_deltaA)$coefficients[1,2]
   c1 <- as.numeric(Fitting_deltaA$m$getPars()[2]) + 
     summary(Fitting_deltaA)$coefficients[2,2]
-  c*te+c1
+  c2 <- as.numeric(Fitting_deltaA$m$getPars()[3])+
+    summary(Fitting_deltaA)$coefficients[3,2]
+  c*te^2+c1*te+c2
 }
 
 vec <- seq(0,45,0.001)
 df_out_deltaA_max <- data.frame(temp_ae = vec,
                                 deltaA_jap <- sapply(vec, mod_max))
 colnames(df_out_deltaA_max) <- c("temp_ae","deltaA_jap")
-df_out_deltaA_max[which(df_out_deltaA_max$deltaA_jap < 0),2] <- 0
+# df_out_deltaA_max[which(df_out_deltaA_max$deltaA_jap < 0),2] <- 0
 df_out_deltaA_max$group <- "max"
 df_out_deltaA$group <- "mean"
 
@@ -84,11 +104,11 @@ plotdeltaA <- ggplot(df_out_deltaA) +
                 color = group,
                 group = group, 
                 alpha = group), size = 0.7) +
-  geom_point(data = Japonicus,aes(x = Temp,y = FemaledeltaA),
+  geom_point(data = Japonicus,aes(x = Temp,y = lifespan),
              size = 0.9, color = "black") +
   scale_color_manual(values=c("red", "blue", "red")) + 
   scale_alpha_manual(values = c(0.5,1,0.5)) +
-  xlim(c(5,35)) + ylim(c(0,0.09)) +
+  xlim(c(5,35)) + ylim(c(0,25)) +
   guides( color =FALSE, alpha = FALSE) +
   ylab("Adult mortality rate") + xlab("Temperature (Cº)") +
   theme_bw() 
@@ -134,6 +154,12 @@ Fitting_dE <- nls(First_instar_mean ~ cont*Temp*(Temp-cont1)*(cont2-Temp)^(1/2) 
 
 summary(Fitting_dE)
 
+# Fitting_dE <- nls(First_instar_mean ~ cont*Temp + cont1 ,
+#                   data = developL,
+#                   start = list(cont = 0.00035, cont1 = 0))
+# 
+# summary(Fitting_dE)
+# 
 mod <- function(te){
   c <- as.numeric(Fitting_dE$m$getPars()[1])
   c1 <- as.numeric(Fitting_dE$m$getPars()[2])
@@ -247,6 +273,11 @@ Fitting_dL <- nls(FemaledL ~ cont*Temp*(Temp-cont1)*(cont2-Temp)^(1/2) ,
 
 summary(Fitting_dL)
 
+# Fitting_dL <- nls(FemaledL ~ cont*Temp + cont1,
+#                   data = Japonicus,
+#                   start = list(cont = 0.00035, cont1 = 0))
+# summary(Fitting_dL)
+
 mod <- function(te){
   c <- as.numeric(Fitting_dL$m$getPars()[1])
   c1 <- as.numeric(Fitting_dL$m$getPars()[2])
@@ -347,6 +378,12 @@ Fitting_deltaL <- nls(mean_mort_perc ~ cont*Temp^2 + cont1*Temp + cont2,
 
 summary(Fitting_deltaL)
 
+# Fitting_deltaL <- nls(mean_mort_perc ~ cont*Temp + cont1,
+#                       data = Lmortality,
+#                       start = list(cont = 0, cont1 = 0))
+# 
+# summary(Fitting_deltaL)
+
 mod <- function(te){
   c <- as.numeric(Fitting_deltaL$m$getPars()[1])
   c1 <- as.numeric(Fitting_deltaL$m$getPars()[2])
@@ -436,7 +473,7 @@ ggarrange(plotdE  +
             theme(text = element_text(size = 15)) + xlab("") ,
           plotdL +
             theme(text = element_text(size = 15)) + xlab(""),
-          plotdeltaL + ylim(c(-0.5,1.3)) +
+          plotdeltaL + ylim(c(0,1.3)) +
             theme(text = element_text(size = 15)),
           plotdeltaA  +
             theme(text = element_text(size = 15)))

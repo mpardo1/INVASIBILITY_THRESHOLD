@@ -74,7 +74,7 @@ R0_func_alb <- function(Te, rain, hum){
   probla <- pLA_f_alb(Te)
   h <- h_f(hum,rain)
   deltaE = 0.1
-  R0 <- (f*(a*deltaa)*probla*(h*dE/(h*dE+deltaE)))^(1/3)
+  R0 <- ((0.3365391*f*a*deltaa)*probla*(h*dE/(h*dE+deltaE)))^(1/3)
   return(R0)
 }
 
@@ -120,7 +120,7 @@ df_out_aeg[which(df_out_aeg$out == max(df_out_aeg$out)),"vec"]
 ####---------------------------Japonicus------------------------####
 dE_f_jap <- function(temp){Briere_func(0.0002859,6.360,35.53 ,temp)} # Mosquito Development Rate
 dL_f_jap <- function(temp){Briere_func(7.000e-05,9.705e+00,3.410e+01,temp)} # Survival probability Egg-Adult
-deltaA_f_jap <- function(temp){Lin_func(0.0029535,-0.0179913,temp)} # Adult life span
+lf_f_jap <- function(temp){QuadN_func(0.0113,-0.9308,21.5214,temp)} # Adult life span
 deltaL_f_jap <- function(temp){QuadN_func(0.0030183,-0.1099622,1.1617832,temp)} # Adult life span
 
 vec <- seq(0,30,0.01)
@@ -132,37 +132,45 @@ ggplot(df_out_jap) +
 
 # R0 function by temperature:
 R0_func_jap <- function(Te, rain,hum){
-  a <- 0.3
-  f <- 183/2
-  deltaa <- deltaA_f_jap(Te)
+  a <- 0.4
+  f <- 170
+  lf <- lf_f_jap(Te)
   deltaL <- deltaL_f_jap(Te)
   deltE = 0.1
   dE <- dE_f_jap(Te)
   dL <- dL_f_jap(Te)
   h <- h_f(hum,rain)
-  if(dL == 0){
+  if(dL == 0 | f == 0 | a == 0 | dE == 0 | h == 0 | Te<0){
     R0 <- 0
   }else{
-    R0 <- ((f*a/deltaa)*(dL/(dL+deltaL))*(h*dE/(h*dE+deltE)))^(1/3)
+    R0 <- ((f*a*lf)*(dL/(dL+deltaL))*(h*dE/(h*dE+deltE)))^(1/3)
   }
   return(R0)
 }
 
-vec <- seq(0,40,0.01)
+vec <- seq(-5,40,0.01)
 out <- sapply(vec,R0_func_jap, rain = 6, hum = 500)
 
 df_out_jap <- data.frame(vec, out)
 ggplot(df_out_jap) +
   geom_line(aes(vec,out))
 
+# Life_span mosquito
+# vec <- seq(-5,40,0.01)
+# out <- sapply(vec,lf_f_jap)
+# 
+# df_out_jap <- data.frame(vec, out)
+# ggplot(df_out_jap) +
+#   geom_line(aes(vec,out))
+
 df_out[which(df_out$out == max(df_out$out)),"vec"]
 
 df_out_aeg$esp <- "Aegypti"
 df_out_alb$esp <- "Albopictus"
 df_out_jap$esp <- "Japonicus"
-df_out_aeg$out <- df_out_aeg$out /max(df_out_aeg$out )
-df_out_alb$out <- df_out_alb$out /max(df_out_alb$out )
-df_out_jap$out <- df_out_jap$out /max(df_out_jap$out )
+df_out_aeg$out <- df_out_aeg$out
+df_out_alb$out <- df_out_alb$out 
+df_out_jap$out <- df_out_jap$out
 df_out <- rbind(df_out_alb, df_out_aeg, df_out_jap)
 
 ggplot(df_out) +
@@ -173,8 +181,6 @@ ggplot(df_out) +
   theme(legend.position = c(0.1,0.6),
         text = element_text(size = 14),
         legend.title=element_blank())  
-  
-
 
 ## Test that the function works and make sense the values should go
 # from bigger to smaller
@@ -189,7 +195,8 @@ rm(census)
 head(R0_each_muni[[1000]])
 
 df_group <- data.table()
-for(i in c(1:length(R0_each_muni))){
+length(R0_each_muni)
+for(i in c(1:2000)){
   print(paste0("i:",i))
   dt_aux <- setDT(R0_each_muni[[i]])
   dt_aux$date <- as.Date(dt_aux$obs_time)
@@ -203,32 +210,31 @@ for(i in c(1:length(R0_each_muni))){
   ## Japonicus
   dt_aux[, R0_hourly_jap := mapply(R0_func_jap, temperature, prec, pop)]
   
-  
   dt_aux <- dt_aux[, .(temp=mean(temperature),
                        min_temp = min(temperature),
                        max_temp = max(temperature),
-                       prec = sum(prec), 
+                       prec = sum(prec),
                        pop= min(pop),
                        R0_hourly_alb = mean(R0_hourly_alb),
                        R0_hourly_aeg = mean(R0_hourly_aeg),
-                       R0_hourly_jap = mean(R0_hourly_jap)), 
+                       R0_hourly_jap = mean(R0_hourly_jap)),
                    by=list(NATCODE,date)]
-  
+
   ## Albopictus
   dt_aux[, R0_min_alb := mapply(R0_func_alb, min_temp, prec, pop)]
   dt_aux[, R0_max_alb := mapply(R0_func_alb, max_temp, prec, pop)]
   dt_aux[, R0_dai_alb := mapply(R0_func_alb, temp, prec, pop)]
-  
+
   ## Aegypti
   dt_aux[, R0_min_aeg := mapply(R0_func_aeg, min_temp, prec, pop)]
   dt_aux[, R0_max_aeg := mapply(R0_func_aeg, max_temp, prec, pop)]
   dt_aux[, R0_dai_aeg := mapply(R0_func_alb, temp, prec, pop)]
-  
+
   ## Japonicus
   dt_aux[, R0_min_jap := mapply(R0_func_jap, min_temp, prec, pop)]
   dt_aux[, R0_max_jap := mapply(R0_func_jap, max_temp, prec, pop)]
   dt_aux[, R0_dai_jap := mapply(R0_func_alb, temp, prec, pop)]
-  
+
   df_group <- rbind(dt_aux,df_group)
 }
 
