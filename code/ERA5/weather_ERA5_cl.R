@@ -165,7 +165,7 @@ saveRDS(climat_each_muni,
 year = 2022
 my_nc <- paste0(getwd(),"/era5_Spain_",year,".nc")
 # Number of cores used in the parallelization
-num_cores = 1
+num_cores = 10
 # Parallelize function in order to obtain value R0 for each municipality
 climat_each_muni <- mclapply(c(1:nrow(esp_can)), 
                              extract_weather, 
