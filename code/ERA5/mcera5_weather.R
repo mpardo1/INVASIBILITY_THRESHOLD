@@ -15,8 +15,8 @@ extract_weather <- function(ind){
   
   # Gather all hourly variables, with spatial and temporal dimensions
   # matching the extent, or a subset, of data in one downloaded file 
-  st_time <- lubridate::ymd("2020:01:01")
-  en_time <- lubridate::ymd("2020:12:31")
+  st_time <- lubridate::ymd(paste0(year,":01:01"))
+  en_time <- lubridate::ymd(paste0(year,":12:31"))
   point_out <- extract_clim(nc = my_nc, long = x,
                             lat = y, start_time = st_time,
                             end_time = en_time) 
@@ -51,7 +51,7 @@ ymn <- 27
 ymx <- 44
 
 # Temporal grid
-year = 2021
+year = 2015
 st_time <- lubridate::ymd(paste0(year,":01:01"))
 en_time <- lubridate::ymd(paste0(year,":12:31"))
 
@@ -65,7 +65,6 @@ req <- build_era5_request(xmin = xmn, xmax = xmx,
                           outfile_name = file_prefix)
 
 request_era5(request = req, uid = uid, out_path = file_path)
-
 # List the path of an .nc file that was downloaded via
 # request_era5()
 my_nc <- paste0(getwd(),"/era5_Spain_",year,".nc")
@@ -83,7 +82,7 @@ esp_can$geometry <- NULL
 census <- mapSpain::pobmun19
 esp_can <- esp_can %>% left_join(census,
                                  by = c("cmun" = "cmun","cpro" = "cpro"))
-esp_can <- esp_can[,c("NATCODE", "centroid", "pob19")]
+esp_can <- esp_can[,c("NATCODE", "centroid", "pob19", "area")]
 
 # Number of cores used in the parallelization
 num_cores = 1
