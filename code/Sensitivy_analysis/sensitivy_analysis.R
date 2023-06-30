@@ -114,7 +114,7 @@ R0_func_aeg <- function(Te, rain,hum){
 #####----------------Japonicus-----------------####
 dE_f_jap <- function(temp){Briere_func(0.0002859,6.360,35.53 ,temp)} # Mosquito Development Rate
 dL_f_jap <- function(temp){Briere_func(7.000e-05,9.705e+00,3.410e+01,temp)} # Survival probability Egg-Adult
-lf_f_jap <- function(temp){QuadN_func(0.18709,-10.20382,153.76255,temp)} # Adult life span
+lf_f_jap <- function(temp){Lin_func(-2.5045,82.6525,temp)} # Adult life span
 deltaL_f_jap <- function(temp){QuadN_func(0.0021476,-0.0806067 ,1.0332455,temp)} # Adult life span
 
 # R0 function by temperature:

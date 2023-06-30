@@ -9,48 +9,65 @@ library(nls2)
 ## https://www.researchgate.net/publication/235430511_The_ecology_of_the_exotic_mosquito_Ochlerotatus_Finlaya_japonicus_japonicus_Theobald_1901_Diptera_Culicidae_and_an_examination_of_its_role_in_the_West_Nile_virus_cycle_in_New_Jersey
 Path <- "~/INVASIBILITY_THRESHOLD/data/japonicus/adult_larva_lifespan.csv"
 Japonicus <- read.csv(Path)
+
 head(Japonicus)
 Japonicus$lifespan <- Japonicus$Age_adult_death_mean.1 
 plot_deltaA <- ggplot(Japonicus) + 
   geom_point(aes(Temp,lifespan)) + theme_bw()
 plot_deltaA
 
-# Fitting_deltaA <- nls(lifespan ~ cont*Temp + cont1,
-#                    data = Japonicus,
-#                    start = list(cont = 0.001, cont1 = 0.0))
-# summary(Fitting_deltaA)
-
-Fitting_deltaA <- nls(lifespan ~ cont*Temp^2 + cont1*Temp +cont2,
-                      data = Japonicus,
-                      start = list(cont = 0.001, cont1 = 0.0, cont2 = 0.0))
-
+## Linear Fit
+Fitting_deltaA <- nls(lifespan ~ cont*Temp + cont1,
+                   data = Japonicus,
+                   start = list(cont = 0.001, cont1 = 0.0))
 summary(Fitting_deltaA)
-
-# mod <- function(te){
-#   c <- as.numeric(Fitting_deltaA$m$getPars()[1])
-#   c1 <- as.numeric(Fitting_deltaA$m$getPars()[2])
-#   c*te+c1
-# }
 
 mod <- function(te){
   c <- as.numeric(Fitting_deltaA$m$getPars()[1])
   c1 <- as.numeric(Fitting_deltaA$m$getPars()[2])
-  c2 <- as.numeric(Fitting_deltaA$m$getPars()[3])
-  c*te^2+c1*te+c2
+  c*te+c1
 }
+## Quadratic Fit
+# Fitting_deltaA <- nls(lifespan ~ cont*Temp^2 + cont1*Temp +cont2,
+#                       data = Japonicus,
+#                       start = list(cont = 0.001, cont1 = 0.0, cont2 = 0.0))
+# 
+# summary(Fitting_deltaA)
+# 
+# mod <- function(te){
+#   c <- as.numeric(Fitting_deltaA$m$getPars()[1])
+#   c1 <- as.numeric(Fitting_deltaA$m$getPars()[2])
+#   c2 <- as.numeric(Fitting_deltaA$m$getPars()[3])
+#   c*te^2+c1*te+c2
+# }
 
+## Exponential Fit
+# Fitting_deltaA <- nls(lifespan ~ cont*exp(cont1+cont2*Temp),
+#                       data = Japonicus,
+#                       start = list(cont = 15, cont1 = 2.1, cont2 = -0.01))
+# 
+# summary(Fitting_deltaA)
+
+# mod <- function(te){
+#   c <- as.numeric(Fitting_deltaA$m$getPars()[1])
+#   c1 <- as.numeric(Fitting_deltaA$m$getPars()[2])
+#   c2 <- as.numeric(Fitting_deltaA$m$getPars()[3])
+#   c*te^2+c1*te+c2
+# }
 vec <- seq(0,45,0.001)
 df_out_deltaA <- data.frame(temp_ae = vec,
                             deltaA_jap <- sapply(vec, mod))
 colnames(df_out_deltaA) <- c("temp_ae","deltaA_jap")
-df_out_deltaA[which(df_out_deltaA$deltaA_jap < 0),2] <- 0
+df_out_deltaA[which(df_out_deltaA$deltaA_jap < 0 ),2] <- 0
+# df_out_deltaA[which(df_out_deltaA$temp_ae < 5 ),2] <- 0
+# df_out_deltaA[which(df_out_deltaA$temp_ae > 34 ),2] <- 0
 plotdeltaA <- ggplot(df_out_deltaA) +
   geom_line(aes(temp_ae,deltaA_jap), size = 0.7) +
   geom_point(data = Japonicus,
              aes(x = Temp,y = lifespan),
              size = 0.9, color = "red") +
   xlim(c(0,45))  +
-  ylab("Adult mortality rate") + xlab("Temperature (Cº)") +
+  ylab("Adult Life Span") + xlab("Temperature (Cº)") +
   theme_bw()
 plotdeltaA
 
@@ -61,9 +78,7 @@ mod_min <- function(te){
     summary(Fitting_deltaA)$coefficients[1,2]
   c1 <- as.numeric(Fitting_deltaA$m$getPars()[2])-
     summary(Fitting_deltaA)$coefficients[2,2]
-  c2 <- as.numeric(Fitting_deltaA$m$getPars()[3])-
-    summary(Fitting_deltaA)$coefficients[3,2]
-  c*te^2+c1*te+c2
+  c*te+c1
 }
 
 vec <- seq(0,45,0.001)
@@ -82,9 +97,7 @@ mod_max <- function(te){
     summary(Fitting_deltaA)$coefficients[1,2]
   c1 <- as.numeric(Fitting_deltaA$m$getPars()[2]) + 
     summary(Fitting_deltaA)$coefficients[2,2]
-  c2 <- as.numeric(Fitting_deltaA$m$getPars()[3])+
-    summary(Fitting_deltaA)$coefficients[3,2]
-  c*te^2+c1*te+c2
+  c*te+c1
 }
 
 vec <- seq(0,45,0.001)
@@ -109,7 +122,7 @@ plotdeltaA <- ggplot(df_out_deltaA) +
              size = 0.9, color = "black") +
   scale_color_manual(values=c("red", "blue", "red")) + 
   scale_alpha_manual(values = c(0.5,1,0.5)) +
-  xlim(c(5,35)) + ylim(c(0,25)) +
+  xlim(c(5,35)) + ylim(c(0,80)) +
   guides( color =FALSE, alpha = FALSE) +
   ylab("Adult mortality rate") + xlab("Temperature (Cº)") +
   theme_bw() 
