@@ -42,9 +42,9 @@ TFD_f_alb <- function(temp){Briere_func(0.0488,8.02,35.65,temp)} # Fecundity
 pEA_f_alb <- function(temp){Quad_func(0.00361,9.04,39.33,temp)} # Survival probability Egg-Adult
 MDR_f_alb <- function(temp){Briere_func(0.0000638,8.6,39.66,temp)} # Mosquito Development Rate
 lf_f_alb <- function(temp){Quad_func(1.43,13.41,31.51,temp)} # Adult life span
-b_f_alb <- function(temp){Briere_func(0.000723,16,36.3,temp)} # Adult life span
-c_f_alb <- function(temp){Briere_func(0.00433,2.8,36.7,temp)} # Adult life span
-pdr_f_alb <- function(temp){Briere_func(0.00433,2.8,36.7,temp)} # Adult life span
+b_f_alb <- function(temp){Briere_func(0.000723,15.84,36.4,temp)} # Adult life span
+c_f_alb <- function(temp){Briere_func(0.000439,3.62,36.82,temp)} # Adult life span
+pdr_f_alb <- function(temp){Briere_func(0.000109,10.39,43.05,temp)} # Adult life span
 
 # R0 function by temperature:
 R0_func_alb <- function(Te, hum){
@@ -59,12 +59,13 @@ R0_func_alb <- function(Te, hum){
   N <- hum
   r = 0.1
   R0 <- sqrt((a^2*b*c*exp(-mu/pdr)*f*probla*mdr)/(N*r*mu^3))
+  
   return(R0)
 }
 
 # R0 for Dengue
 vec <- seq(10,40,0.01)
-hum_cte <- 100
+hum_cte <- 0.1
 te_cte <- 15
 out <- sapply(vec,R0_func_alb,hum=hum_cte)
 
@@ -72,18 +73,21 @@ df_out <- data.frame(vec, out)
 ggplot(df_out) +
   geom_line(aes(vec,out))
 
+max(out)
+
 # Population density in each municipality.
 census <- mapSpain::pobmun19
 esp_can_pop <- esp_can %>% left_join(census, by = c("cmun" = "cmun","cpro" = "cpro"))
 esp_can_pop$area <- as.numeric(st_area(esp_can_pop))/1000000
 esp_can_pop$pop_km <- esp_can_pop$pob19/esp_can_pop$area
+esp_can_pop$pop_km[which(is.na(esp_can_pop$pop_km))] <- 10
 esp_can_pop$NATCODE <- as.numeric(paste0("34",
                                          esp_can_pop$codauto,
                                          esp_can_pop$cpro,
                                          esp_can_pop$LAU_CODE))
 
 #####
-year = "2020"
+year = "2019"
 Path = paste0("~/INVASIBILITY_THRESHOLD/output/ERA5/temp/",year,"/")
 listfile <- list.files(Path)
 weather_t <- data.table()
@@ -121,4 +125,10 @@ modified_chunks <- mclapply(df_chunks, modify_column, mc.cores = num_cores)
 DengueR0 <- do.call(rbind, modified_chunks)
 
 saveRDS(DengueR0,
-        "~/INVASIBILITY_THRESHOLD/output/R0/R0_Dengue_2020.Rds")
+        "~/INVASIBILITY_THRESHOLD/output/R0/R0_Dengue_2019.Rds")
+
+
+## Read Zivko file Spain
+Path <- "~/INVASIBILITY_THRESHOLD/code/Dengue/gadm_410_transformed_spain.gpkg"
+spain <- st_read(Path)
+spain_ine <- st_read("~/INVASIBILITY_THRESHOLD/data/municipios_sh/Municipios_IGN.shp")

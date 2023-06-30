@@ -449,7 +449,7 @@ ggarrange( plotdE +
             ylab("Probability from Larvae to Adult")
          )
 
-### Gonotrophic cycle aegypti:
+
 ## Eggs per femae paper: https://onlinelibrary.wiley.com/doi/full/10.1111/jvec.12187
 fec <- data.frame(Temp = c(16,22,28,33,36,16,22,28,33,36,16,22,28,33,36, 20,26,30,35), 
            Number.eggs  = c(3.5,79.22,64.42,40.4,16.12,2.75,161.5,262.3,51.3,30.57,1.46,126,181.3,52.92,22.27,43,80,70,22))
@@ -497,53 +497,57 @@ df_out_aeg <- data.frame(temp = vec,
 
 ggplot(fec) + geom_point(aes(Temp, Number.eggs)) + 
   geom_line(data =df_out_aeg,aes(temp, egg))
-
-### Gonotrophic cycle
-Path <- "~/INVASIBILITY_THRESHOLD/data/Aedes/gono_aegypti.csv"
-gono <- read.csv(Path, sep = ",")
-gono$Dur_gono <- as.numeric(gsub(pattern = ",",
-                                 replacement = ".",
-                                 gono$Dur_gono))
-head(gono)
-ggplot(gono) + geom_point(aes(Temp, Dur_gono))
-
-Fitting_gono_aeg <- nls(Dur_gono ~ -c*(Temp - c1)*(Temp - c2),
-                       data = gono, 
-                       start = list(c = 0.0001, c1 = 10, c2 = 40))
-
-summary(Fitting_gono_aeg)
-
-mod <- function(te){
-  c <- as.numeric(Fitting_gono_aeg$m$getPars()[1])
-  c1 <- as.numeric(Fitting_gono_aeg$m$getPars()[2])
-  c2 <- as.numeric(Fitting_gono_aeg$m$getPars()[3])
-  -c*(te-c1)*(te-c2)
-}
-
-vec <- seq(0,45,0.001)
-df_out_aeg <- data.frame(temp = vec,
-                         egg = sapply(vec, mod))
-
-ggplot(gono) + geom_point(aes(Temp, Dur_gono)) + 
-  geom_line(data =df_out_aeg,aes(temp, egg)) + ylim (c(0,100))
-
-## Briere function
-Fitting_gono_aeg <- nls(Dur_gono ~ c*Temp*(Temp - c1)*(c2-Temp)^(1/2),
-                        data = gono, 
-                        start = list(c = 0.0001, c1 = 13, c2 = 40))
-
-summary(Fitting_gono_aeg)
-
-mod <- function(te){
-  c <- as.numeric(Fitting_gono_aeg$m$getPars()[1])
-  c1 <- as.numeric(Fitting_gono_aeg$m$getPars()[2])
-  c2 <- as.numeric(Fitting_gono_aeg$m$getPars()[3])
-  -c*(te-c1)*(te-c2)
-}
-
-vec <- seq(0,45,0.001)
-df_out_aeg <- data.frame(temp = vec,
-                         egg = sapply(vec, mod))
-
-ggplot(gono) + geom_point(aes(Temp, Dur_gono)) + 
-  geom_line(data =df_out_aeg,aes(temp, egg)) + ylim (c(0,100))
+# 
+# ### Gonotrophic cycle
+# Path <- "~/INVASIBILITY_THRESHOLD/data/Aedes/gono_aegypti.csv"
+# gono <- read.csv(Path, sep = ",")
+# gono[nrow(gono)+1,] <- c(20,8)
+# gono[nrow(gono)+1,] <- c(26,3)
+# gono[nrow(gono)+1,] <- c(30,2.5)
+# gono[nrow(gono)+1,] <- c(35,4.3)
+# gono$Dur_gono <- as.numeric(gsub(pattern = ",",
+#                                  replacement = ".",
+#                                  gono$Dur_gono))
+# head(gono)
+# ggplot(gono) + geom_point(aes(Temp, Dur_gono))
+# 
+# Fitting_gono_aeg <- nls(Dur_gono ~ -c*(Temp - c1)*(Temp - c2),
+#                        data = gono, 
+#                        start = list(c = 0.0001, c1 = 10, c2 = 40))
+# 
+# summary(Fitting_gono_aeg)
+# 
+# mod <- function(te){
+#   c <- as.numeric(Fitting_gono_aeg$m$getPars()[1])
+#   c1 <- as.numeric(Fitting_gono_aeg$m$getPars()[2])
+#   c2 <- as.numeric(Fitting_gono_aeg$m$getPars()[3])
+#   -c*(te-c1)*(te-c2)
+# }
+# 
+# vec <- seq(0,45,0.001)
+# df_out_aeg <- data.frame(temp = vec,
+#                          egg = sapply(vec, mod))
+# 
+# ggplot(gono) + geom_point(aes(Temp, Dur_gono)) + 
+#   geom_line(data =df_out_aeg,aes(temp, egg)) + ylim (c(0,100))
+# 
+# ## Briere function
+# Fitting_gono_aeg <- nls(Dur_gono ~ c*Temp*(Temp - c1)*(c2-Temp)^(1/2),
+#                         data = gono, 
+#                         start = list(c = 0.0001, c1 = 13, c2 = 40))
+# 
+# summary(Fitting_gono_aeg)
+# 
+# mod <- function(te){
+#   c <- as.numeric(Fitting_gono_aeg$m$getPars()[1])
+#   c1 <- as.numeric(Fitting_gono_aeg$m$getPars()[2])
+#   c2 <- as.numeric(Fitting_gono_aeg$m$getPars()[3])
+#   -c*(te-c1)*(te-c2)
+# }
+# 
+# vec <- seq(0,45,0.001)
+# df_out_aeg <- data.frame(temp = vec,
+#                          egg = sapply(vec, mod))
+# 
+# ggplot(gono) + geom_point(aes(Temp, Dur_gono)) + 
+#   geom_line(data =df_out_aeg,aes(temp, egg)) + ylim (c(0,100))

@@ -72,12 +72,11 @@ my_nc <- paste0(getwd(),"/era5_Spain_",year,".nc")
 # my_nc = "/home/marta/era5_Spain_2020.nc"
 
 # Compute centroid for each municipality
-esp_can <- esp_get_munic_siane(moveCAN = FALSE)
-esp_can$centroid <- st_centroid(esp_can$geometry)
-esp_can$area <- st_area(esp_can$geometry)
-esp_can$NATCODE <- as.numeric(paste0("34",esp_can$codauto,
-                                     esp_can$cpro,
-                                     esp_can$LAU_CODE))
+## Read Zivko file Spain
+Path <- "~/INVASIBILITY_THRESHOLD/code/Dengue/gadm_410_transformed_spain.gpkg"
+esp_can <- st_read(Path)
+esp_can$centroid <- st_centroid(esp_can$geom)
+esp_can$area <- st_area(esp_can$geom)
 esp_can$geometry <- NULL
 census <- mapSpain::pobmun19
 esp_can <- esp_can %>% left_join(census,
@@ -88,8 +87,8 @@ esp_can <- esp_can[,c("NATCODE", "centroid", "pob19", "area")]
 num_cores = 1
 # Parallelize function in order to obtain value R0 for each municipality
 climat_each_muni <- mclapply(c(1:nrow(esp_can)), 
-                         extract_weather, 
-                         mc.cores = num_cores)
+                             extract_weather, 
+                             mc.cores = num_cores)
 
 saveRDS(climat_each_muni,
         paste0("~/INVASIBILITY_THRESHOLD/output/R0/ERA5_daily_mcera_",year,".Rds"))

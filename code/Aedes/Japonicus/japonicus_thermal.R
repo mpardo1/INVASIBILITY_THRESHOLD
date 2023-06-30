@@ -10,7 +10,7 @@ library(nls2)
 Path <- "~/INVASIBILITY_THRESHOLD/data/japonicus/adult_larva_lifespan.csv"
 Japonicus <- read.csv(Path)
 head(Japonicus)
-Japonicus$lifespan <- Japonicus$Age_adult_death_mean.1 - Japonicus$Age_emergence_male_mean.1
+Japonicus$lifespan <- Japonicus$Age_adult_death_mean.1 
 plot_deltaA <- ggplot(Japonicus) + 
   geom_point(aes(Temp,lifespan)) + theme_bw()
 plot_deltaA
@@ -19,6 +19,7 @@ plot_deltaA
 #                    data = Japonicus,
 #                    start = list(cont = 0.001, cont1 = 0.0))
 # summary(Fitting_deltaA)
+
 Fitting_deltaA <- nls(lifespan ~ cont*Temp^2 + cont1*Temp +cont2,
                       data = Japonicus,
                       start = list(cont = 0.001, cont1 = 0.0, cont2 = 0.0))
@@ -254,6 +255,7 @@ plotdE
 Path <- "~/INVASIBILITY_THRESHOLD/data/japonicus/adult_larva_lifespan.csv"
 Japonicus <- read.csv(Path)
 head(Japonicus)
+## Aunque ponga male es female
 Japonicus$FemaledL <- 1/Japonicus$Age_emergence_male_mean.1
 # Thesis Jamesina
 Japonicus <- rbind(Japonicus, c(10,1/140.8))
@@ -362,11 +364,20 @@ plotdL <- ggplot(df_out_dL) +
 plotdL
 
 ###----------------------------------------------
+## Paper Germany:
 Lmortality <- data.frame(Temp = c(0,5,10,12,14,15,17,19,20,23,25,26,27,28,29,31),
                          mean_mort_perc = c(100,99.5,16,38.5,18,15,19,29.5,11.3,48.5,13.8,6,41.5,12.5,70.5,87.5),
                          sd_mort_perc = c(0,1.1,5.5,14.2,4.8,7.9,9.6,12.4,6.5,27.6,8.4,5.2,31.1,7.7,22.2,6.4))
-head(Lmortality)
 Lmortality$mean_mort_perc = Lmortality$mean_mort_perc/100
+Lmortality[nrow(Lmortality) +1,] <- c(10,0.5,0)
+Lmortality[nrow(Lmortality) +1,] <- c(16,1-0.6,0)
+Lmortality[nrow(Lmortality) +1,] <- c(22,1-0.27,0)
+Lmortality[nrow(Lmortality) +1,] <- c(28,1-0.33,0)
+Lmortality[nrow(Lmortality) +1,] <- c(34,1,0)
+Lmortality[nrow(Lmortality) +1,] <- c(40,1,0)
+
+head(Lmortality)
+
 plot_deltaL <- ggplot(Lmortality) + 
   geom_point(aes(Temp,mean_mort_perc)) + theme_bw()
 plot_deltaL

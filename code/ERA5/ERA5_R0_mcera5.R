@@ -68,24 +68,16 @@ dE_f_alb <- function(temp){Briere_func(0.00006881,8.869,35.09,temp)} # Adult lif
 # R0 function by temperature:
 R0_func_alb <- function(Te, rain, hum){
   a <- a_f_alb(Te)
-  f <- (1/2)*TFD_f_alb(Te)
+  f <- 100#(1/2)*TFD_f_alb(Te)
   deltaa <- lf_f_alb(Te)
   dE <- dE_f_alb(Te)
   probla <- pLA_f_alb(Te)
   h <- h_f(hum,rain)
   deltaE = 0.1
-  R0 <- ((0.3365391*f*a*deltaa)*probla*(h*dE/(h*dE+deltaE)))^(1/3)
+  #R0 <- ((0.3365391*f*a*deltaa)*probla*(h*dE/(h*dE+deltaE)))^(1/3)
+  R0 <- ((f*a*deltaa)*probla*(h*dE/(h*dE+deltaE)))^(1/3)
   return(R0)
 }
-
-vec <- seq(0,40,0.01)
-out <- sapply(vec,R0_func_alb, rain = 6, hum = 500)
-
-df_out_alb <- data.frame(vec, out)
-ggplot(df_out_alb) +
-  geom_line(aes(vec,out))
-
-df_out_alb[which(df_out_alb$out == max(df_out_alb$out)),"vec"]
 
 ####------------------------------Aegypti------------------------####
 a_f_aeg <- function(temp){Briere_func(0.000202,13.35,40.08,temp)} # Biting rate
@@ -98,42 +90,27 @@ dE_f_aeg <- function(temp){Briere_func(0.0003775 ,14.88,37.42,temp)} # Adult lif
 # R0 function by temperature:
 R0_func_aeg <- function(Te, rain,hum){
   a <- a_f_aeg(Te)
-  f <- (1/2)*EFD_f_aeg(Te)
+  f <- 100#(1/2)*EFD_f_aeg(Te)
   deltaa <- lf_f_aeg(Te)
   dE <- dE_f_aeg(Te)
   probla <- pLA_f_aeg(Te)
   h <- h_f(hum,rain)
   deltE = 0.1
-  R0 <- ((f*deltaa)*probla*(h*dE/(h*dE+deltE)))^(1/3)
+  R0 <- ((f*a*deltaa)*probla*(h*dE/(h*dE+deltE)))^(1/3)
   return(R0)
 }
 
-vec <- seq(0,40,0.01)
-out <- sapply(vec,R0_func_aeg, rain = 6, hum = 500)
 
-df_out_aeg <- data.frame(vec, out)
-ggplot(df_out_aeg) +
-  geom_line(aes(vec,out))
-
-df_out_aeg[which(df_out_aeg$out == max(df_out_aeg$out)),"vec"]
-
-####---------------------------Japonicus------------------------####
+#####----------------Japonicus-----------------####
 dE_f_jap <- function(temp){Briere_func(0.0002859,6.360,35.53 ,temp)} # Mosquito Development Rate
 dL_f_jap <- function(temp){Briere_func(7.000e-05,9.705e+00,3.410e+01,temp)} # Survival probability Egg-Adult
-lf_f_jap <- function(temp){QuadN_func(0.0113,-0.9308,21.5214,temp)} # Adult life span
-deltaL_f_jap <- function(temp){QuadN_func(0.0030183,-0.1099622,1.1617832,temp)} # Adult life span
-
-vec <- seq(0,30,0.01)
-out <- sapply(vec,deltaL_f_jap)
-
-df_out_jap <- data.frame(vec, out)
-ggplot(df_out_jap) +
-  geom_line(aes(vec,out))
+lf_f_jap <- function(temp){QuadN_func(0.18709,-10.20382,153.76255,temp)} # Adult life span
+deltaL_f_jap <- function(temp){QuadN_func(0.0021476,-0.0806067 ,1.0332455,temp)} # Adult life span
 
 # R0 function by temperature:
 R0_func_jap <- function(Te, rain,hum){
-  a <- 0.4
-  f <- 170
+  a <- 0.35
+  f <- 100 #183/2
   lf <- lf_f_jap(Te)
   deltaL <- deltaL_f_jap(Te)
   deltE = 0.1
