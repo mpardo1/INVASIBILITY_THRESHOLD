@@ -51,7 +51,7 @@ ymn <- 27
 ymx <- 44
 
 # Temporal grid
-year = 2019
+year = 2017
 st_time <- lubridate::ymd(paste0(year,":01:01"))
 en_time <- lubridate::ymd(paste0(year,":12:31"))
 
