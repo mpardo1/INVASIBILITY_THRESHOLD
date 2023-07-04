@@ -165,26 +165,43 @@ ggplot(df_out) +
 
 #### Phase space for all three species
 temperature <- seq(5, 40, by = 0.1)
-rainfall <- seq(0, 18, by = 0.1)
+rainfall <- seq(0, 40, by = 0.1)
 dt_ps <- setDT(expand.grid(temperature = temperature, rainfall = rainfall))
-dt_ps$hum = 0
+dt_ps$hum = 10
 dt_ps[, Albopictus := mapply(R0_func_alb, temperature, rainfall, hum)]
 dt_ps[, Japonicus := mapply(R0_func_jap, temperature, rainfall, hum)]
 dt_ps[, Aegypti := mapply(R0_func_aeg, temperature, rainfall, hum)]
+dt_ps$rangealb <- ifelse(dt_ps$Albopictus<1,0,
+                  ifelse(dt_ps$Albopictus>=1 & dt_ps$Albopictus<2,1,
+                  ifelse(dt_ps$Albopictus>=2 & dt_ps$Albopictus<3,2,
+                  ifelse(dt_ps$Albopictus>=3 & dt_ps$Albopictus<4,3, 
+                  ifelse(dt_ps$Albopictus>=4 & dt_ps$Albopictus<5,4,5))))) 
+dt_ps$rangeaeg <- ifelse(dt_ps$Aegypti<1,0,
+                  ifelse(dt_ps$Aegypti>=1 & dt_ps$Aegypti<2,1,
+                  ifelse(dt_ps$Aegypti>=2 & dt_ps$Aegypti<3,2,
+                  ifelse(dt_ps$Aegypti>=3 & dt_ps$Aegypti<4,3, 
+                  ifelse(dt_ps$Aegypti>=4 & dt_ps$Aegypti<5,4,5))))) 
+dt_ps$rangejap <- ifelse(dt_ps$Japonicus<1,0,
+                  ifelse(dt_ps$Japonicus>=1 & dt_ps$Japonicus<2,1,
+                  ifelse(dt_ps$Japonicus>=2 & dt_ps$Japonicus<3,2,
+                  ifelse(dt_ps$Japonicus>=3 & dt_ps$Japonicus<4,3, 
+                  ifelse(dt_ps$Japonicus>=4 & dt_ps$Japonicus<5,4,5))))) 
 
 albo <- ggplot(dt_ps) +
-  geom_point(aes(temperature,rainfall,color = Albopictus)) +
+  geom_point(aes(temperature,rainfall,color = rangealb)) +
   scale_color_viridis_c(option = "magma") + theme_bw()
 
 aeg <- ggplot(dt_ps) +
-  geom_point(aes(temperature,rainfall,color = Aegypti)) +
+  geom_point(aes(temperature,rainfall,color = rangeaeg)) +
   scale_color_viridis_c(option = "magma") + theme_bw()
 
 jap <- ggplot(dt_ps) +
-  geom_point(aes(temperature,rainfall,color = Japonicus)) +
+  geom_point(aes(temperature,rainfall,color = rangejap)) +
   scale_color_viridis_c(option = "magma") + theme_bw()
 
 library(ggpubr)
-ggarrange(jap + xlab(""),albo + xlab(""),aeg , ncol =1)
+ggarrange(jap + xlab(""),
+          albo + xlab(""),
+          aeg , ncol =1, common.legend = TRUE)
 
 
