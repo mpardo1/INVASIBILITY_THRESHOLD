@@ -149,6 +149,7 @@ esp_can$NATCODE <- as.numeric(paste0("34",esp_can$codauto,
                                      esp_can$LAU_CODE))
 df_group$month <- lubridate::month(df_group$date)
 
+### -------------Temporal plots-----------------#
 # Temporal R0 for Barcelona
 NATCODE_BCN <- esp_can$NATCODE[which(esp_can$name == "Barcelona")]
 df_BCN <- df_group[which(df_group$NATCODE == NATCODE_BCN),
@@ -172,6 +173,7 @@ ggplot(df_BCN) +
 
 rm(df_BCN)
 
+### -------------Temporal plots-----------------#
 # Plot R0
 esp_can <- esp_get_munic_siane(moveCAN = TRUE)
 esp_can$NATCODE <- as.numeric(paste0("34",
@@ -189,13 +191,17 @@ R0_cpro <- df_group[which(df_group$cpro %in%
   group_by(cpro,month) %>%
   summarise(R0_tmed_alb = mean(R0_hourly_alb),
             R0_tmed_aeg = mean(R0_hourly_aeg),
-            R0_tmed_jap = mean(R0_hourly_jap))
+            R0_tmed_jap = mean(R0_hourly_jap),
+            R0d_tmed_alb = mean(R0_dai_alb),
+            R0d_tmed_aeg = mean(R0_dai_aeg),
+            R0d_tmed_jap = mean(R0_dai_jap))
 
 df_group  <- df_group %>% left_join(R0_cpro)
-df_group  <- df_group[,c("NATCODE", "month", "temp", "min_temp",
+df_group  <- df_group[,c("NATCODE","cpro", "month", "temp", "min_temp",
                          "max_temp","prec",  "pop", "R0_tmed_alb",
                          "R0_tmed_aeg", "R0_tmed_jap", "R0_hourly_alb",
-                         "R0_hourly_aeg", "R0_hourly_jap")]
+                         "R0_hourly_aeg", "R0_hourly_jap", "R0_dai_alb",
+                         "R0_dai_aeg", "R0_dai_jap")]
 rm(R0_cpro)
 
 ## Delete NA in the map for hourly R0
@@ -210,6 +216,25 @@ df_group$R0_hourly_jap <- ifelse(is.na(df_group$R0_hourly_jap),
                                  df_group$R0_hourly_jap)
 
 ## Delete NA in the map for daily R0
+ind <- is.na(df_group$R0_dai_alb)
+R0_cpro <- df_group[which(df_group$cpro %in%
+                            df_group$cpro[ind] & 
+                            is.na(df_group$R0_dai_alb) == FALSE),] %>%
+  group_by(cpro,month) %>%
+  summarise(R0_tmed_alb = mean(R0_hourly_alb),
+            R0_tmed_aeg = mean(R0_hourly_aeg),
+            R0_tmed_jap = mean(R0_hourly_jap),
+            R0d_tmed_alb = mean(R0_dai_alb),
+            R0d_tmed_aeg = mean(R0_dai_aeg),
+            R0d_tmed_jap = mean(R0_dai_jap))
+
+df_group  <- df_group %>% left_join(R0_cpro)
+df_group  <- df_group[,c("NATCODE", "month", "temp", "min_temp",
+                         "max_temp","prec",  "pop", "R0_tmed_alb",
+                         "R0_tmed_aeg", "R0_tmed_jap", "R0_hourly_alb",
+                         "R0_hourly_aeg", "R0_hourly_jap", "R0_dai_alb",
+                         "R0_dai_aeg", "R0_dai_jap")]
+rm(R0_cpro)
 df_group$R0_dai_alb <- ifelse(is.na(df_group$R0_dai_alb),
                                  df_group$R0_tmed_alb,
                                  df_group$R0_dai_alb)
@@ -234,10 +259,19 @@ df_group_mon <- df_group[, .(temp = mean(temp),
                              R0_monthlyd_jap = mean(R0_dai_jap)), 
                          by=list(NATCODE,month)]
 
+df_group_mon[, R0_mon_alb := mapply(R0_func_alb, temp, prec, pop)]
+df_group_mon[, R0_mon_aeg := mapply(R0_func_aeg, temp, prec, pop)]
+df_group_mon[, R0_mon_jap := mapply(R0_func_jap, temp, prec, pop)]
+
 df_group_mon <- esp_can %>%
   left_join(df_group_mon)
 
 rm(df_group)
+### Difference between computing R0 daily monthly or hourly in the montly results:
+df_group_mon$diff_hd <- abs(df_group_mon$R0_monthly_alb - df_group_mon$R0_monthlyd_alb)
+df_group_mon$diff_dm <- abs(df_group_mon$R0_monthlyd_alb - df_group_mon$R0_mon_alb)
+hist(df_group_mon$diff_dm)
+hist(df_group_mon$diff_hd)
 
 ## Animate maps:
 ggplot(df_group_mon) +
@@ -269,19 +303,34 @@ df_group_mon$bool_R0_alb <- ifelse(df_group_mon$R0_monthly_alb < 1,0,1)
 df_group_mon$bool_R0_aeg <- ifelse(df_group_mon$R0_monthly_aeg < 1,0,1)
 df_group_mon$bool_R0_jap <- ifelse(df_group_mon$R0_monthly_jap < 1,0,1)
 
+df_group_mon$bool_m_R0_alb <- ifelse(df_group_mon$R0_mon_alb < 1,0,1)
+df_group_mon$bool_m_R0_aeg <- ifelse(df_group_mon$R0_mon_aeg < 1,0,1)
+df_group_mon$bool_m_R0_jap <- ifelse(df_group_mon$R0_mon_jap < 1,0,1)
+
+df_group_mon$bool_d_R0_alb <- ifelse(df_group_mon$R0_monthlyd_alb < 1,0,1)
+df_group_mon$bool_d_R0_aeg <- ifelse(df_group_mon$R0_monthlyd_aeg < 1,0,1)
+df_group_mon$bool_d_R0_jap <- ifelse(df_group_mon$R0_monthlyd_jap < 1,0,1)
+
 df_group_y <- df_group_mon %>% group_by(NATCODE) %>%
   summarise(R0_sum_alb = sum(bool_R0_alb),
             R0_sum_aeg = sum(bool_R0_aeg),
             R0_sum_jap = sum(bool_R0_jap),
+            R0_sum_d_alb = sum(bool_d_R0_alb),
+            R0_sum_d_aeg = sum(bool_d_R0_aeg),
+            R0_sum_d_jap = sum(bool_d_R0_jap),
+            R0_sum_m_alb = sum(bool_m_R0_alb),
+            R0_sum_m_aeg = sum(bool_m_R0_aeg),
+            R0_sum_m_jap = sum(bool_m_R0_jap),
             R0_avg_alb = mean(R0_monthly_alb),
             R0_avg_aeg = mean(R0_monthly_aeg),
             R0_avg_jap = mean(R0_monthly_jap),
             avg_temp = mean(temp),
-            sum_prec = sum(prec))
+            sum_prec = sum(prec), 
+            pop = mean(pop))
 
 df_sum <- df_group_mon[which(df_group_mon$month >3 &
                      df_group_mon$month <11 ),]
-df_group_sum <- df_sum %>%group_by(NATCODE) %>%
+df_group_sum <- df_sum %>% group_by(NATCODE) %>%
   summarise(R0_sum_alb = sum(bool_R0_alb),
             R0_sum_aeg = sum(bool_R0_aeg),
             R0_sum_jap = sum(bool_R0_jap),
@@ -289,50 +338,97 @@ df_group_sum <- df_sum %>%group_by(NATCODE) %>%
             R0_avg_aeg = mean(R0_monthly_aeg),
             R0_avg_jap = mean(R0_monthly_jap),
             avg_temp = mean(temp),
-            sum_prec = sum(prec))
+            sum_prec = sum(prec),
+            pop = mean(pop))
 
 rm(df_group_na,df_BCN,df_sum)
 # Whole map group by number of months suitable
 library(RColorBrewer)
 library(ggpubr)
-num_colors <- 13
-# Create a palette function using colorRampPalette
-my_palette <- colorRampPalette(c("#faf0ca","#f95738", "#732c2c"))
 
-colors <- c("#43A2CA", "#7BCCC4", "#BAE4BC", "#F0F9E8",
-            "#FFF7EC","#FEE8C8","#FDD49E","#FDBB84",
-            "#FC8D59","#EF6548","#D7301F", "#B30000",
-            "#7F0000") 
+plot_summonths <- function(df){
+  num_colors <- 13
+  # Create a palette function using colorRampPalette
+  my_palette <- colorRampPalette(c("#faf0ca","#f95738", "#732c2c"))
+  
+  colors <- c("#43A2CA", "#7BCCC4", "#BAE4BC", "#F0F9E8",
+              "#FFF7EC","#FEE8C8","#FDD49E","#FDBB84",
+              "#FC8D59","#EF6548","#D7301F", "#B30000",
+              "#7F0000") 
+  ggplot(df) +
+    geom_sf(aes(fill = as.factor(R0)), colour = NA) +
+    geom_sf(data = can_box) + coord_sf(datum = NA) +
+    scale_fill_manual(values = colors,
+                      name = "Nº months\n suitable") +
+    theme_bw() 
+}
 
-plot_sum_alb <- ggplot(df_group_y) +
-  geom_sf(aes(fill = as.factor(R0_sum_alb)), colour = NA) +
-  geom_sf(data = can_box) + coord_sf(datum = NA) +
-  scale_fill_manual(values = colors,
-                    name = "Nº months\n suitable") +
-  theme_bw() 
+## Computed with hourly data
+df_group_y$R0 <- df_group_y$R0_sum_alb
+plot_sum_alb <- plot_summonths(df_group_y)
 plot_sum_alb
 
 Path <- "~/Documentos/PHD/2023/INVASIBILITY/Plots/MS/AlboSum2014.pdf"
 dev.copy2pdf(file=Path, width = 7, height = 5)
 
-plot_sum_aeg <- ggplot(df_group_y) +
-  geom_sf(aes(fill = as.factor(R0_sum_aeg)), colour = NA) +
-  geom_sf(data = can_box) + coord_sf(datum = NA) +
-  scale_fill_manual(values = colors,
-                    name = "Nº months\n suitable") +
-  theme_bw() 
+df_group_y$R0 <- df_group_y$R0_sum_aeg
+plot_sum_aeg <- plot_summonths(df_group_y)
 plot_sum_aeg
 Path <- "~/Documentos/PHD/2023/INVASIBILITY/Plots/MS/AegSum2014.pdf"
 dev.copy2pdf(file=Path, width = 7, height = 5)
 
-plot_sum_jap <- ggplot(df_group_y) +
-  geom_sf(aes(fill = as.factor(R0_sum_jap)), colour = NA) +
-  geom_sf(data = can_box) + coord_sf(datum = NA) +
-  scale_fill_manual(values = colors,
-                    name = "Nº months\n suitable") +
-  theme_bw() 
+df_group_y$R0 <- df_group_y$R0_sum_jap
+plot_sum_jap <- plot_summonths(df_group_y)
 plot_sum_jap
 Path <- "~/Documentos/PHD/2023/INVASIBILITY/Plots/MS/JapSum2014.pdf"
+dev.copy2pdf(file=Path, width = 7, height = 5)
+
+ggarrange(plot_sum_alb + ggtitle("Aedes Albopictus"),
+          plot_sum_aeg + ggtitle("Aedes Aegypti"),
+          plot_sum_jap + ggtitle("Aedes Japonicus"),
+          common.legend = TRUE)
+
+### PLOOOTS
+
+## Take out the NA values as the average of the province
+str(df_group_y)
+esp_can_cpro <-setDT(esp_can[,c("NATCODE", "cpro")])
+esp_can_cpro$geometry <- NULL
+df_group_y <- df_group_y %>% left_join(esp_can_cpro)
+df_group_cpro <- df_group_y[which(is.na(df_group_y$R0_sum_m_alb)==FALSE),] %>% 
+  group_by(cpro) %>%
+  summarise(R0_aeg =mean(R0_sum_m_aeg),
+            R0_alb = mean(R0_sum_m_alb),
+            R0_jap = mean(R0_sum_m_jap))
+
+df_group_cpro$geometry <- NULL
+df_group_y <- df_group_y %>% left_join(df_group_cpro)
+df_group_y$R0_sum_m_alb <- ifelse(is.na(df_group_y$R0_sum_m_alb ),
+                                  df_group_y$R0_alb,
+                                  df_group_y$R0_sum_m_alb )
+df_group_y$R0_sum_m_aeg <- ifelse(is.na(df_group_y$R0_sum_m_aeg ),
+                                  df_group_y$R0_aeg,
+                                  df_group_y$R0_sum_m_aeg )
+df_group_y$R0_sum_m_jap <- ifelse(is.na(df_group_y$R0_sum_m_jap ),
+                                  df_group_y$R0_jap,
+                                  df_group_y$R0_sum_m_jap )
+
+df_group_y$R0 <- ceiling(df_group_y$R0_sum_m_alb)
+plot_sum_alb <- plot_summonths(df_group_y)
+plot_sum_alb
+Path <- "~/Documentos/PHD/2023/INVASIBILITY/Plots/MS/mon_AlboSum2014.pdf"
+dev.copy2pdf(file=Path, width = 7, height = 5)
+
+df_group_y$R0 <- ceiling(df_group_y$R0_sum_m_aeg)
+plot_sum_aeg <- plot_summonths(df_group_y)
+plot_sum_aeg
+Path <- "~/Documentos/PHD/2023/INVASIBILITY/Plots/MS/mon_AegSum2014.pdf"
+dev.copy2pdf(file=Path, width = 7, height = 5)
+
+df_group_y$R0 <- ceiling(df_group_y$R0_sum_m_jap)
+plot_sum_jap <- plot_summonths(df_group_y)
+plot_sum_jap
+Path <- "~/Documentos/PHD/2023/INVASIBILITY/Plots/MS/mon_JapSum2014.pdf"
 dev.copy2pdf(file=Path, width = 7, height = 5)
 
 ggarrange(plot_sum_alb + ggtitle("Aedes Albopictus"),
@@ -372,6 +468,7 @@ ggarrange(plot_avg_alb + ggtitle("Aedes Albopictus"),
           common.legend = TRUE)
 
 ### Plot of average temperature and rainfall
+df_group_y[,]
 plot_temp <- ggplot(df_group_y) +
   geom_sf(aes(fill = avg_temp), linewidth = 0.01) +
   geom_sf(data = can_box) + coord_sf(datum = NA) +
@@ -387,56 +484,6 @@ plot_rain <- ggplot(df_group_y) +
   theme_void()
 
 ggarrange(plot_temp,plot_rain)
-
-##### Daily maps ######
-df_group_mon$bool_R0_alb <- ifelse(df_group_mon$R0_monthlyd_alb < 1,0,1)
-df_group_mon$bool_R0_aeg <- ifelse(df_group_mon$R0_monthlyd_aeg < 1,0,1)
-df_group_mon$bool_R0_jap <- ifelse(df_group_mon$R0_monthlyd_jap < 1,0,1)
-
-df_group_y <- df_group_mon %>% group_by(NATCODE) %>%
-  summarise(R0_sum_alb = sum(bool_R0_alb),
-            R0_sum_aeg = sum(bool_R0_aeg),
-            R0_sum_jap = sum(bool_R0_jap),
-            R0_avg_alb = mean(R0_monthly_alb),
-            R0_avg_aeg = mean(R0_monthly_aeg),
-            R0_avg_jap = mean(R0_monthly_jap),
-            avg_temp = mean(temp),
-            sum_prec = sum(prec))
-
-## Plots sum months for R0 computed daily.
-plot_sum_alb <- ggplot(df_group_y) +
-  geom_sf(aes(fill = R0_sum_alb), linewidth = 0.01) +
-  geom_sf(data = can_box) + coord_sf(datum = NA) +
-  scale_fill_distiller(palette = "Spectral",
-                       name = "Nº months\n suitable",
-                       limits=c(0,12)) +
-  # scale_fill_viridis_c(option = "magma",
-  #                      name = "Nº months\n suitable",
-  #                      direction = -1,
-  #                      limits=c(0,12)) +
-  theme_bw() 
-plot_sum_alb
-
-plot_sum_aeg <- ggplot(df_group_y) +
-  geom_sf(aes(fill = R0_sum_aeg), linewidth = 0.01) +
-  geom_sf(data = can_box) + coord_sf(datum = NA) +
-  scale_fill_distiller(palette = "Spectral",
-                       name = "Nº months suitable",
-                       limits=c(0,12)) +
-  theme_bw()
-
-plot_sum_jap <- ggplot(df_group_y) +
-  geom_sf(aes(fill = R0_sum_jap), linewidth = 0.01) +
-  geom_sf(data = can_box) + coord_sf(datum = NA) +
-  scale_fill_distiller(palette = "Spectral",
-                       name = "Nº months suitable",
-                       limits=c(0,12)) +
-  theme_bw()
-
-ggarrange(plot_sum_alb + ggtitle("Aedes Albopictus"),
-          plot_sum_aeg + ggtitle("Aedes Aegypti"),
-          plot_sum_jap + ggtitle("Aedes Japonicus"),
-          common.legend = TRUE)
 
 ###----------------- VALIDATION -----------------------#
 ## MAp Spain -------
