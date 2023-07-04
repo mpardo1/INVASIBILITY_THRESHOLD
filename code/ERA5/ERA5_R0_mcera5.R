@@ -25,6 +25,23 @@ Quad_func <- function(cte, tmin, tmax, temp){
   return(outp)
 }
 
+Lin_func <- function(cte, cte1, temp){
+  outp <- temp*cte + cte1
+  if(outp < 0 | is.na(outp)){
+    outp <- 0.00001
+  }
+  return(outp)
+}
+
+
+Quad <- function(cte, cte1,cte2, temp){
+  outp <- cte*temp^2 + cte1*temp + cte2
+  if(outp < 0 | is.na(outp)){
+    outp <- 0
+  }
+  return(outp)
+}
+
 QuadN_func <- function(cte, c1, c2, temp){
   outp <- cte*temp^2 + c1*temp + c2
   if(outp < 0 | is.na(outp)){
@@ -32,15 +49,6 @@ QuadN_func <- function(cte, c1, c2, temp){
   }
   return(outp)
 }
-
-Lin_func <- function(cte, c1, temp){
-  outp <- cte*temp + c1
-  if(outp < 0 | is.na(outp)){
-    outp <- 0
-  }
-  return(outp)
-}
-
 ### Incorporating rain and human density:
 h_f <- function(hum, rain){
   # Constants: 
@@ -50,6 +58,7 @@ h_f <- function(hum, rain){
   eopt = 8
   efac = 0.01
   edens = 0.01
+  
   
   hatch <- (1-erat)*(((1+e0)*exp(-evar*(rain-eopt)^2))/(exp(-evar*(rain - eopt)^2) + e0)) +
     erat*(edens/(edens + exp(-efac*hum)))
@@ -68,7 +77,7 @@ dE_f_alb <- function(temp){Briere_func(0.00006881,8.869,35.09,temp)} # Adult lif
 # R0 function by temperature:
 R0_func_alb <- function(Te, rain, hum){
   a <- a_f_alb(Te)
-  f <- 100#(1/2)*TFD_f_alb(Te)
+  f <- (1/2)*TFD_f_alb(Te)
   deltaa <- lf_f_alb(Te)
   dE <- dE_f_alb(Te)
   probla <- pLA_f_alb(Te)
@@ -90,7 +99,7 @@ dE_f_aeg <- function(temp){Briere_func(0.0003775 ,14.88,37.42,temp)} # Adult lif
 # R0 function by temperature:
 R0_func_aeg <- function(Te, rain,hum){
   a <- a_f_aeg(Te)
-  f <- 100#(1/2)*EFD_f_aeg(Te)
+  f <- 40#(1/2)*EFD_f_aeg(Te)
   deltaa <- lf_f_aeg(Te)
   dE <- dE_f_aeg(Te)
   probla <- pLA_f_aeg(Te)
@@ -104,20 +113,20 @@ R0_func_aeg <- function(Te, rain,hum){
 #####----------------Japonicus-----------------####
 dE_f_jap <- function(temp){Briere_func(0.0002859,6.360,35.53 ,temp)} # Mosquito Development Rate
 dL_f_jap <- function(temp){Briere_func(7.000e-05,9.705e+00,3.410e+01,temp)} # Survival probability Egg-Adult
-lf_f_jap <- function(temp){QuadN_func(0.18709,-10.20382,153.76255,temp)} # Adult life span
+lf_f_jap <- function(temp){Lin_func(-2.5045,82.6525,temp)} # Adult life span
 deltaL_f_jap <- function(temp){QuadN_func(0.0021476,-0.0806067 ,1.0332455,temp)} # Adult life span
 
 # R0 function by temperature:
 R0_func_jap <- function(Te, rain,hum){
   a <- 0.35
-  f <- 100 #183/2
+  f <- 40 #183/2
   lf <- lf_f_jap(Te)
   deltaL <- deltaL_f_jap(Te)
   deltE = 0.1
   dE <- dE_f_jap(Te)
   dL <- dL_f_jap(Te)
   h <- h_f(hum,rain)
-  if(dL == 0 | f == 0 | a == 0 | dE == 0 | h == 0 | Te<0){
+  if(dL == 0 | f == 0 | a == 0 | dE == 0 |  Te<0){
     R0 <- 0
   }else{
     R0 <- ((f*a*lf)*(dL/(dL+deltaL))*(h*dE/(h*dE+deltE)))^(1/3)
@@ -125,13 +134,13 @@ R0_func_jap <- function(Te, rain,hum){
   return(R0)
 }
 
-vec <- seq(-5,40,0.01)
+vec <- seq(0,40,0.01)
 out <- sapply(vec,R0_func_jap, rain = 6, hum = 500)
-
 df_out_jap <- data.frame(vec, out)
-ggplot(df_out_jap) +
-  geom_line(aes(vec,out))
-
+out <- sapply(vec,R0_func_alb, rain = 6, hum = 500)
+df_out_alb <- data.frame(vec, out)
+out <- sapply(vec,R0_func_aeg, rain = 6, hum = 500)
+df_out_aeg <- data.frame(vec, out)
 # Life_span mosquito
 # vec <- seq(-5,40,0.01)
 # out <- sapply(vec,lf_f_jap)
@@ -152,12 +161,16 @@ df_out <- rbind(df_out_alb, df_out_aeg, df_out_jap)
 
 ggplot(df_out) +
   geom_line(aes(vec, out, group = esp, color = esp)) +
-  theme_bw() + xlim(c(5,36)) +
-  scale_x_continuous(breaks = seq(5,35,5),limits = c(5, 36)) +
+  theme_bw() + 
+  scale_x_continuous(breaks = seq(5,40,5),limits = c(5, 40)) +
   xlab("Temperature (Cº)") + ylab("Vector suitability, R0") +
-  theme(legend.position = c(0.1,0.6),
+  theme(legend.position = c(0.2,0.8),
         text = element_text(size = 14),
         legend.title=element_blank())  
+
+df_out_aeg[which(df_out_aeg$out == max(df_out_aeg$out)),"vec"]
+df_out_alb[which(df_out_alb$out == max(df_out_alb$out)),"vec"]
+df_out_jap[which(df_out_jap$out == max(df_out_jap$out)),"vec"]
 
 ## Test that the function works and make sense the values should go
 # from bigger to smaller
@@ -166,24 +179,25 @@ R0_func_alb(15,5,400)
 R0_func_aeg(15,5,400)
 
 # Use data taken from MCERA5 Package R from ERA5 data set Copernicus
-R0_each_muni <- readRDS("~/INVASIBILITY_THRESHOLD/output/R0/R0_ERA5_hourly_mcera_2020.Rds")
-# modified_df <- do.call(rbind, R0_each_muni)
-rm(census)
-head(R0_each_muni[[1000]])
+year = 2014
+Path <- paste0("~/INVASIBILITY_THRESHOLD/output//mcera5/mcera5/ERA5_daily_mcera_",year,".Rds")
+weather_muni <- readRDS(Path)
+# weather_muni <- setDT(do.call(rbind, weather_muni))
+head(weather_muni[[1000]])
 
 df_group <- data.table()
-length(R0_each_muni)
-for(i in c(1:2000)){
+length(weather_muni)
+for(i in c(1:length(weather_muni))){
   print(paste0("i:",i))
-  dt_aux <- setDT(R0_each_muni[[i]])
+  dt_aux <- setDT(weather_muni[[i]])
+  dt_aux$prec2 <- dt_aux$prec
+  dt_aux$prec <- dt_aux$prec1
   dt_aux$date <- as.Date(dt_aux$obs_time)
-  
+  dt_aux$prec <- as.numeric(dt_aux$prec)
   ## Albopictus
   dt_aux[, R0_hourly_alb := mapply(R0_func_alb, temperature, prec, pop)]
-  
   ## Aegypti
   dt_aux[, R0_hourly_aeg := mapply(R0_func_aeg, temperature, prec, pop)]
-  
   ## Japonicus
   dt_aux[, R0_hourly_jap := mapply(R0_func_jap, temperature, prec, pop)]
   
@@ -215,5 +229,5 @@ for(i in c(1:2000)){
   df_group <- rbind(dt_aux,df_group)
 }
 
-saveRDS(df_group,
-        "~/INVASIBILITY_THRESHOLD/output/R0/R0_ERA5_daily_mcera_2020.Rds")
+Path <- paste0("~/INVASIBILITY_THRESHOLD/output/R0/1R0_ERA5_daily_mcera_",year,".Rds")
+saveRDS(df_group,Path)

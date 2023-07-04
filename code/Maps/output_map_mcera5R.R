@@ -9,8 +9,138 @@ library(data.table)
 library("viridis")
 library("gganimate")
 
-df_group <- readRDS("~/INVASIBILITY_THRESHOLD/output/R0/R0_ERA5_daily_mcera_2020.Rds")
+#------------------------FUNCTIONS---------------------------#
+# Main functions 
+Briere_func <- function(cte, tmin, tmax, temp){
+  outp <- temp*cte*(temp - tmin)*(tmax - temp)^(1/2)
+  if(outp < 0 | is.na(outp)){
+    outp <- 0
+  }
+  return(outp)
+}
 
+Quad_func <- function(cte, tmin, tmax, temp){
+  outp <- -cte*(temp - tmin)*(temp - tmax)
+  if(outp < 0 | is.na(outp)){
+    outp <- 0
+  }
+  return(outp)
+}
+
+Lin_func <- function(cte, cte1, temp){
+  outp <- temp*cte + cte1
+  if(outp < 0 | is.na(outp)){
+    outp <- 0.00001
+  }
+  return(outp)
+}
+
+
+Quad <- function(cte, cte1,cte2, temp){
+  outp <- cte*temp^2 + cte1*temp + cte2
+  if(outp < 0 | is.na(outp)){
+    outp <- 0
+  }
+  return(outp)
+}
+
+QuadN_func <- function(cte, c1, c2, temp){
+  outp <- cte*temp^2 + c1*temp + c2
+  if(outp < 0 | is.na(outp)){
+    outp <- 0
+  }
+  return(outp)
+}
+### Incorporating rain and human density:
+h_f <- function(hum, rain){
+  # Constants: 
+  erat = 0.5
+  e0 = 1.5
+  evar = 0.05
+  eopt = 8
+  efac = 0.01
+  edens = 0.01
+  
+  
+  hatch <- (1-erat)*(((1+e0)*exp(-evar*(rain-eopt)^2))/(exp(-evar*(rain - eopt)^2) + e0)) +
+    erat*(edens/(edens + exp(-efac*hum)))
+  return(hatch)
+}
+
+#### -------------------------- Albopictus ------------------------- ####
+## Thermal responses Aedes Albopictus from Mordecai 2017:
+a_f_alb <- function(temp){Briere_func(0.000193,10.25,38.32,temp)} # Biting rate
+TFD_f_alb <- function(temp){Briere_func(0.0488,8.02,35.65,temp)} # Fecundity
+pLA_f_alb <- function(temp){Quad_func(0.002663,6.668,38.92,temp)} # Survival probability Egg-Adult
+MDR_f_alb <- function(temp){Briere_func(0.0000638,8.6,39.66,temp)} # Mosquito Development Rate
+lf_f_alb <- function(temp){Quad_func(1.43,13.41,31.51,temp)} # Adult life span
+dE_f_alb <- function(temp){Briere_func(0.00006881,8.869,35.09,temp)} # Adult life span
+
+# R0 function by temperature:
+R0_func_alb <- function(Te, rain, hum){
+  a <- a_f_alb(Te)
+  f <- (1/2)*TFD_f_alb(Te)
+  deltaa <- lf_f_alb(Te)
+  dE <- dE_f_alb(Te)
+  probla <- pLA_f_alb(Te)
+  h <- h_f(hum,rain)
+  deltaE = 0.1
+  #R0 <- ((0.3365391*f*a*deltaa)*probla*(h*dE/(h*dE+deltaE)))^(1/3)
+  R0 <- ((f*a*deltaa)*probla*(h*dE/(h*dE+deltaE)))^(1/3)
+  return(R0)
+}
+
+####------------------------------Aegypti------------------------####
+a_f_aeg <- function(temp){Briere_func(0.000202,13.35,40.08,temp)} # Biting rate
+EFD_f_aeg <- function(temp){Briere_func(0.00856,14.58,34.61,temp)} # Fecundity
+pLA_f_aeg <- function(temp){Quad_func(0.004186,9.373,40.26,temp)} # Survival probability Egg-Adult
+MDR_f_aeg <- function(temp){Briere_func(0.0000786,11.36,39.17,temp)} # Mosquito Development Rate
+lf_f_aeg <- function(temp){Quad_func(0.148,9.16,37.73,temp)} # Adult life span
+dE_f_aeg <- function(temp){Briere_func(0.0003775 ,14.88,37.42,temp)} # Adult life span
+
+# R0 function by temperature:
+R0_func_aeg <- function(Te, rain,hum){
+  a <- a_f_aeg(Te)
+  f <- 40#(1/2)*EFD_f_aeg(Te)
+  deltaa <- lf_f_aeg(Te)
+  dE <- dE_f_aeg(Te)
+  probla <- pLA_f_aeg(Te)
+  h <- h_f(hum,rain)
+  deltE = 0.1
+  R0 <- ((f*a*deltaa)*probla*(h*dE/(h*dE+deltE)))^(1/3)
+  return(R0)
+}
+
+
+#####----------------Japonicus-----------------####
+dE_f_jap <- function(temp){Briere_func(0.0002859,6.360,35.53 ,temp)} # Mosquito Development Rate
+dL_f_jap <- function(temp){Briere_func(7.000e-05,9.705e+00,3.410e+01,temp)} # Survival probability Egg-Adult
+lf_f_jap <- function(temp){Lin_func(-2.5045,82.6525,temp)} # Adult life span
+deltaL_f_jap <- function(temp){QuadN_func(0.0021476,-0.0806067 ,1.0332455,temp)} # Adult life span
+
+# R0 function by temperature:
+R0_func_jap <- function(Te, rain,hum){
+  a <- 0.35
+  f <- 40 #183/2
+  lf <- lf_f_jap(Te)
+  deltaL <- deltaL_f_jap(Te)
+  deltE = 0.1
+  dE <- dE_f_jap(Te)
+  dL <- dL_f_jap(Te)
+  h <- h_f(hum,rain)
+  if(dL == 0 | f == 0 | a == 0 | dE == 0 |  Te<0){
+    R0 <- 0
+  }else{
+    R0 <- ((f*a*lf)*(dL/(dL+deltaL))*(h*dE/(h*dE+deltE)))^(1/3)
+  }
+  return(R0)
+}
+
+#----------------------------------------------------------------------#
+## Read the data for the R0 computed daily:
+year = 2014
+Path <- paste0("~/INVASIBILITY_THRESHOLD/output/R0/R0_ERA5_daily_mcera_",year,".Rds")
+df_group <- readRDS(Path)
 #-----------------------------Create plots------------------------#
 esp_can <- esp_get_munic_siane(moveCAN = TRUE)
 can_box <- esp_get_can_box()
@@ -20,27 +150,28 @@ esp_can$NATCODE <- as.numeric(paste0("34",esp_can$codauto,
 df_group$month <- lubridate::month(df_group$date)
 
 # Temporal R0 for Barcelona
-# NATCODE_BCN <- esp_can$NATCODE[which(esp_can$name == "Barcelona")]
-# df_BCN <- df_group[which(df_group$NATCODE == NATCODE_BCN),
-#                    c("NATCODE","date", "R0_hourly_alb",
-#                      "R0_hourly_aeg","R0_hourly_jap"
-#                      )]
-# colnames(df_BCN) <- c("NATCODE","date", "SVI Albopictus",
-#                       "SVI Aegypti","SVI Japonicus")
-# 
-# df_BCN <- reshape2::melt(df_BCN, id.vars = c("NATCODE", "date"))
-# df_BCN <- esp_can %>%
-#   left_join(df_BCN)
-# df_BCN <- df_BCN[which(df_BCN$name =="Barcelona"),]
-# 
-# ggplot(df_BCN) + 
-#   geom_line(aes(date,value, color = variable)) +
-#   scale_x_date(date_breaks = "1 month", date_labels =  "%b %Y") +
-#   ylab("Vector Suitability Indes (VSI)") +
-#   xlab("Date") + ggtitle("Barcelona 2020") +
-#   theme_bw()
-# 
-# rm(df_BCN)
+NATCODE_BCN <- esp_can$NATCODE[which(esp_can$name == "Barcelona")]
+df_BCN <- df_group[which(df_group$NATCODE == NATCODE_BCN),
+                   c("NATCODE","date", "R0_hourly_alb",
+                     "R0_hourly_aeg","R0_hourly_jap"
+                     )]
+colnames(df_BCN) <- c("NATCODE","date", "SVI Albopictus",
+                      "SVI Aegypti","SVI Japonicus")
+
+df_BCN <- reshape2::melt(df_BCN, id.vars = c("NATCODE", "date"))
+df_BCN <- esp_can %>%
+  left_join(df_BCN)
+df_BCN <- df_BCN[which(df_BCN$name =="Barcelona"),]
+
+ggplot(df_BCN) +
+  geom_line(aes(date,value, color = variable)) +
+  scale_x_date(date_breaks = "1 month", date_labels =  "%b %Y") +
+  ylab("Vector Suitability Indes (VSI)") +
+  xlab("Date") + ggtitle("Barcelona 2020") +
+  theme_bw()
+
+rm(df_BCN)
+
 # Plot R0
 esp_can <- esp_get_munic_siane(moveCAN = TRUE)
 esp_can$NATCODE <- as.numeric(paste0("34",
@@ -67,6 +198,7 @@ df_group  <- df_group[,c("NATCODE", "month", "temp", "min_temp",
                          "R0_hourly_aeg", "R0_hourly_jap")]
 rm(R0_cpro)
 
+## Delete NA in the map for hourly R0
 df_group$R0_hourly_alb <- ifelse(is.na(df_group$R0_hourly_alb),
                            df_group$R0_tmed_alb,
                            df_group$R0_hourly_alb)
@@ -77,6 +209,17 @@ df_group$R0_hourly_jap <- ifelse(is.na(df_group$R0_hourly_jap),
                                  df_group$R0_tmed_jap,
                                  df_group$R0_hourly_jap)
 
+## Delete NA in the map for daily R0
+df_group$R0_dai_alb <- ifelse(is.na(df_group$R0_dai_alb),
+                                 df_group$R0_tmed_alb,
+                                 df_group$R0_dai_alb)
+df_group$R0_dai_aeg <- ifelse(is.na(df_group$R0_dai_aeg),
+                                 df_group$R0_tmed_aeg,
+                                 df_group$R0_dai_aeg)
+df_group$R0_dai_jap <- ifelse(is.na(df_group$R0_dai_jap),
+                                 df_group$R0_tmed_jap,
+                                 df_group$R0_dai_jap)
+
 df_group_na <- df_group[which(is.na(df_group$R0_hourly_jap)),]
 
 ## Whole map moving monthly
@@ -85,7 +228,10 @@ df_group_mon <- df_group[, .(temp = mean(temp),
                              pop = min(pop),
                              R0_monthly_alb = mean(R0_hourly_alb),
                              R0_monthly_aeg = mean(R0_hourly_aeg),
-                             R0_monthly_jap = mean(R0_hourly_jap)), 
+                             R0_monthly_jap = mean(R0_hourly_jap),
+                             R0_monthlyd_alb = mean(R0_dai_alb),
+                             R0_monthlyd_aeg = mean(R0_dai_aeg),
+                             R0_monthlyd_jap = mean(R0_dai_jap)), 
                          by=list(NATCODE,month)]
 
 df_group_mon <- esp_can %>%
@@ -145,9 +291,119 @@ df_group_sum <- df_sum %>%group_by(NATCODE) %>%
             avg_temp = mean(temp),
             sum_prec = sum(prec))
 
+rm(df_group_na,df_BCN,df_sum)
 # Whole map group by number of months suitable
 library(RColorBrewer)
 library(ggpubr)
+num_colors <- 13
+# Create a palette function using colorRampPalette
+my_palette <- colorRampPalette(c("#faf0ca","#f95738", "#732c2c"))
+
+colors <- c("#43A2CA", "#7BCCC4", "#BAE4BC", "#F0F9E8",
+            "#FFF7EC","#FEE8C8","#FDD49E","#FDBB84",
+            "#FC8D59","#EF6548","#D7301F", "#B30000",
+            "#7F0000") 
+
+plot_sum_alb <- ggplot(df_group_y) +
+  geom_sf(aes(fill = as.factor(R0_sum_alb)), colour = NA) +
+  geom_sf(data = can_box) + coord_sf(datum = NA) +
+  scale_fill_manual(values = colors,
+                    name = "Nº months\n suitable") +
+  theme_bw() 
+plot_sum_alb
+
+Path <- "~/Documentos/PHD/2023/INVASIBILITY/Plots/MS/AlboSum2014.pdf"
+dev.copy2pdf(file=Path, width = 7, height = 5)
+
+plot_sum_aeg <- ggplot(df_group_y) +
+  geom_sf(aes(fill = as.factor(R0_sum_aeg)), colour = NA) +
+  geom_sf(data = can_box) + coord_sf(datum = NA) +
+  scale_fill_manual(values = colors,
+                    name = "Nº months\n suitable") +
+  theme_bw() 
+plot_sum_aeg
+Path <- "~/Documentos/PHD/2023/INVASIBILITY/Plots/MS/AegSum2014.pdf"
+dev.copy2pdf(file=Path, width = 7, height = 5)
+
+plot_sum_jap <- ggplot(df_group_y) +
+  geom_sf(aes(fill = as.factor(R0_sum_jap)), colour = NA) +
+  geom_sf(data = can_box) + coord_sf(datum = NA) +
+  scale_fill_manual(values = colors,
+                    name = "Nº months\n suitable") +
+  theme_bw() 
+plot_sum_jap
+Path <- "~/Documentos/PHD/2023/INVASIBILITY/Plots/MS/JapSum2014.pdf"
+dev.copy2pdf(file=Path, width = 7, height = 5)
+
+ggarrange(plot_sum_alb + ggtitle("Aedes Albopictus"),
+          plot_sum_aeg + ggtitle("Aedes Aegypti"),
+          plot_sum_jap + ggtitle("Aedes Japonicus"),
+          common.legend = TRUE)
+
+##-------------------- AVG maps -----------------------
+plot_avg_aeg <- ggplot(df_group_sum) +
+  geom_sf(aes(fill = R0_avg_aeg), linewidth = 0.01) +
+  geom_sf(data = can_box) + coord_sf(datum = NA) +
+  scale_fill_distiller(palette = "Spectral",
+                       name = "Annual R0") +
+  theme_bw()
+plot_avg_aeg
+
+plot_avg_jap <- ggplot(df_group_sum) +
+  geom_sf(aes(fill = R0_avg_jap), linewidth = 0.01) +
+  geom_sf(data = can_box) + coord_sf(datum = NA) +
+  scale_fill_distiller(palette = "Spectral",
+                       name = "Annual R0") +
+  theme_bw()
+plot_avg_jap
+
+plot_avg_alb <- ggplot(df_group_sum) +
+  geom_sf(aes(fill = R0_avg_alb), linewidth = 0.01) +
+  geom_sf(data = can_box) + coord_sf(datum = NA) +
+  scale_fill_distiller(palette = "Spectral",
+                       name = "Annual R0") +
+  theme_bw()
+
+plot_avg_alb
+
+ggarrange(plot_avg_alb + ggtitle("Aedes Albopictus"),
+          plot_avg_aeg + ggtitle("Aedes Aegypti"),
+          plot_avg_jap + ggtitle("Aedes Japonicus"),
+          common.legend = TRUE)
+
+### Plot of average temperature and rainfall
+plot_temp <- ggplot(df_group_y) +
+  geom_sf(aes(fill = avg_temp), linewidth = 0.01) +
+  geom_sf(data = can_box) + coord_sf(datum = NA) +
+  scale_fill_distiller(palette = "Spectral", name = "Mean Temp") +
+  theme(plot.margin = margin(0.2, 0.2, 0.2, 0.2, "cm")) +
+  theme_void()
+
+plot_rain <- ggplot(df_group_y) +
+  geom_sf(aes(fill = sum_prec), linewidth = 0.01) +
+  geom_sf(data = can_box) + coord_sf(datum = NA) +
+  scale_fill_distiller(palette = "Spectral", name = "Sum prec") +
+  theme(plot.margin = margin(0.2, 0.2, 0.2, 0.2, "cm")) +
+  theme_void()
+
+ggarrange(plot_temp,plot_rain)
+
+##### Daily maps ######
+df_group_mon$bool_R0_alb <- ifelse(df_group_mon$R0_monthlyd_alb < 1,0,1)
+df_group_mon$bool_R0_aeg <- ifelse(df_group_mon$R0_monthlyd_aeg < 1,0,1)
+df_group_mon$bool_R0_jap <- ifelse(df_group_mon$R0_monthlyd_jap < 1,0,1)
+
+df_group_y <- df_group_mon %>% group_by(NATCODE) %>%
+  summarise(R0_sum_alb = sum(bool_R0_alb),
+            R0_sum_aeg = sum(bool_R0_aeg),
+            R0_sum_jap = sum(bool_R0_jap),
+            R0_avg_alb = mean(R0_monthly_alb),
+            R0_avg_aeg = mean(R0_monthly_aeg),
+            R0_avg_jap = mean(R0_monthly_jap),
+            avg_temp = mean(temp),
+            sum_prec = sum(prec))
+
+## Plots sum months for R0 computed daily.
 plot_sum_alb <- ggplot(df_group_y) +
   geom_sf(aes(fill = R0_sum_alb), linewidth = 0.01) +
   geom_sf(data = can_box) + coord_sf(datum = NA) +
@@ -177,57 +433,10 @@ plot_sum_jap <- ggplot(df_group_y) +
                        limits=c(0,12)) +
   theme_bw()
 
-
 ggarrange(plot_sum_alb + ggtitle("Aedes Albopictus"),
           plot_sum_aeg + ggtitle("Aedes Aegypti"),
           plot_sum_jap + ggtitle("Aedes Japonicus"),
           common.legend = TRUE)
-
-##-------------------- AVG maps -----------------------
-plot_avg_aeg <- ggplot(df_group_sum) +
-  geom_sf(aes(fill = R0_avg_aeg), linewidth = 0.01) +
-  geom_sf(data = can_box) + coord_sf(datum = NA) +
-  scale_fill_distiller(palette = "Spectral",
-                       name = "Annual R0") +
-  theme_bw()
-
-plot_avg_jap <- ggplot(df_group_sum) +
-  geom_sf(aes(fill = R0_avg_jap), linewidth = 0.01) +
-  geom_sf(data = can_box) + coord_sf(datum = NA) +
-  scale_fill_distiller(palette = "Spectral",
-                       name = "Annual R0") +
-  theme_bw()
-
-plot_avg_alb <- ggplot(df_group_sum) +
-  geom_sf(aes(fill = R0_avg_alb), linewidth = 0.01) +
-  geom_sf(data = can_box) + coord_sf(datum = NA) +
-  scale_fill_distiller(palette = "Spectral",
-                       name = "Annual R0") +
-  theme_bw()
-
-
-
-ggarrange(plot_avg_alb + ggtitle("Aedes Albopictus"),
-          plot_avg_aeg + ggtitle("Aedes Aegypti"),
-          plot_avg_jap + ggtitle("Aedes Japonicus"),
-          common.legend = TRUE)
-
-### Plot of average temperature and rainfall
-plot_temp <- ggplot(df_group_y) +
-  geom_sf(aes(fill = avg_temp), linewidth = 0.01) +
-  geom_sf(data = can_box) + coord_sf(datum = NA) +
-  scale_fill_distiller(palette = "Spectral", name = "Mean Temp") +
-  theme(plot.margin = margin(0.2, 0.2, 0.2, 0.2, "cm")) +
-  theme_void()
-
-plot_rain <- ggplot(df_group_y) +
-  geom_sf(aes(fill = sum_prec), linewidth = 0.01) +
-  geom_sf(data = can_box) + coord_sf(datum = NA) +
-  scale_fill_distiller(palette = "Spectral", name = "Sum prec") +
-  theme(plot.margin = margin(0.2, 0.2, 0.2, 0.2, "cm")) +
-  theme_void()
-
-ggarrange(plot_temp,plot_rain)
 
 ###----------------- VALIDATION -----------------------#
 ## MAp Spain -------
