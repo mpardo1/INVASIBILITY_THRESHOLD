@@ -74,7 +74,7 @@ ggplot(df_out) +
   geom_line(aes(vec,out))
 
 # Data table with tmed and R0 computed for albopictus and dengue
-dengue_df <- readRDS("~/INVASIBILITY_THRESHOLD/output/R0/R0/R0_Dengue_2020.Rds")
+dengue_df <- readRDS("~/INVASIBILITY_THRESHOLD/output/R0/R0_Dengue_2019.Rds")
 # Spain map municipalities
 esp_can <- esp_get_munic_siane(moveCAN = TRUE)
 can_box <- esp_get_can_box()
@@ -161,7 +161,7 @@ rm(dengue_df)
 # # Create plots:
 ggplot(dengue_df_g_m) +
   geom_sf(aes(fill = as.factor(group_R0)), linewidth = 0.01) +
-  scale_fill_manual(values = cols,
+  scale_fill_manual(values = cols,R0
                     labels = c("<1", "[1,25)", "[25,50)",
                                "[50,100)", "[100,200)", "[200,400]", ">400"),
                     name = "R0 Dengue") +

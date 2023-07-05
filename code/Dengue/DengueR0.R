@@ -101,7 +101,7 @@ for(file in listfile){
   
 }
 
-esp_can_pop <- esp_can_pop[,c("NATCODE","pob19")]
+esp_can_pop <- esp_can_pop[,c("NATCODE","pob19", "pop_km")]
 esp_can_pop$geometry <- NULL
 head(esp_can_pop)
 head(weather_t)
@@ -110,14 +110,14 @@ weather_t$R0 <- 0
 weather_t <- setDT(weather_t)
 
 ## Function to read all output weather file compute R0 and create a list of df.
-num_cores <- 12
+num_cores <- 16
 df_chunks <- split(weather_t, 0:(nrow(weather_t) - 1) %% num_cores)
 modify_column <- function(chunk) {
   # Modify the values in the desired column
   for (j in c(1:nrow(chunk))){ 
     print(paste0("j:",j))
     chunk$R0[j] <- R0_func_alb(chunk$tmean[j],
-                               chunk$pob19[j])
+                               chunk$pop_km[j])
     
   }
   
