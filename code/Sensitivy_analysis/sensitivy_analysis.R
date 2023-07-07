@@ -255,7 +255,7 @@ ggplot(df_out) +
                      text = element_text(size = letsize),
                      legend.text.align = 0)
 
-#------------------------------Albopictus------------------------------------#
+#-----------------Albopictus--------------------------#
 # R0 with hacthing rate
 vec <- seq(0,30,0.01)
 hum_cte <- 2000
