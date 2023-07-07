@@ -243,11 +243,17 @@ df_out <- data.frame(vec, aegypti = aegypti,
                      japonicus = japonicus)
 df_out <- reshape2::melt( df_out, id.vars = "vec")
 
+letsize = 14
+library("latex2exp")
 ggplot(df_out) + 
   geom_line(aes(vec,value, color=variable)) +
   geom_hline(yintercept = 1, linetype = "dashed", color = "red") +
-  ylab("R0") +
-  theme_bw()
+  ylab(TeX("$R_M$")) + scale_color_viridis_d(name = "") +
+  xlab("Temperature") +
+  scale_x_continuous(breaks = seq(5,41,4)) +
+  theme_bw() + theme(legend.position = c(0.18,0.8),
+                     text = element_text(size = letsize),
+                     legend.text.align = 0)
 
 #------------------------------Albopictus------------------------------------#
 # R0 with hacthing rate
