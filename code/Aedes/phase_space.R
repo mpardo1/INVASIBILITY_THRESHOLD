@@ -165,9 +165,9 @@ ggplot(df_out) +
 
 #### Phase space for all three species
 temperature <- seq(5, 40, by = 0.1)
-rainfall <- seq(0, 40, by = 0.1)
+rainfall <- seq(0, 16, by = 0.1)
 dt_ps <- setDT(expand.grid(temperature = temperature, rainfall = rainfall))
-dt_ps$hum = 10
+dt_ps$hum = 0
 dt_ps[, Albopictus := mapply(R0_func_alb, temperature, rainfall, hum)]
 dt_ps[, Japonicus := mapply(R0_func_jap, temperature, rainfall, hum)]
 dt_ps[, Aegypti := mapply(R0_func_aeg, temperature, rainfall, hum)]
@@ -186,22 +186,27 @@ dt_ps$rangejap <- ifelse(dt_ps$Japonicus<1,0,
                   ifelse(dt_ps$Japonicus>=2 & dt_ps$Japonicus<3,2,
                   ifelse(dt_ps$Japonicus>=3 & dt_ps$Japonicus<4,3, 
                   ifelse(dt_ps$Japonicus>=4 & dt_ps$Japonicus<5,4,5))))) 
-
+library(latex2exp)
 albo <- ggplot(dt_ps) +
   geom_point(aes(temperature,rainfall,color = rangealb)) +
-  scale_color_viridis_c(option = "magma") + theme_bw()
+  scale_color_viridis_c(option = "magma", name = TeX("$$R_M$$")) + theme_bw()
 
 aeg <- ggplot(dt_ps) +
   geom_point(aes(temperature,rainfall,color = rangeaeg)) +
-  scale_color_viridis_c(option = "magma") + theme_bw()
+  scale_color_viridis_c(option = "magma", name = TeX("$$R_M$$")) + theme_bw()
 
 jap <- ggplot(dt_ps) +
   geom_point(aes(temperature,rainfall,color = rangejap)) +
-  scale_color_viridis_c(option = "magma") + theme_bw()
+  scale_color_viridis_c(option = "magma", name = TeX("$$R_M$$")) + theme_bw()
 
 library(ggpubr)
-ggarrange(jap + xlab(""),
-          albo + xlab(""),
-          aeg , ncol =1, common.legend = TRUE)
+ggarrange(jap + xlab("") + 
+            ggtitle(expression(italic("Aedes japonicus"))),
+          albo + xlab("")+ 
+            ggtitle(expression(italic("Aedes albopictus"))),
+          aeg + 
+            ggtitle(expression(italic("Aedes aegypti"))), ncol =1, common.legend = TRUE)
 
-
+# vec <- seq(0,40,0.1)
+# out <- sapply(vec,h_f, hum=0)
+# plot(vec,out)
