@@ -18,6 +18,7 @@ extract_weather <- function(year_n){
     print(paste0("i:",i))
     dt_aux <- setDT(df_group[[1]])
     dt_aux$date <- as.Date(dt_aux$obs_time)
+    dt_aux$prec <- as.numeric(dt_aux$prec)
     dt_aux <- dt_aux[,.(tmean = mean(temperature),
                         tmin = min(temperature),
                         tmax = max(temperature),
@@ -32,47 +33,7 @@ extract_weather <- function(year_n){
   return(dt_weather)
 }
 
-year = 2014
-out <- extract_weather(year)
-Path <- paste0("~/INVASIBILITY_THRESHOLD/output/mcera5/process_Daily_ERA5_daily_mcera_",year,".Rds")
-saveRDS(out,Path)
-
-year = 2015
-out <- extract_weather(year)
-Path <- paste0("~/INVASIBILITY_THRESHOLD/output/mcera5/process_Daily_ERA5_daily_mcera_",year,".Rds")
-saveRDS(out,Path)
-
-year = 2016
-out <- extract_weather(year)
-Path <- paste0("~/INVASIBILITY_THRESHOLD/output/mcera5/process_Daily_ERA5_daily_mcera_",year,".Rds")
-saveRDS(out,Path)
-
-year = 2017
-out <- extract_weather(year)
-Path <- paste0("~/INVASIBILITY_THRESHOLD/output/mcera5/process_Daily_ERA5_daily_mcera_",year,".Rds")
-saveRDS(out,Path)
-
-year = 2018
-out <- extract_weather(year)
-Path <- paste0("~/INVASIBILITY_THRESHOLD/output/mcera5/process_Daily_ERA5_daily_mcera_",year,".Rds")
-saveRDS(out,Path)
-
-year = 2019
-out <- extract_weather(year)
-Path <- paste0("~/INVASIBILITY_THRESHOLD/output/mcera5/process_Daily_ERA5_daily_mcera_",year,".Rds")
-saveRDS(out,Path)
-
-year = 2020
-out <- extract_weather(year)
-Path <- paste0("~/INVASIBILITY_THRESHOLD/output/mcera5/process_Daily_ERA5_daily_mcera_",year,".Rds")
-saveRDS(out,Path)
-
-year = 2021
-out <- extract_weather(year)
-Path <- paste0("~/INVASIBILITY_THRESHOLD/output/mcera5/process_Daily_ERA5_daily_mcera_",year,".Rds")
-saveRDS(out,Path)
-
 year = 2022
 out <- extract_weather(year)
-Path <- paste0("~/INVASIBILITY_THRESHOLD/output/mcera5/process_Daily_ERA5_daily_mcera_",year,".Rds")
+Path <- paste0("~/INVASIBILITY_THRESHOLD/output/mcera5/1process_Daily_ERA5_daily_mcera_",year,".Rds")
 saveRDS(out,Path)
