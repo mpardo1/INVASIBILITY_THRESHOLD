@@ -138,35 +138,15 @@ R0_func_jap <- function(Te, rain,hum){
 
 #----------------------------------------------------------------------#
 ## Read the data for the R0 computed daily:
-year = 2019
-Path <- paste0("/home/marta/INVASIBILITY_THRESHOLD/output/mcera5/ERA5_daily_mcera_",year,".Rds")
-df_group <- readRDS(Path)
-head(df_group[[5000]])
-dt_weather <- data.table()
-for(i in c(1:length(df_group))){
-  print(paste0("i:",i))
-  dt_aux <- setDT(df_group[[1]])
-  dt_aux$date <- as.Date(dt_aux$obs_time)
-  dt_aux <- dt_aux[,.(tmean = mean(temperature),
-                      tmin = min(temperature),
-                      tmax = max(temperature),
-                      prec =sum(prec),
-                      prec1 = sum(prec1),
-                      pop = min(pop),
-                      area= min(area)), by = list(date,NATCODE)]
-  dt_weather <- rbind(dt_aux,dt_weather)
-  df_group[[1]] <- NULL
-  rm(dt_aux)
-}
-
-year = 2019
+year = 2014
 Path <- paste0("/home/marta/INVASIBILITY_THRESHOLD/output/mcera5/process_Daily_ERA5_daily_mcera_",year,".Rds")
-saveRDS(dt_weather,Path)
-dt_weather <- setDT(readRDS(Path))
-rm(df_group,dt_aux)
-
-dt_weather$id <- 1
-test <- dt_weather[,.(n = sum(id)), by = list(NATCODE)]
+# saveRDS(dt_weather,Path)
+df_group <- setDT(readRDS(Path))
+df_group$id <- 1
+test <- df_group[,.(n = sum(id)), by = list(NATCODE)]
+min(test$n)
+max(test$n)
+nrow(test)
 
 #-----------------------------Create plots------------------------#
 esp_can <- esp_get_munic_siane(moveCAN = TRUE)
@@ -175,134 +155,30 @@ esp_can$NATCODE <- as.numeric(paste0("34",esp_can$codauto,
                                      esp_can$cpro,
                                      esp_can$LAU_CODE))
 df_group$month <- lubridate::month(df_group$date)
+#---------------------Compute R0-------------------------#
+df_group$prec <- as.numeric(df_group$prec)
+df_group$pop[which(is.na(df_group$pop))] <- 0
+df_group$dens <- as.numeric(df_group$pop/df_group$area)
+df_group[, R0_dai_alb := mapply(R0_func_alb, tmean, prec, dens)]
+df_group[, R0_dai_aeg := mapply(R0_func_aeg, tmean, prec, dens)]
+df_group[, R0_dai_jap := mapply(R0_func_jap, tmean, prec, dens)]
 
-### -------------Temporal plots-----------------#
-# Temporal R0 for Barcelona
-NATCODE_BCN <- esp_can$NATCODE[which(esp_can$name == "Barcelona")]
-df_BCN <- df_group[which(df_group$NATCODE == NATCODE_BCN),
-                   c("NATCODE","date", "R0_hourly_alb",
-                     "R0_hourly_aeg","R0_hourly_jap"
-                   )]
-colnames(df_BCN) <- c("NATCODE","date", "SVI Albopictus",
-                      "SVI Aegypti","SVI Japonicus")
-
-df_BCN <- reshape2::melt(df_BCN, id.vars = c("NATCODE", "date"))
-df_BCN <- esp_can %>%
-  left_join(df_BCN)
-df_BCN <- df_BCN[which(df_BCN$name =="Barcelona"),]
-
-ggplot(df_BCN) +
-  geom_line(aes(date,value, color = variable)) +
-  scale_x_date(date_breaks = "1 month", date_labels =  "%b %Y") +
-  ylab("Vector Suitability Indes (VSI)") +
-  xlab("Date") + ggtitle("Barcelona 2020") +
-  theme_bw()
-
-rm(df_BCN)
-
-### -------------Temporal plots-----------------#
-# Plot R0
-esp_can <- esp_get_munic_siane(moveCAN = TRUE)
-esp_can$NATCODE <- as.numeric(paste0("34",
-                                     esp_can$codauto,
-                                     esp_can$cpro,
-                                     esp_can$LAU_CODE))
-df_group <- esp_can %>% left_join(df_group)
-df_group <- setDT(df_group)
-
-# Remove NA from R0 with municipilities
-ind <- is.na(df_group$R0_hourly_alb)
-R0_cpro <- df_group[which(df_group$cpro %in%
-                            df_group$cpro[ind] & 
-                            is.na(df_group$R0_hourly_alb) == FALSE),] %>%
-  group_by(cpro,month) %>%
-  summarise(R0_tmed_alb = mean(R0_hourly_alb),
-            R0_tmed_aeg = mean(R0_hourly_aeg),
-            R0_tmed_jap = mean(R0_hourly_jap),
-            R0d_tmed_alb = mean(R0_dai_alb),
-            R0d_tmed_aeg = mean(R0_dai_aeg),
-            R0d_tmed_jap = mean(R0_dai_jap))
-
-df_group  <- df_group %>% left_join(R0_cpro)
-df_group  <- df_group[,c("NATCODE","cpro", "month", "temp", "min_temp",
-                         "max_temp","prec",  "pop", "R0_tmed_alb",
-                         "R0_tmed_aeg", "R0_tmed_jap", "R0_hourly_alb",
-                         "R0_hourly_aeg", "R0_hourly_jap", "R0_dai_alb",
-                         "R0_dai_aeg", "R0_dai_jap")]
-rm(R0_cpro)
-
-## Delete NA in the map for hourly R0
-df_group$R0_hourly_alb <- ifelse(is.na(df_group$R0_hourly_alb),
-                                 df_group$R0_tmed_alb,
-                                 df_group$R0_hourly_alb)
-df_group$R0_hourly_aeg <- ifelse(is.na(df_group$R0_hourly_aeg),
-                                 df_group$R0_tmed_aeg,
-                                 df_group$R0_hourly_aeg)
-df_group$R0_hourly_jap <- ifelse(is.na(df_group$R0_hourly_jap),
-                                 df_group$R0_tmed_jap,
-                                 df_group$R0_hourly_jap)
-
-## Delete NA in the map for daily R0
-ind <- is.na(df_group$R0_dai_alb)
-R0_cpro <- df_group[which(df_group$cpro %in%
-                            df_group$cpro[ind] & 
-                            is.na(df_group$R0_dai_alb) == FALSE),] %>%
-  group_by(cpro,month) %>%
-  summarise(R0_tmed_alb = mean(R0_hourly_alb),
-            R0_tmed_aeg = mean(R0_hourly_aeg),
-            R0_tmed_jap = mean(R0_hourly_jap),
-            R0d_tmed_alb = mean(R0_dai_alb),
-            R0d_tmed_aeg = mean(R0_dai_aeg),
-            R0d_tmed_jap = mean(R0_dai_jap))
-
-df_group  <- df_group %>% left_join(R0_cpro)
-df_group  <- df_group[,c("NATCODE", "month", "temp", "min_temp",
-                         "max_temp","prec",  "pop", "R0_tmed_alb",
-                         "R0_tmed_aeg", "R0_tmed_jap", "R0_hourly_alb",
-                         "R0_hourly_aeg", "R0_hourly_jap", "R0_dai_alb",
-                         "R0_dai_aeg", "R0_dai_jap")]
-rm(R0_cpro)
-df_group$R0_dai_alb <- ifelse(is.na(df_group$R0_dai_alb),
-                              df_group$R0_tmed_alb,
-                              df_group$R0_dai_alb)
-df_group$R0_dai_aeg <- ifelse(is.na(df_group$R0_dai_aeg),
-                              df_group$R0_tmed_aeg,
-                              df_group$R0_dai_aeg)
-df_group$R0_dai_jap <- ifelse(is.na(df_group$R0_dai_jap),
-                              df_group$R0_tmed_jap,
-                              df_group$R0_dai_jap)
-
-df_group_na <- df_group[which(is.na(df_group$R0_hourly_jap)),]
-
-## Whole map moving monthly
-df_group_mon <- df_group[, .(temp = mean(temp),
+#### ----------- Monthly agg----------------###
+df_group_mon <- df_group[, .(tmean = mean(tmean),
+                             tmin = min(tmean),
+                             tmax = max(tmean),
                              prec = sum(prec), 
-                             pop = min(pop),
-                             R0_monthly_alb = mean(R0_hourly_alb),
-                             R0_monthly_aeg = mean(R0_hourly_aeg),
-                             R0_monthly_jap = mean(R0_hourly_jap),
-                             R0_monthlyd_alb = mean(R0_dai_alb),
-                             R0_monthlyd_aeg = mean(R0_dai_aeg),
-                             R0_monthlyd_jap = mean(R0_dai_jap)), 
+                             dens = min(dens)), 
                          by=list(NATCODE,month)]
 
-df_group_mon[, R0_mon_alb := mapply(R0_func_alb, temp, prec, pop)]
-df_group_mon[, R0_mon_aeg := mapply(R0_func_aeg, temp, prec, pop)]
-df_group_mon[, R0_mon_jap := mapply(R0_func_jap, temp, prec, pop)]
+df_group_mon[, R0_mon_alb := mapply(R0_func_alb, tmean, prec, dens)]
+df_group_mon[, R0_mon_aeg := mapply(R0_func_aeg, tmean, prec, dens)]
+df_group_mon[, R0_mon_jap := mapply(R0_func_jap, tmean, prec, dens)]
 
-df_group_mon <- esp_can %>%
-  left_join(df_group_mon)
-
-rm(df_group)
-### Difference between computing R0 daily monthly or hourly in the montly results:
-df_group_mon$diff_hd <- abs(df_group_mon$R0_monthly_alb - df_group_mon$R0_monthlyd_alb)
-df_group_mon$diff_dm <- abs(df_group_mon$R0_monthlyd_alb - df_group_mon$R0_mon_alb)
-hist(df_group_mon$diff_dm)
-hist(df_group_mon$diff_hd)
-
-## Animate maps:
+####---------------ANIMATE PLOTS----------------#
+df_group_mon <- esp_can %>% left_join(df_group_mon)
 ggplot(df_group_mon) +
-  geom_sf(aes(fill = R0_monthly_alb), linewidth = 0.01) +
+  geom_sf(aes(fill = R0_mon_alb), linewidth = 0.01) +
   geom_sf(data = can_box) + coord_sf(datum = NA) +
   scale_fill_viridis_c() +
   theme_void() +
@@ -310,7 +186,7 @@ ggplot(df_group_mon) +
   transition_manual(as.factor(month))
 
 ggplot(df_group_mon) +
-  geom_sf(aes(fill = R0_monthly_aeg), linewidth = 0.01) +
+  geom_sf(aes(fill = R0_mon_aeg), linewidth = 0.01) +
   geom_sf(data = can_box) + coord_sf(datum = NA) +
   scale_fill_viridis_c() +
   theme_void() +
@@ -318,57 +194,25 @@ ggplot(df_group_mon) +
   transition_manual(as.factor(month))
 
 ggplot(df_group_mon) +
-  geom_sf(aes(fill = R0_monthly_jap), linewidth = 0.01) +
+  geom_sf(aes(fill = R0_mon_jap), linewidth = 0.01) +
   geom_sf(data = can_box) + coord_sf(datum = NA) +
   scale_fill_viridis_c() +
   theme_void() +
   labs(title = "Month: {current_frame}") +
   transition_manual(as.factor(month))
 
+###--------------GROUP SUM MONTHS---------####
 # Maps number of months that > 1
-df_group_mon$bool_R0_alb <- ifelse(df_group_mon$R0_monthly_alb < 1,0,1)
-df_group_mon$bool_R0_aeg <- ifelse(df_group_mon$R0_monthly_aeg < 1,0,1)
-df_group_mon$bool_R0_jap <- ifelse(df_group_mon$R0_monthly_jap < 1,0,1)
+df_group_mon$bool_R0_alb <- ifelse(df_group_mon$R0_mon_alb < 1,0,1)
+df_group_mon$bool_R0_aeg <- ifelse(df_group_mon$R0_mon_aeg < 1,0,1)
+df_group_mon$bool_R0_jap <- ifelse(df_group_mon$R0_mon_jap < 1,0,1)
 
-df_group_mon$bool_m_R0_alb <- ifelse(df_group_mon$R0_mon_alb < 1,0,1)
-df_group_mon$bool_m_R0_aeg <- ifelse(df_group_mon$R0_mon_aeg < 1,0,1)
-df_group_mon$bool_m_R0_jap <- ifelse(df_group_mon$R0_mon_jap < 1,0,1)
-
-df_group_mon$bool_d_R0_alb <- ifelse(df_group_mon$R0_monthlyd_alb < 1,0,1)
-df_group_mon$bool_d_R0_aeg <- ifelse(df_group_mon$R0_monthlyd_aeg < 1,0,1)
-df_group_mon$bool_d_R0_jap <- ifelse(df_group_mon$R0_monthlyd_jap < 1,0,1)
 
 df_group_y <- df_group_mon %>% group_by(NATCODE) %>%
   summarise(R0_sum_alb = sum(bool_R0_alb),
             R0_sum_aeg = sum(bool_R0_aeg),
-            R0_sum_jap = sum(bool_R0_jap),
-            R0_sum_d_alb = sum(bool_d_R0_alb),
-            R0_sum_d_aeg = sum(bool_d_R0_aeg),
-            R0_sum_d_jap = sum(bool_d_R0_jap),
-            R0_sum_m_alb = sum(bool_m_R0_alb),
-            R0_sum_m_aeg = sum(bool_m_R0_aeg),
-            R0_sum_m_jap = sum(bool_m_R0_jap),
-            R0_avg_alb = mean(R0_monthly_alb),
-            R0_avg_aeg = mean(R0_monthly_aeg),
-            R0_avg_jap = mean(R0_monthly_jap),
-            avg_temp = mean(temp),
-            sum_prec = sum(prec), 
-            pop = mean(pop))
+            R0_sum_jap = sum(bool_R0_jap))
 
-df_sum <- df_group_mon[which(df_group_mon$month >3 &
-                               df_group_mon$month <11 ),]
-df_group_sum <- df_sum %>% group_by(NATCODE) %>%
-  summarise(R0_sum_alb = sum(bool_R0_alb),
-            R0_sum_aeg = sum(bool_R0_aeg),
-            R0_sum_jap = sum(bool_R0_jap),
-            R0_avg_alb = mean(R0_monthly_alb),
-            R0_avg_aeg = mean(R0_monthly_aeg),
-            R0_avg_jap = mean(R0_monthly_jap),
-            avg_temp = mean(temp),
-            sum_prec = sum(prec),
-            pop = mean(pop))
-
-rm(df_group_na,df_BCN,df_sum)
 # Whole map group by number of months suitable
 library(RColorBrewer)
 library(ggpubr)
@@ -415,7 +259,6 @@ ggarrange(plot_sum_alb + ggtitle("Aedes Albopictus"),
           plot_sum_jap + ggtitle("Aedes Japonicus"),
           common.legend = TRUE)
 
-### PLOOOTS
 
 ## Take out the NA values as the average of the province
 str(df_group_y)
