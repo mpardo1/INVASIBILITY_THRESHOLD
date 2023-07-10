@@ -35,5 +35,5 @@ extract_weather <- function(year_n){
 
 year = 2022
 out <- extract_weather(year)
-Path <- paste0("~/INVASIBILITY_THRESHOLD/output/mcera5/1process_Daily_ERA5_daily_mcera_",year,".Rds")
+Path <- paste0("~/INVASIBILITY_THRESHOLD/output/mcera5/process_Daily_ERA5_daily_mcera_",year,".Rds")
 saveRDS(out,Path)

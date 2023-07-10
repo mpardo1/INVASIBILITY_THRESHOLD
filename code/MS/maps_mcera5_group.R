@@ -152,7 +152,7 @@ R0_func_jap <- function(Te, rain,hum){
 
 #----------------------------------------------------------------------#
 ## Read the data for the R0 computed daily:
-year = 2021
+year = 2022
 Path <- paste0("/home/marta/INVASIBILITY_THRESHOLD/output/mcera5/process_Daily_ERA5_daily_mcera_",year,".Rds")
 # saveRDS(dt_weather,Path)
 df_group <- setDT(readRDS(Path))
@@ -183,6 +183,8 @@ esp_can[which(is.na(esp_can$POB22)),"POB22"] <- 0
 esp_can_pop <- setDT(esp_can[,c("NATCODE","name", "POB22")])
 esp_can_pop$geometry <- NULL
 df_group <- df_group %>% left_join(esp_can_pop)
+df_group$diff_pop <- abs(df_group$pop - df_group$POB22)
+hist(df_group$diff_pop)
 # NATNA <- df_group[which(is.na(df_group$POB22)),"NATCODE"]   
 # esp_can$null_name <- ifelse(is.na(esp_can$POB22),1,0)
 # ggplot(esp_can) + geom_sf(aes(fill = as.factor(null_name)), lwd = 0)
@@ -241,6 +243,36 @@ ggplot(df_group_mon) + geom_point(aes(tmean, bool_R0_jap))
 df_group_mon[which(df_group_mon$bool_R0_jap == 0 & df_group_mon$tmean < 15),]
 
 # R0_func_jap(13.7,56,0.6)
+##------------------ Plots months------------------#
+library(RColorBrewer)
+library(ggpubr)
+plot_months <- function(df, month){
+  df1 <- df[which(df$month == month),]
+  # Create a palette function using colorRampPalette
+  plot <- ggplot(df1) +
+    geom_sf(aes(fill = R0), colour = NA) +
+    geom_sf(data = can_box) + coord_sf(datum = NA) +
+    scale_fill_distiller(palette = "Spectral",
+                         limits = c(min(df$R0),max(df$R0))) +
+    ggtitle(as.character(month)) + 
+    theme_bw() +  theme(plot.title = element_text(hjust = 0.5))
+  return(plot)
+}
+
+df_group_mon <- esp_can %>% left_join(df_group_mon)
+df_group_mon$R0 <- df_group_mon$R0_mon_alb
+month = 11
+plot_11 <- plot_months(df_group_mon,month)
+ggarr <- ggarrange(plot_3,plot_4,plot_5,
+          plot_6,plot_7,plot_8,
+          plot_9,plot_10,plot_11,
+          nrow=3,ncol = 3, common.legend = TRUE, 
+          legend.position = "left")
+
+ggarr
+
+Path <- paste0("~/Documentos/PHD/2023/INVASIBILITY/Plots/Fede_deathline/AlbMonthWhole.pdf")
+dev.copy2pdf(file=Path, width = 7, height = 5)
 
 ## Group by year:
 df_group_y <- df_group_mon %>% group_by(NATCODE) %>%
@@ -258,10 +290,6 @@ df_group_y <- df_group_mon %>% group_by(NATCODE) %>%
             R0_sum_alb_max = sum(bool_R0_alb_max),
             R0_sum_aeg_max = sum(bool_R0_aeg_max),
             R0_sum_jap_max = sum(bool_R0_jap_max))
-
-## Save RDS:
-Path <- paste0("/home/marta/INVASIBILITY_THRESHOLD/output/R0/datasets/R0_yearly_",year,".Rds")
-saveRDS(df_group_y,Path)
 
 ## Test if variables make sense:
 df_group_y <- esp_can %>% left_join(df_group_y)
@@ -351,7 +379,7 @@ plot_sum_jap
 Path <- paste0("~/Documentos/PHD/2023/INVASIBILITY/Plots/MS/min_JapSum",year,".pdf")
 dev.copy2pdf(file=Path, width = 7, height = 5)
 
-# Wioth maximum temp
+# With maximum temp
 ## Computed with sum months maps 
 df_group_y$R0 <- df_group_y$R0_sum_alb_max
 plot_sum_alb <- plot_summonths(df_group_y)
@@ -371,7 +399,6 @@ plot_sum_jap <- plot_summonths(df_group_y)
 plot_sum_jap
 Path <- paste0("~/Documentos/PHD/2023/INVASIBILITY/Plots/MS/max_JapSum",year,".pdf")
 dev.copy2pdf(file=Path, width = 7, height = 5)
-
 
 ###--------TEST------------###
 ### Use the R0 compute daily and after average
