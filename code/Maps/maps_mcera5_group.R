@@ -138,9 +138,36 @@ R0_func_jap <- function(Te, rain,hum){
 
 #----------------------------------------------------------------------#
 ## Read the data for the R0 computed daily:
-year = 2020
-Path <- paste0("~/INVASIBILITY_THRESHOLD/output/R0/R0_ERA5_daily_mcera_",year,".Rds")
+year = 2019
+Path <- paste0("/home/marta/INVASIBILITY_THRESHOLD/output/mcera5/ERA5_daily_mcera_",year,".Rds")
 df_group <- readRDS(Path)
+head(df_group[[5000]])
+dt_weather <- data.table()
+for(i in c(1:length(df_group))){
+  print(paste0("i:",i))
+  dt_aux <- setDT(df_group[[1]])
+  dt_aux$date <- as.Date(dt_aux$obs_time)
+  dt_aux <- dt_aux[,.(tmean = mean(temperature),
+                      tmin = min(temperature),
+                      tmax = max(temperature),
+                      prec =sum(prec),
+                      prec1 = sum(prec1),
+                      pop = min(pop),
+                      area= min(area)), by = list(date,NATCODE)]
+  dt_weather <- rbind(dt_aux,dt_weather)
+  df_group[[1]] <- NULL
+  rm(dt_aux)
+}
+
+year = 2019
+Path <- paste0("/home/marta/INVASIBILITY_THRESHOLD/output/mcera5/process_Daily_ERA5_daily_mcera_",year,".Rds")
+saveRDS(dt_weather,Path)
+dt_weather <- setDT(readRDS(Path))
+rm(df_group,dt_aux)
+
+dt_weather$id <- 1
+test <- dt_weather[,.(n = sum(id)), by = list(NATCODE)]
+
 #-----------------------------Create plots------------------------#
 esp_can <- esp_get_munic_siane(moveCAN = TRUE)
 can_box <- esp_get_can_box()
@@ -155,7 +182,7 @@ NATCODE_BCN <- esp_can$NATCODE[which(esp_can$name == "Barcelona")]
 df_BCN <- df_group[which(df_group$NATCODE == NATCODE_BCN),
                    c("NATCODE","date", "R0_hourly_alb",
                      "R0_hourly_aeg","R0_hourly_jap"
-                     )]
+                   )]
 colnames(df_BCN) <- c("NATCODE","date", "SVI Albopictus",
                       "SVI Aegypti","SVI Japonicus")
 
@@ -187,7 +214,7 @@ df_group <- setDT(df_group)
 ind <- is.na(df_group$R0_hourly_alb)
 R0_cpro <- df_group[which(df_group$cpro %in%
                             df_group$cpro[ind] & 
-                                 is.na(df_group$R0_hourly_alb) == FALSE),] %>%
+                            is.na(df_group$R0_hourly_alb) == FALSE),] %>%
   group_by(cpro,month) %>%
   summarise(R0_tmed_alb = mean(R0_hourly_alb),
             R0_tmed_aeg = mean(R0_hourly_aeg),
@@ -206,8 +233,8 @@ rm(R0_cpro)
 
 ## Delete NA in the map for hourly R0
 df_group$R0_hourly_alb <- ifelse(is.na(df_group$R0_hourly_alb),
-                           df_group$R0_tmed_alb,
-                           df_group$R0_hourly_alb)
+                                 df_group$R0_tmed_alb,
+                                 df_group$R0_hourly_alb)
 df_group$R0_hourly_aeg <- ifelse(is.na(df_group$R0_hourly_aeg),
                                  df_group$R0_tmed_aeg,
                                  df_group$R0_hourly_aeg)
@@ -236,14 +263,14 @@ df_group  <- df_group[,c("NATCODE", "month", "temp", "min_temp",
                          "R0_dai_aeg", "R0_dai_jap")]
 rm(R0_cpro)
 df_group$R0_dai_alb <- ifelse(is.na(df_group$R0_dai_alb),
-                                 df_group$R0_tmed_alb,
-                                 df_group$R0_dai_alb)
+                              df_group$R0_tmed_alb,
+                              df_group$R0_dai_alb)
 df_group$R0_dai_aeg <- ifelse(is.na(df_group$R0_dai_aeg),
-                                 df_group$R0_tmed_aeg,
-                                 df_group$R0_dai_aeg)
+                              df_group$R0_tmed_aeg,
+                              df_group$R0_dai_aeg)
 df_group$R0_dai_jap <- ifelse(is.na(df_group$R0_dai_jap),
-                                 df_group$R0_tmed_jap,
-                                 df_group$R0_dai_jap)
+                              df_group$R0_tmed_jap,
+                              df_group$R0_dai_jap)
 
 df_group_na <- df_group[which(is.na(df_group$R0_hourly_jap)),]
 
@@ -329,7 +356,7 @@ df_group_y <- df_group_mon %>% group_by(NATCODE) %>%
             pop = mean(pop))
 
 df_sum <- df_group_mon[which(df_group_mon$month >3 &
-                     df_group_mon$month <11 ),]
+                               df_group_mon$month <11 ),]
 df_group_sum <- df_sum %>% group_by(NATCODE) %>%
   summarise(R0_sum_alb = sum(bool_R0_alb),
             R0_sum_aeg = sum(bool_R0_aeg),
@@ -558,7 +585,7 @@ df_range <- function(df_pa_CAT){
   df_r <- df_r_1 %>% left_join(df_r_0)
   df_r$prop_1 <- df_r$num_1/(df_r$num_1+df_r$num_0)
   return(df_r)
-
+  
 }
 
 ###### Sum number of months ###
@@ -571,7 +598,7 @@ df_num_months <- function(df_pa_CAT){
   df_r <- df_r_1 %>% left_join(df_r_0)
   df_r$prop_1 <- df_r$num_1/(df_r$num_1+df_r$num_0)
   return(df_r)
-
+  
 }
 
 ## Compute the plots for cataluña
@@ -815,7 +842,7 @@ ggarrange(gg_range , gg_sum, common.legend = TRUE)
 NATCODE_GN <- esp_can[which(esp_can$ine.prov.name == "Girona"),"NATCODE"]
 NATCODE_GN$geometry <- NULL
 df_pa_GN <- df_pa[which(as.numeric(df_pa$NATCODE) %in% 
-                           as.numeric(NATCODE_GN$NATCODE)),]
+                          as.numeric(NATCODE_GN$NATCODE)),]
 
 hist(df_pa_GN[which(df_pa_GN$PA == 1), "R0_avg_alb"])
 ggplot(df_pa_GN[which(df_pa_GN$PA == 1),]) +
@@ -911,7 +938,7 @@ head(PA_jap_ESP)
 NATCODE_AST <- esp_can[which(esp_can$codauto == "03"),"NATCODE"]
 NATCODE_AST$geometry <- NULL
 df_pa_AST <- setDT(PA_jap_ESP[which(as.numeric(PA_jap_ESP$NATCODE) %in% 
-                           as.numeric(NATCODE_AST$NATCODE)),])[,c("NATCODE", "Japonicus")]
+                                      as.numeric(NATCODE_AST$NATCODE)),])[,c("NATCODE", "Japonicus")]
 
 df_group_y_AST <- df_group_y[which(as.numeric(df_group_y$NATCODE) %in% 
                                      as.numeric(NATCODE_AST$NATCODE)),] %>% 
