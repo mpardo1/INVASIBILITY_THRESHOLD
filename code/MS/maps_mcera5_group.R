@@ -90,6 +90,25 @@ R0_func_alb <- function(Te, rain, hum){
   return(R0)
 }
 
+# vec = seq(0,40,0.1)
+# out <- unlist(lapply(vec,a_f_alb))
+# max(out)
+# vec = seq(0,40,0.1)
+# out <- unlist(lapply(vec,TFD_f_alb))
+# max(out)
+# vec = seq(0,40,0.1)
+# out <- unlist(lapply(vec,lf_f_alb))
+# max(out)
+# vec = seq(0,40,0.1)
+# out <- unlist(lapply(vec,dE_f_alb))
+# max(out)
+# vec = seq(0,40,0.1)
+# out <- unlist(lapply(vec,pLA_f_alb))
+# max(out)
+# vec = seq(0,10,0.1)
+# out <- unlist(lapply(vec,h_f, hum=0))
+# max(out)
+
 ####------------------------------Aegypti------------------------####
 a_f_aeg <- function(temp){Briere_func(0.000202,13.35,40.08,temp)} # Biting rate
 EFD_f_aeg <- function(temp){Briere_func(0.00856,14.58,34.61,temp)} # Fecundity
@@ -206,6 +225,40 @@ df_group[, R0_dai_alb := mapply(R0_func_alb, tmean, prec, dens)]
 df_group[, R0_dai_aeg := mapply(R0_func_aeg, tmean, prec, dens)]
 df_group[, R0_dai_jap := mapply(R0_func_jap, tmean, prec, dens)]
 
+## ----------PLOT TEMP----------#
+# df_prov <- esp_can[,c("cpro","ine.prov.name")]
+# df_prov$geometry <- NULL
+# df_prov <- unique(df_prov)
+# provincia = "Valencia/València"
+# df_GN <- df_group[which(df_group$NATCODE %in%
+#                           esp_can$NATCODE[which(esp_can$ine.prov.name == provincia)]),]
+# df_GN <- df_GN[,.(tmean = mean(tmean),
+#                   prec = mean(prec),
+#                   dens = as.numeric(sum(pop)/sum(area))), by = list(date)]
+# 
+# df_GN[, R0_dai_alb := mapply(R0_func_alb, tmean, prec, dens)]
+# df_GN[, R0_dai_aeg := mapply(R0_func_aeg, tmean, prec, dens)]
+# df_GN[, R0_dai_jap := mapply(R0_func_jap, tmean, prec, dens)]
+# 
+# library("latex2exp")
+# ggplot(df_GN) + 
+#   geom_line(aes(date, R0_dai_alb)) + 
+#   ylab(TeX("$R_M$")) + 
+#   scale_x_date(date_breaks = "2 month", date_labels =  "%b %Y") +
+#   ggtitle(provincia) +
+#   theme_bw()
+# 
+## It is the rainfall why there are so many peaks and downs
+# coeff <- 1
+# 
+# ggplot(df_BCN, aes(x=date)) +
+#   geom_line( aes(y=R0_dai_alb), color = "darkblue") + 
+#   geom_line( aes(y=prec), color = "yellow") + # Divide by 10 to get the same range than the temperature
+#   scale_y_continuous(
+#     name = "R0",
+#     sec.axis = sec_axis(~.*coeff, name="Temperature")
+#   ) + theme_bw()
+
 #### ----------- Monthly agg----------------###
 df_group_mon <- df_group[, .(tmean = mean(tmean),
                              tmin = min(tmean),
@@ -244,36 +297,39 @@ df_group_mon[which(df_group_mon$bool_R0_jap == 0 & df_group_mon$tmean < 15),]
 
 # R0_func_jap(13.7,56,0.6)
 ##------------------ Plots months------------------#
-library(RColorBrewer)
-library(ggpubr)
-plot_months <- function(df, month){
-  df1 <- df[which(df$month == month),]
-  # Create a palette function using colorRampPalette
-  plot <- ggplot(df1) +
-    geom_sf(aes(fill = R0), colour = NA) +
-    geom_sf(data = can_box) + coord_sf(datum = NA) +
-    scale_fill_distiller(palette = "Spectral",
-                         limits = c(min(df$R0),max(df$R0))) +
-    ggtitle(as.character(month)) + 
-    theme_bw() +  theme(plot.title = element_text(hjust = 0.5))
-  return(plot)
-}
+# library(RColorBrewer)
+# library(ggpubr)
+# plot_months <- function(df, month){
+#   df1 <- df[which(df$month == month),]
+#   # Create a palette function using colorRampPalette
+#   plot <- ggplot(df1) +
+#     geom_sf(aes(fill = R0), colour = NA) +
+#     geom_sf(data = can_box) + coord_sf(datum = NA) +
+#     scale_fill_distiller(palette = "Spectral",
+#                          limits = c(min(df$R0),max(df$R0))) +
+#     ggtitle(as.character(month)) + 
+#     theme_bw() + 
+#     theme(plot.title = element_text(hjust = 0.5))
+#   return(plot)
+# }
+# 
+# df_group_mon <- esp_can %>% left_join(df_group_mon)
+# df_group_mon$R0 <- df_group_mon$R0_mon_alb
+# month = 10
+# plot_10 <- plot_months(df_group_mon,month)
+# ggarr <- ggarrange(plot_3,plot_4,plot_5,
+#           plot_6,plot_7,plot_8,
+#           plot_9,plot_10,plot_11,
+#           nrow=3,ncol = 3, common.legend = TRUE)
+# 
+# ggarr
+# 
+# Path <- paste0("~/Documentos/PHD/2023/INVASIBILITY/Plots/Fede_deathline/AlbMonthWhole.pdf")
+# dev.copy2pdf(file=Path, width = 7, height = 5)
+# Path <- paste0("~/Documentos/PHD/2023/INVASIBILITY/Plots/Fede_deathline/AlbMonthWhole.png")
+# ggsave(Path, plot = ggarr)
 
-df_group_mon <- esp_can %>% left_join(df_group_mon)
-df_group_mon$R0 <- df_group_mon$R0_mon_alb
-month = 11
-plot_11 <- plot_months(df_group_mon,month)
-ggarr <- ggarrange(plot_3,plot_4,plot_5,
-          plot_6,plot_7,plot_8,
-          plot_9,plot_10,plot_11,
-          nrow=3,ncol = 3, common.legend = TRUE, 
-          legend.position = "left")
-
-ggarr
-
-Path <- paste0("~/Documentos/PHD/2023/INVASIBILITY/Plots/Fede_deathline/AlbMonthWhole.pdf")
-dev.copy2pdf(file=Path, width = 7, height = 5)
-
+## ----------PLOT TEMP----------#
 ## Group by year:
 df_group_y <- df_group_mon %>% group_by(NATCODE) %>%
   summarise(tmean = mean(tmean),
@@ -342,6 +398,9 @@ plot_summonths <- function(df){
 df_group_y$R0 <- df_group_y$R0_sum_alb
 plot_sum_alb <- plot_summonths(df_group_y)
 plot_sum_alb
+
+Path <- paste0("~/Documentos/PHD/2023/INVASIBILITY/Plots/Fede_deathline/AlbMonthSum.png")
+ggsave(Path, plot = plot_sum_alb)
 
 Path <- paste0("~/Documentos/PHD/2023/INVASIBILITY/Plots/MS/AlboSum",year,".pdf")
 dev.copy2pdf(file=Path, width = 7, height = 5)
@@ -428,14 +487,28 @@ df_group_y[, R0_avg_alb := mapply(R0_func_alb, tmean, meanprec, dens)]
 df_group_y[, R0_avg_aeg := mapply(R0_func_aeg, tmean, meanprec, dens)]
 df_group_y[, R0_avg_jap := mapply(R0_func_jap, tmean, meanprec, dens)]
 
-df_group_tot <- df_group_y[,c("NATCODE",
+### Extract the average R0 for the mosquito season
+df_group_sum <- df_group_mon[which(df_group_mon$month >3 & df_group_mon$month <11),]
+df_group_sum <- df_group_sum[, .(tmean = mean(tmean),
+                               prec = sum(prec), 
+                               meanprec = mean(prec),
+                               dens = min(dens)), 
+                           by=list(NATCODE)]
+df_group_sum[, R0_avg_alb_sum := mapply(R0_func_alb, tmean, meanprec, dens)]
+df_group_sum[, R0_avg_aeg_sum := mapply(R0_func_aeg, tmean, meanprec, dens)]
+df_group_sum[, R0_avg_jap_sum := mapply(R0_func_jap, tmean, meanprec, dens)]
+
+df_group_tot <- (df_group_y[,c("NATCODE",
                               "R0_sum_alb_dai",
                               "R0_sum_aeg_dai",
                               "R0_sum_jap_dai",
                               "R0_avg_jap",
                               "R0_avg_alb",
                               "R0_avg_aeg")] %>% 
-  left_join(df_group_y1)
+  left_join(df_group_y1) ) %>% left_join(df_group_sum[,c("NATCODE",
+                                                         "R0_avg_alb_sum",
+                                                         "R0_avg_aeg_sum",
+                                                         "R0_avg_jap_sum")])
 
 ## Save file for the validation with PA data
 Path <- paste0("~/INVASIBILITY_THRESHOLD/output/R0/datasets/R0_summonths_",year,".Rds")

@@ -93,14 +93,46 @@ dt_z <- setDT(expand.grid(vec,vec1))
 dt_z[, R0 := mapply(R0_func_alb, Var1, Var2)]
 ggplot(dt_z) + 
   geom_point(aes(Var1,Var2,color = R0)) + 
+  xlab("Temperature") + ylab("Human density") +
   scale_color_viridis()
 
-library("plot3D")
-plot3d(x=dt_z$Var1,y=dt_z$Var2,z=dt_z$R0, col = my_palette[dt_z$R0 * 100],
-       cex.lab=10,cex.axis=5,
-       xlab = "Human density (km2)", ylab = "Rainfall(mm day)",
-       zlab = "Haching rate") 
+# Spain map municipalities
+esp_can <- esp_get_munic_siane(moveCAN = TRUE)
+can_box <- esp_get_can_box()
+esp_can$NATCODE <- as.numeric(paste0("34",
+                                     esp_can$codauto,
+                                     esp_can$cpro,
+                                     esp_can$LAU_CODE))
 
+
+###--------------PA---------------#
+# Presence absence data Albopictus Spain:
+Path = "~/INVASIBILITY_THRESHOLD/data/PA/PresenceAbsence_MA_BG2.Rds"
+df_pa <- readRDS(Path)
+df_pa <- df_pa %>% group_by(NATCODE) %>%
+  summarise(sum = sum(A_PRIM_DET_OFICIAL),
+            sum_MA = sum(A_PRIM_DET_CITSCI))
+df_pa$PA <- ifelse(df_pa$sum == 0 & df_pa$sum_MA == 0,0,1 )
+df_pa <- df_pa[,c("NATCODE", "PA")]
+df_pa_new <- "~/INVASIBILITY_THRESHOLD/data/PA/NewPAalbopictus.csv"
+df_pa_new <- read.csv(df_pa_new, sep = ",", header = FALSE)
+df_pa_new$PA <- 1
+df_pa_new <- df_pa_new[,c("V1","PA")]
+colnames(df_pa_new) <- c("NATCODE", "PA")
+df_pa <- df_pa[-which(df_pa$NATCODE %in% df_pa_new$NATCODE),]
+df_pa <- rbind(df_pa,df_pa_new)
+
+df_pa <- esp_can %>% left_join(df_pa)
+df_pa[which(is.na(df_pa$PA)),"PA"] <- 0
+
+ggplot(df_pa) + 
+  geom_sf(aes(fill=as.factor(PA)))
+
+df_pa <- df_pa[,c("NATCODE","PA")]
+df_pa$geometry <- NULL
+# write.csv(df_pa, "~/INVASIBILITY_THRESHOLD/data/PA/Albopictus_Spain_Pa.csv")
+
+###--------------WEATHER---------------#
 # Data table with tmed and R0 computed for albopictus and dengue
 #####
 year = "2019"
@@ -133,12 +165,21 @@ ggplot(weather) + geom_sf(aes(fill=tmean))
 census <- mapSpain::pobmun19
 esp_can <- esp_can %>% 
   left_join(census, by = c("cmun" = "cmun","cpro" = "cpro"))
+ggplot(esp_can) + geom_sf(aes(fill=pob19))
 esp_can$area <- as.numeric(st_area(esp_can))/1000000
+esp_can_pop <- setDT(esp_can[which(is.na(esp_can$pob19) == FALSE),c("cpro", "pob19")])
+esp_can_pop$geometry <- NULL
+esp_can_pop <- esp_can_pop[,.(pop=mean(pob19)), 
+                           by = list(cpro)]
+esp_can <- esp_can %>% left_join(esp_can_pop)
+esp_can$pob19 <- ifelse(is.na(esp_can$pob19),
+                        esp_can$pop,
+                        esp_can$pob19)
+ggplot(esp_can) + geom_sf(aes(fill=pob19), lwd = 0)
 esp_can$pop_km <- esp_can$pob19/esp_can$area
-esp_can[which(is.na(esp_can$pop_km)),"pop_km"] <- 1
 # hist(esp_can$pop_km)
-# ggplot(esp_can) + geom_sf(aes(fill=pop_km), lwd = 0)
-
+# 
+## Join with weather data
 esp_can_pro <- esp_can[,c("NATCODE", "cpro", "pob19", "area", "ine.prov.name")]
 esp_can_pro[which(is.na(esp_can_pro$pob19)),"pob19"] <- 0
 esp_can <- esp_can[,c("NATCODE","pop_km", "cpro", "pob19", "area", "name.x")]
@@ -158,201 +199,417 @@ import <- unique(import[, c("provincia", "dengue_cases",
                             "dengue_prob", "malaria_cases",
                             "malaria_prob")])
 import$geom <- NULL
-
+import <- unique(import)
 #Compute R0 for Spain for 2019
 dengue_df[, R0_mean := mapply(R0_func_alb, tmean, pop_km)]
-dengue_p <- esp_can %>% left_join(dengue_df[,c("NATCODE","R0_mean", "date" )])
+dengue_p <- esp_can %>%
+  left_join(dengue_df[,c("NATCODE","R0_mean", "date" )])
 ggplot(dengue_p[which(dengue_p$date == "2019-07-26"),]) +
-  geom_sf(aes(fill=R0_mean)) + 
+  geom_sf(aes(fill=R0_mean), lwd = 0) + 
   scale_fill_viridis_c(option = "magma")
 
 rm(census,df_out,esp_can)
 dengue_df <- dengue_df[,c("NATCODE","R0_mean","date", 
                           "tmean","pop_km","cpro", "area", "pob19")]
 dengue_df$month <- lubridate::month(dengue_df$date)
-# 51 code for Ceuta
+import$cpro <- ifelse(import$provincia < 10,
+                      paste0("0", as.character(import$provincia)),
+                      as.character(import$provincia))
+
+dengue_df <- dengue_df %>% left_join(import)
+dengue_df$R0_rel <- dengue_df$R0_mean/max(dengue_df$R0_mean)
+dengue_df$risk <- dengue_df$R0_rel*dengue_df$dengue_prob
+dengue_df <- dengue_df %>% left_join(df_pa)
+dengue_df$risk_PA <- dengue_df$risk*dengue_df$PA
+
+#### Check and write csv:
+
+# R0 Dengue and risk daily municipalities daily:
+head(dengue_df)
+dengue_df$R0_daily_muni <- dengue_df$R0_mean
+dengue_df$R0_daily_muni_rel <- dengue_df$R0_rel
+dengue_df$cpro <- as.numeric(dengue_df$cpro)
+dengue_R0 <- dengue_df[,c("NATCODE","cpro","R0_daily_muni",
+                          "R0_daily_muni_rel",
+                          "date", "month", "risk", "risk_PA",
+                          "dengue_prob", "PA")]
+write.csv(dengue_R0,
+          "~/Dengue/output/risk_dengue_2019_daily_muni.csv")
+
+##----------------- Check daily muni Dengue--------------------###
+# Spain map municipalities
+esp_can <- esp_get_munic_siane(moveCAN = TRUE)
+can_box <- esp_get_can_box()
+esp_can$NATCODE <- as.numeric(paste0("34",
+                                     esp_can$codauto,
+                                     esp_can$cpro,
+                                     esp_can$LAU_CODE))
+
+### Dengue data frame
+dengue_R0$cpro <- NULL
+day_R0 <- esp_can %>% left_join(dengue_R0)
+# day_R0$cpro <- as.numeric(day_R0$cpro)
+day_R0 <- day_R0[which(day_R0$date == "2019-07-01"),]
+ggplot(day_R0) + scale_fill_viridis_c(option="magma") +
+  geom_sf(aes(fill = risk_PA), linewidth = 0.01)
+
+####-------------------MONTHLY MUNI--------------------###
+dengue_df_mon <- dengue_df[,.(tmean = mean(tmean),
+                              area = min(area),
+                              pop = min(pob19),
+                              dens =  min(pob19)/min(area),
+                              PA = min(PA),
+                              PA1 = max(PA),
+                              dengue_prob = min(dengue_prob),
+                              dengue_prob1 = max(dengue_prob)),
+                           by = list(NATCODE,month)]
+dengue_df_mon$dens[which(is.na(dengue_df_mon$dens))] <- 0.1
+dengue_df_mon[, R0_mean := mapply(R0_func_alb, tmean, dens)]
+max_R0 <- max(dengue_df_mon$R0_mean[which(is.na(dengue_df_mon$R0_mean)==FALSE)])
+dengue_df_mon$R0_rel <- dengue_df_mon$R0_mean/max_R0
+dengue_df_mon$risk <- dengue_df_mon$R0_rel*dengue_df_mon$dengue_prob
+dengue_df_mon$risk_PA <- dengue_df_mon$risk*dengue_df_mon$PA
+
+####----------------MONTHLY------------------##
+# R0 Dengue daily municipalities monthly:
+head(dengue_df_mon)
+dengue_df_mon$R0_mon_muni <- dengue_df_mon$R0_mean
+dengue_df_mon$R0_mon_muni_rel <- dengue_df_mon$R0_rel
+dengue_df_mon$cpro <- as.numeric(dengue_df_mon$cpro)
+dengue_df_mon$date <- paste0(dengue_df_mon$month, "-2019")
+dengue_R0_mon <- dengue_df_mon[,c("NATCODE","cpro","R0_mon_muni","R0_mon_muni_rel",
+                                  "date", "month", "risk", "risk_PA",
+                                  "dengue_prob", "PA")]
+write.csv(dengue_R0_mon,
+          "~/Dengue/output/risk_dengue_2019_monthly_muni.csv")
+
+## Check results map:
+dengue_R0_mon_plot <- dengue_R0_mon
+dengue_R0_mon_plot$cpro <- NULL
+dengue_R0_mon_plot <- esp_can %>% left_join(dengue_R0_mon_plot)
+range(dengue_R0_mon_plot$risk_PA[which(is.na(dengue_R0_mon_plot$risk_PA)==FALSE)])
+dengue_R0_mon_plot$risk_range_PA <- ifelse(dengue_R0_mon_plot$risk_PA<6.92E-05,0,
+                                        ifelse(dengue_R0_mon_plot$risk_PA<0.01,1,
+                                               ifelse(dengue_R0_mon_plot$risk_PA<0.02,2,3)))
+
+dengue_R0_mon_plot$risk_range <- ifelse(dengue_R0_mon_plot$risk<6.92E-05,0,
+                                        ifelse(dengue_R0_mon_plot$risk<0.01,1,
+                                               ifelse(dengue_R0_mon_plot$risk<0.02,2,3)))
+
+ggplot(dengue_R0_mon_plot) +
+  geom_sf(aes(fill = as.factor(risk_range)), linewidth = 0.01) +
+  geom_sf(data = can_box) + coord_sf(datum = NA) +
+  scale_fill_viridis_d(option = "magma") +
+  theme(plot.margin = margin(0.2, 0.2, 0.2, 0.2, "cm")) +
+  theme_void() +
+  labs(title = "Month: {current_frame}") +
+  transition_manual(as.factor(month), duration = rep(1000,12))
 
 
-###--------------------DAILY PROVINCES---------------------####
-# test = dengue_df %>% group_by(NATCODE, date) %>% summarise(n=n())
-dengue_df1 <- dengue_df[which(dengue_df$cpro != 51 & dengue_df$cpro != 52),]
-dengue_df_d_p <- dengue_df1[, .(tmean = mean(tmean),
-                                   pop = sum(pob19),
-                                   area = sum(area),
-                                   dens = (sum(pob19)/sum(area))), 
-                               by=list(cpro,date)]
-dengue_df_d_p$dens[which(is.finite(dengue_df_d_p$dens)==FALSE)] <- 10
-dengue_df_d_p[, R0 := mapply(R0_func_alb, tmean, dens)]
-dengue_df_d_p[which(is.finite(dengue_df_d_p$R0)==FALSE),]
-dengue_df_d_p$cpro <- as.numeric(dengue_df_d_p$cpro)
-sum(is.na(dengue_df_d_p))
+# plot Risk specific months
+## Sin PA
+month_n = 9
+plot_9 <- ggplot(dengue_R0_mon_plot[which(dengue_R0_mon_plot$month == month_n &
+                                  is.na(dengue_R0_mon_plot$risk)==FALSE),]) +
+  geom_sf(aes(fill = as.factor(risk_range)), linewidth = 0.01) +
+  geom_sf(data = can_box) + coord_sf(datum = NA) +
+  scale_fill_viridis_d(option = "magma",limits = c(0:3), name="risk") +
+  ggtitle(month_n) + theme_bw() +
+  theme(plot.title = element_text(hjust = 0.5),
+        plot.margin = margin(0.1,0.1,0.1,0.1, "cm"))
 
-import <- unique(import[which(is.na(import$provincia)==FALSE | is.na(import$dengue_prob)==FALSE),])
-# sum(is.na(import))
-# sum(is.na(df_den))
-dengue_df_d_p <- dengue_df_d_p %>%
-  left_join(unique(import), by = c("cpro" = "provincia"))
+# Con PA
+plot_9_PA <- ggplot(dengue_R0_mon_plot[which(dengue_R0_mon_plot$month == month_n &
+                                            is.na(dengue_R0_mon_plot$risk)==FALSE),]) +
+  geom_sf(aes(fill = as.factor(risk_range_PA)), linewidth = 0.01) +
+  geom_sf(data = can_box) + coord_sf(datum = NA) +
+  scale_fill_viridis_d(option = "magma",limits = c(0:3),
+                       name="risk") + theme_bw() +
+  theme(plot.title = element_text(hjust = 0.5),
+        plot.margin = margin(0.1,0.1,0.1,0.1, "cm"))
 
-sum(is.na(dengue_df_d_p))
-dengue_df_d_p <- dengue_df_d_p[which(is.na(dengue_df_d_p$cpro) == FALSE),]
-dengue_df_d_p$R0_rel <- dengue_df_d_p$R0/max(dengue_df_d_p$R0)
-dengue_df_d_p$R0_bool <- ifelse(dengue_df_d_p$R0>1,1,0 )
+### Join all the plots:
+library(ggpubr)
+ggarrange(plot_5,plot_7,  plot_9, 
+          plot_5_PA, plot_7_PA,plot_9_PA,
+          common.legend = TRUE) 
 
-## Compute the relative risk : Dengue proability * R0 Dengue relative
-dengue_df_d_p$risk <- dengue_df_d_p$dengue_prob*dengue_df_d_p$R0_rel
+# Plot R0 specific months
+dengue_R0_mon_plot$rR0_range <- ifelse(dengue_R0_mon_plot$risk<1,0,
+                                        ifelse(dengue_R0_mon_plot$risk<100,1,
+                                               ifelse(dengue_R0_mon_plot$risk<500,2,
+                                                      ifelse(dengue_R0_mon_plot$risk<1000,3,4))))
+range(dengue_R0_mon_plot$R0_mon_muni)
+df_aux <-dengue_R0_mon_plot[which(is.na(dengue_R0_mon_plot$risk)==FALSE),"R0_mon_muni"]
+df_aux$geometry <- NULL
+min_R0 <- min(df_aux$R0_mon_muni)
+max_R0 <- max(df_aux$R0_mon_muni)
+month_n = 11
+### RO normal absoluto
+plot_11 <- ggplot(dengue_R0_mon_plot[which(dengue_R0_mon_plot$month == month_n &
+                                  is.na(dengue_R0_mon_plot$R0_mon_muni)==FALSE),]) +
+  geom_sf(aes(fill = R0_mon_muni_rel), linewidth = 0.01) +
+  geom_sf(data = can_box) + coord_sf(datum = NA) +
+  scale_fill_distiller(palette = "Spectral",
+                       limits = c(min_R0,max_R0),
+                       name = "R0 Dengue",
+                       breaks = c(0,4000,8000)) +
+  ggtitle(month_n) +  theme(plot.title = element_text(hjust = 0.5))
 
-# step <- range(dengue_df_d_p$risk)/3
-dengue_df_d_p$risk_range <- ifelse((dengue_df_d_p$risk < max(dengue_df_d_p$risk[dengue_df_d_p$R0<1])),
-                                   "No risk",
-                                   ifelse(dengue_df_d_p$risk < 0.01, "Low risk",
-                                          ifelse(dengue_df_d_p$risk < 0.02, "Medium risk","High risk")))
+library("latex2exp")
+## R0 relativo
+month_n = 11
+plot_11 <- ggplot(dengue_R0_mon_plot[which(dengue_R0_mon_plot$month == month_n &
+                                             is.na(dengue_R0_mon_plot$R0_mon_muni)==FALSE),]) +
+  geom_sf(aes(fill = R0_mon_muni_rel), linewidth = 0.01) +
+  geom_sf(data = can_box) + coord_sf(datum = NA) +
+  scale_fill_distiller(palette = "Spectral",
+                       limits = c(0,1),
+                       name = TeX("$R0_{DENV}$"),
+                       breaks = c(0,0.5,1)) +
+  ggtitle(month_n) + theme_bw() +
+  theme(plot.title = element_text(hjust = 0.5))
 
-esp_can <- esp_get_prov_siane(moveCAN = TRUE)
+## Join all the plots
+ggarr <- ggarrange(plot_3,plot_4,plot_5,
+          plot_6,plot_7,plot_8,
+          plot_9,plot_10,plot_11,
+          nrow=3,ncol = 3, common.legend = TRUE)
+ggarr
+
+### Plot R0>1 or R0_rel>0
+dengue_R0_mon_plot$geometry <- NULL
+dengue_R0_mon_plot$bool <- ifelse(dengue_R0_mon_plot$R0_mon_muni>1,1,0)
+dengue_R0_mon_plot$bool_rel <- ifelse(dengue_R0_mon_plot$R0_mon_muni_rel>0,1,0)
+dengue_R0_mon_plot <- setDT(dengue_R0_mon_plot)
+dengue_R0_mon_plot_a <- dengue_R0_mon_plot[,.(sum_R0 = sum(bool),
+                                              sum_R0_rel = sum(bool_rel)),
+                                           by=list(NATCODE)]
+
+dengue_R0_mon_plot_a <- esp_can %>% left_join(dengue_R0_mon_plot_a)
+colors <- c("#43A2CA", "#7BCCC4", "#BAE4BC", "#F0F9E8",
+            "#FFF7EC","#FEE8C8","#FDD49E","#FDBB84",
+            "#FC8D59","#EF6548","#D7301F", "#B30000",
+            "#7F0000")
+
+ggplot(dengue_R0_mon_plot_a) +
+  geom_sf(aes(fill = as.factor(sum_R0_rel)), colour = NA) +
+  geom_sf(data = can_box) + coord_sf(datum = NA) +
+  scale_fill_manual(values = colors,
+                    name = "Nº months\n suitable",
+                    limits = factor(seq(0,12,1))) +
+  theme_bw() 
+####--------------------DAILY PROVINCES---------------------####
+# # test = dengue_df %>% group_by(NATCODE, date) %>% summarise(n=n())
+# dengue_df1 <- dengue_df[which(dengue_df$cpro != 51 & dengue_df$cpro != 52),]
+# dengue_df_d_p <- dengue_df1[, .(tmean = mean(tmean),
+#                                    pop = sum(pob19),
+#                                    area = sum(area),
+#                                    dens = (sum(pob19)/sum(area))), 
+#                                by=list(cpro,date)]
+# dengue_df_d_p$dens[which(is.finite(dengue_df_d_p$dens)==FALSE)] <- 10
+# dengue_df_d_p[, R0 := mapply(R0_func_alb, tmean, dens)]
+# dengue_df_d_p[which(is.finite(dengue_df_d_p$R0)==FALSE),]
+# dengue_df_d_p$cpro <- as.numeric(dengue_df_d_p$cpro)
+# sum(is.na(dengue_df_d_p))
+# 
+# import <- unique(import[which(is.na(import$provincia)==FALSE | is.na(import$dengue_prob)==FALSE),])
+# # sum(is.na(import))
+# # sum(is.na(df_den))
+# dengue_df_d_p <- dengue_df_d_p %>%
+#   left_join(unique(import), by = c("cpro" = "provincia"))
+# 
+# sum(is.na(dengue_df_d_p))
+# dengue_df_d_p <- dengue_df_d_p[which(is.na(dengue_df_d_p$cpro) == FALSE),]
+# dengue_df_d_p$R0_rel <- dengue_df_d_p$R0/max(dengue_df_d_p$R0)
+# dengue_df_d_p$R0_bool <- ifelse(dengue_df_d_p$R0>1,1,0 )
+# 
+# ## Compute the relative risk : Dengue proability * R0 Dengue relative
+# dengue_df_d_p$risk <- dengue_df_d_p$dengue_prob*dengue_df_d_p$R0_rel
+# 
+# # step <- range(dengue_df_d_p$risk)/3
+# dengue_df_d_p$risk_range <- ifelse((dengue_df_d_p$risk < 0.000357),
+#                                    0,
+#                                    ifelse(dengue_df_d_p$risk < 0.01, 1,
+#                                           ifelse(dengue_df_d_p$risk < 0.02, 2,3)))
+# 
+# esp_can <- esp_get_prov_siane(moveCAN = TRUE)
+# # ## Delete Ceuta and Melilla from the analysis
+# # esp_can <- esp_can[which(esp_can$cpro != 51 & esp_can$cpro != 52 ),"cpro",
+# #                    "ine.prov.name"]
+# esp_can$cpro <- as.numeric(esp_can$cpro)
+# dengue_df_d_p <- esp_can %>% left_join(dengue_df_d_p)
+# 
+# test <- dengue_df_d_p %>% group_by(date) %>% summarize(n=n())
+# test$geometry <- NULL
+# dengue_df_d_p[which(is.na(dengue_df_d_p$risk)),]
+# dengue_df_d_p <- dengue_df_d_p[-which(is.na(dengue_df_d_p$risk_range)),]
+# 
+# ## Create plots:
+# ggplot(dengue_df_d_p) +
+#   geom_sf(aes(fill = as.factor(risk_range)), linewidth = 0.01) +
+#   geom_sf(data = can_box) + coord_sf(datum = NA) +
+#   scale_fill_brewer(palette = "YlOrRd",
+#                     name = "Dengue risk") +
+#   theme(plot.margin = margin(0.2, 0.2, 0.2, 0.2, "cm")) +
+#   theme_void() +
+#   labs(title = "Day: {current_frame}") +
+#   transition_manual(as.factor(date))
+# 
+# ## Dengue prob David
+# ggplot(dengue_df_d_p[which(dengue_df_d_p$date == "2019-01-01"),]) +
+#   geom_sf(aes(fill = dengue_prob), linewidth = 0.01) +
+#   geom_sf(data = can_box) + coord_sf(datum = NA) +
+#   theme(plot.margin = margin(0.2, 0.2, 0.2, 0.2, "cm")) +
+#   scale_fill_viridis_c(name = "Dengue prob") +
+#   theme_void() 
+# 
+# #---------------------------province and month--------------------------#
+# # Agrupate by month
+# dengue_df_g <- dengue_df[, .(R0_tmed=mean(R0_mean),
+#                              tmean = mean(tmean),
+#                              pop = min(pop_km)), 
+#                          by=list(NATCODE,month)]
+# 
+# dengue_df_g[, R0_mon := mapply(R0_func_alb, tmean, pop)]
+# dengue_df_g[which(is.na(dengue_df_g$R0_mon)),]
+# 
+# dengue_df_g_p <- dengue_df_g %>%
+#   left_join(esp_can_pro)
+# dengue_df_g_p[which(is.na(dengue_df_g_p$R0_mon)),]
+# 
+# dengue_df_g_p <- dengue_df_g_p[, .(tmean = mean(tmean),
+#                                    pop = sum(pob19),
+#                                    area = sum(area),
+#                                    dens = (sum(pob19)/sum(area))), 
+#                                by=list(cpro,month)]
+# 
+# dengue_df_g_p[, R0_mon_prov := mapply(R0_func_alb, tmean, dens)]
+# 
+# esp_can <- esp_get_prov_siane(moveCAN = TRUE)
 # ## Delete Ceuta and Melilla from the analysis
 # esp_can <- esp_can[which(esp_can$cpro != 51 & esp_can$cpro != 52 ),"cpro",
 #                    "ine.prov.name"]
-esp_can$cpro <- as.numeric(esp_can$cpro)
-dengue_df_d_p <- esp_can %>% left_join(dengue_df_d_p)
-
-test <- dengue_df_d_p %>% group_by(date) %>% summarize(n=n())
-test$geometry <- NULL
-dengue_df_d_p[which(is.na(dengue_df_d_p$risk)),]
-
-## Create plots:
-ggplot(dengue_df_d_p) +
-  geom_sf(aes(fill = risk_range), linewidth = 0.01) +
-  geom_sf(data = can_box) + coord_sf(datum = NA) +
-  theme(plot.margin = margin(0.2, 0.2, 0.2, 0.2, "cm")) +
-  theme_void() +
-  labs(title = "Day: {current_frame}") +
-  transition_manual(as.factor(date))
-
-#---------------------------province and month--------------------------#
-# Agrupate by month
-dengue_df_g <- dengue_df[, .(R0_tmed=mean(R0_mean),
-                             tmean = mean(tmean),
-                             pop = min(pop_km)), 
-                         by=list(NATCODE,month)]
-
-dengue_df_g[, R0_mon := mapply(R0_func_alb, tmean, pop)]
-dengue_df_g[which(is.na(dengue_df_g$R0_mon)),]
-
-dengue_df_g_p <- dengue_df_g %>%
-  left_join(esp_can_pro)
-dengue_df_g_p[which(is.na(dengue_df_g_p$R0_mon)),]
-
-dengue_df_g_p <- dengue_df_g_p[, .(tmean = mean(tmean),
-                                   pop = sum(pob19),
-                                   area = sum(area),
-                                   dens = (sum(pob19)/sum(area))), 
-                               by=list(cpro,month)]
-
-dengue_df_g_p[, R0_mon_prov := mapply(R0_func_alb, tmean, dens)]
-
-esp_can <- esp_get_prov_siane(moveCAN = TRUE)
-## Delete Ceuta and Melilla from the analysis
-esp_can <- esp_can[which(esp_can$cpro != 51 & esp_can$cpro != 52 ),"cpro",
-                   "ine.prov.name"]
-dengue_df_g_p <- esp_can %>% left_join(dengue_df_g_p) 
-
-# # Create plots:
-ggplot(dengue_df_g_p) +
-  geom_sf(aes(fill = R0_mon_prov), linewidth = 0.01) +
-  geom_sf(data = can_box) + coord_sf(datum = NA) +
-  theme(plot.margin = margin(0.2, 0.2, 0.2, 0.2, "cm")) +
-  theme_void() +
-  labs(title = "Month: {current_frame}") +
-  transition_manual(as.factor(month), duration = rep(1000,12))
-
-## File with data province and monthly
-dengue_df_g_p$cpro <- as.numeric(dengue_df_g_p$cpro)
-dengue_df_g_p <- dengue_df_g_p %>%
-  left_join(unique(import), by = c("cpro" = "provincia"))
-dengue_df_g_p$R0_rel <- dengue_df_g_p$R0_mon_prov/max(dengue_df_g_p$R0_mon_prov)
-dengue_df_g_p$R0_bool <- ifelse(dengue_df_g_p$R0_mon_prov>1,1,0 )
-## Compute the relative risk : Dengue proability * R0 Dengue relative
-dengue_df_g_p$risk <- dengue_df_g_p$dengue_prob*dengue_df_g_p$R0_rel
-dengue_df_g_p <- dengue_df_g_p[which(is.na(dengue_df_g_p$cpro ) == FALSE),]
-
-# # Create plots:
-ggplot(dengue_df_g_p) +
-  geom_sf(aes(fill = risk_range), linewidth = 0.01) +
-  geom_sf(data = can_box) + coord_sf(datum = NA) +
-  theme(plot.margin = margin(0.2, 0.2, 0.2, 0.2, "cm")) +
-  theme_void() +
-  labs(title = "Month: {current_frame}") +
-  transition_manual(as.factor(month), duration = rep(1000,12))
+# dengue_df_g_p <- esp_can %>% left_join(dengue_df_g_p) 
 # 
-# hist(dengue_df_g_p$risk)
-# plot(dengue_df_g_p$risk, dengue_df_g_p$R0_bool)
-# plot(dengue_df_g_p$dengue_prob, dengue_df_g_p$R0_bool)
-# plot(dengue_df_g_p$dengue_prob, dengue_df_g_p$R0_mon_prov)
-# range(dengue_df_g_p$risk)
+# ## August
+# ggplot(dengue_df_g_p[which(dengue_df_g_p$month == 6),]) +
+#   geom_sf(aes(fill = R0_mon_prov), linewidth = 0.01) +
+#   geom_sf(data = can_box) + coord_sf(datum = NA) +
+#   theme(plot.margin = margin(0.2, 0.2, 0.2, 0.2, "cm")) +
+#   scale_fill_viridis_c(name = "R0 Dengue") +
+#   theme_void() 
+# 
+# ## August
+# ggplot(dengue_df_g_p[which(dengue_df_g_p$month == 6),]) +
+#   geom_sf(aes(fill = R0_rel), linewidth = 0.01) +
+#   geom_sf(data = can_box) + coord_sf(datum = NA) +
+#   theme(plot.margin = margin(0.2, 0.2, 0.2, 0.2, "cm")) +
+#   scale_fill_viridis_c(name = "R0 Dengue") +
+#   theme_void() 
+# 
+# # # Create plots:
+# ggplot(dengue_df_g_p) +
+#   geom_sf(aes(fill = R0_mon_prov), linewidth = 0.01) +
+#   geom_sf(data = can_box) + coord_sf(datum = NA) +
+#   theme(plot.margin = margin(0.2, 0.2, 0.2, 0.2, "cm")) +
+#   scale_fill_viridis_c() +
+#   theme_void() +
+#   labs(title = "Month: {current_frame}") +
+#   transition_manual(as.factor(month), duration = rep(1000,12))
+# 
+# ## File with data province and monthly
+# dengue_df_g_p$cpro <- as.numeric(dengue_df_g_p$cpro)
+# dengue_df_g_p <- dengue_df_g_p %>%
+#   left_join(unique(import), by = c("cpro" = "provincia"))
+# dengue_df_g_p$R0_rel <- dengue_df_g_p$R0_mon_prov/max(dengue_df_g_p$R0_mon_prov)
+# dengue_df_g_p$R0_bool <- ifelse(dengue_df_g_p$R0_mon_prov>1,1,0 )
+# 
+# ## Compute the relative risk : Dengue proability * R0 Dengue relative
+# dengue_df_g_p$risk <- dengue_df_g_p$dengue_prob*dengue_df_g_p$R0_rel
+# dengue_df_g_p <- dengue_df_g_p[which(is.na(dengue_df_g_p$cpro ) == FALSE),]
+# dengue_df_g_p$risk_range <- ifelse((dengue_df_g_p$risk < 6.92879e-05),0,
+#                                    ifelse(dengue_df_g_p$risk < 0.01, 1,
+#                                           ifelse(dengue_df_g_p$risk < 0.02, 2,3)))
+# 
+# max(dengue_df_g_p$risk[which(dengue_df_g_p$dengue_prob<0.000357)])
+# 
+# range(dengue_df_g_p$risk) 
+# plot(dengue_df_g_p$dengue_prob, dengue_df_g_p$R0_rel)
+# 
+# ## Create plots:
+# ggplot(dengue_df_g_p) +
+#   geom_sf(aes(fill = as.factor(risk_range)), linewidth = 0.01) +
+#   geom_sf(data = can_box) + coord_sf(datum = NA) +
+#   theme(plot.margin = margin(0.2, 0.2, 0.2, 0.2, "cm")) +
+#   theme_void() +
+#   scale_fill_viridis_d() +
+#   labs(title = "Month: {current_frame}") +
+#   transition_manual(as.factor(month), duration = rep(1000,12))
+# 
+# ggplot(dengue_df_g_p) +
+#   geom_sf(aes(fill = risk), linewidth = 0.01) +
+#   geom_sf(data = can_box) + coord_sf(datum = NA) +
+#   theme(plot.margin = margin(0.2, 0.2, 0.2, 0.2, "cm")) +
+#   theme_void() +
+#   scale_fill_viridis_c(option = "magma") +
+#   labs(title = "Month: {current_frame}") +
+#   transition_manual(as.factor(month), duration = rep(1000,12))
+# 
+# # Plot August:
+# ggplot(dengue_df_g_p[which(dengue_df_g_p$month == 1),]) +
+#   geom_sf(aes(fill = as.factor(risk_range)), linewidth = 0.01) +
+#   geom_sf(data = can_box) + coord_sf(datum = NA) +
+#   theme(plot.margin = margin(0.2, 0.2, 0.2, 0.2, "cm")) +
+#   scale_fill_viridis_d(name = "R0 Dengue") +
+#   theme_void() 
+# 
+# # hist(dengue_df_g_p$risk)
+# # plot(dengue_df_g_p$risk, dengue_df_g_p$R0_bool)
+# # plot(dengue_df_g_p$dengue_prob, dengue_df_g_p$R0_bool)
+# # plot(dengue_df_g_p$dengue_prob, dengue_df_g_p$R0_mon_prov)
+# # range(dengue_df_g_p$risk)
+# #-----------------------------------------------------------------------#
+# ##Data frames:
+# # Risk daily provinces:
+# head(dengue_df_d_p)
+# dengue_df_d_p$R0_daily_prov <- dengue_df_d_p$R0
+# dengue_df_d_p$R0_daily_prov_rel <- dengue_df_d_p$R0_rel
+# dengue_df_d_p$risk_daily_prov <- dengue_df_d_p$risk
+# dengue_df_d_p$risk_range_daily_prov <- dengue_df_d_p$risk_range
+# risk_d_p <- dengue_df_d_p[, c("cpro", "date", "R0_daily_prov_rel",
+#                               "R0_daily_prov","risk_daily_prov")]
+# risk_d_p$geometry <- NULL
+# write.csv(risk_d_p,
+#           "~/INVASIBILITY_THRESHOLD/code/Dengue/output/risk_dengue_2019_daily_prov.csv")
+# 
+# # risk_d_p <- read.csv("~/INVASIBILITY_THRESHOLD/code/Dengue/output/risk_dengue_2019_daily_prov.csv")
+# 
+# # Risk monthly provinces:
+# head(dengue_df_g_p)
+# dengue_df_g_p$R0_mon_prov_rel <- dengue_df_g_p$R0_rel
+# dengue_df_g_p$risk_mon_prov <- dengue_df_g_p$risk
+# dengue_df_g_p$risk_range_mon_prov <- dengue_df_g_p$risk_range
+# risk_m_p <- dengue_df_g_p[, c("cpro", "month", "R0_rel","R0_mon_prov","dengue_prob",
+#                               "risk_mon_prov")]
+# risk_m_p$geometry <- NULL
+# risk_m_p$month1 <- ifelse(risk_m_p$month <10, paste0("0", risk_m_p$month),
+#                           as.character(risk_m_p$month))
+# risk_m_p$date <- paste0(risk_m_p$month1,"-2019")
+# risk_m_p$month1 <- NULL
+# colnames(risk_m_p)[4] <- "R0_rel_mon_prov"
+# write.csv(risk_m_p,
+#           "~/Dengue/output/risk_dengue_2019_monthly_prov.csv")
 
-dengue_df_g_p$risk_range <- ifelse((dengue_df_g_p$risk < max(dengue_df_g_p$risk[dengue_df_g_p$R0_mon_prov<1])),
-                                   "No risk",
-                                   ifelse(dengue_df_g_p$risk < 0.01, "Low risk",
-                                          ifelse(dengue_df_g_p$risk < 0.02, "Medium risk","High risk")))
-
-ggplot(dengue_df_g_p) +
-  geom_sf(aes(fill = risk_range), linewidth = 0.01) +
-  geom_sf(data = can_box) + coord_sf(datum = NA) +
-  theme(plot.margin = margin(0.2, 0.2, 0.2, 0.2, "cm")) +
-  theme_void() +
-  labs(title = "Month: {current_frame}") +
-  transition_manual(as.factor(month), duration = rep(1000,12))
-
-#-----------------------------------------------------------------------#
-##Data frames:
-
-# Risk daily provinces:
-head(dengue_df_d_p)
-dengue_df_d_p$R0_daily_prov <- dengue_df_d_p$R0
-dengue_df_d_p$R0_daily_prov_rel <- dengue_df_d_p$R0_rel
-dengue_df_d_p$risk_daily_prov <- dengue_df_d_p$risk
-dengue_df_d_p$risk_range_daily_prov <- dengue_df_d_p$risk_range
-risk_d_p <- dengue_df_d_p[, c("cpro", "date", "R0_daily_prov_rel",
-                              "R0_daily_prov","risk_daily_prov")]
-risk_d_p$geometry <- NULL
-write.csv(risk_d_p,
-          "~/INVASIBILITY_THRESHOLD/code/Dengue/output/risk_dengue_2019_daily_prov.csv")
-
-# risk_d_p <- read.csv("~/INVASIBILITY_THRESHOLD/code/Dengue/output/risk_dengue_2019_daily_prov.csv")
-
-# Risk monthly provinces:
-head(dengue_df_g_p)
-dengue_df_g_p$R0_mon_prov_rel <- dengue_df_g_p$R0_rel
-dengue_df_g_p$risk_mon_prov <- dengue_df_g_p$risk
-dengue_df_g_p$risk_range_mon_prov <- dengue_df_g_p$risk_range
-risk_m_p <- dengue_df_g_p[, c("cpro", "month", "R0_rel","R0_mon_prov","dengue_prob",
-                              "risk_mon_prov")]
-risk_m_p$geometry <- NULL
-risk_m_p$month1 <- ifelse(risk_m_p$month <10, paste0("0", risk_m_p$month),
-                          as.character(risk_m_p$month))
-risk_m_p$date <- paste0(risk_m_p$month1,"-2019")
-risk_m_p$month1 <- NULL
-colnames(risk_m_p)[4] <- "R0_rel_mon_prov"
-write.csv(risk_m_p,
-          "~/Dengue/output/risk_dengue_2019_monthly_prov.csv")
-
-# R0 Dengue daily municipalities:
-head(dengue_df)
-dengue_df$R0_daily_muni <- dengue_df$R0_mean
-dengue_df$cpro <- as.numeric(dengue_df$cpro)
-dengue_R0 <- dengue_df[,c("NATCODE","cpro","R0_daily_muni", "date", "month")]
-write.csv(dengue_R0,
-          "~/INVASIBILITY_THRESHOLD/code/Dengue/output/Dengue_R0_2019_daily_muni.csv")
-rm(dengue_df)
-
-# ## Join all the data frames: 
-risk_d_p <- read.csv("~/Dengue/output/risk_dengue_2019_daily_prov.csv")
-risk_m_p <- read.csv("~/Dengue/output/risk_dengue_2019_monthly_prov.csv")
-dengue_R0 <- read.csv("~/Dengue/output/risk_dengue_2019.csv")
-
-risk_dengue <- dengue_R0 %>% left_join(risk_d_p)
-risk_dengue <- risk_dengue %>% left_join(risk_m_p)
-write.csv(risk_dengue,
-          "~/INVASIBILITY_THRESHOLD/code/Dengue/output/risk_dengue_2019.csv")
+# # ## Join all the data frames: 
+# risk_d_p <- read.csv("~/Dengue/output/risk_dengue_2019_daily_prov.csv")
+# risk_m_p <- read.csv("~/Dengue/output/risk_dengue_2019_monthly_prov.csv")
+# dengue_R0 <- read.csv("~/Dengue/output/risk_dengue_2019.csv")
+# 
+# risk_dengue <- dengue_R0 %>% left_join(risk_d_p)
+# risk_dengue <- risk_dengue %>% left_join(risk_m_p)
+# write.csv(risk_dengue,
+#           "~/INVASIBILITY_THRESHOLD/code/Dengue/output/risk_dengue_2019.csv")
 
 ###### SHAPE FILES #####
 esp_can <- esp_get_munic_siane(moveCAN = TRUE)
@@ -381,40 +638,33 @@ st_write(esp_can,
 
 ## Checks:
 can_box <- esp_get_can_box()
-mon_prov <- esp_can %>% left_join(risk_m_p)
-ggplot(mon_prov) +
-  geom_sf(aes(fill = risk_mon_prov), linewidth = 0.01) +
+dengue_R0_mon_plot <- dengue_R0_mon
+dengue_R0_mon_plot$cpro <- NULL
+dengue_R0_mon_plot <- esp_can %>% left_join(dengue_R0_mon_plot)
+ggplot(dengue_R0_mon_plot) +
+  geom_sf(aes(fill = risk_PA), linewidth = 0.01) +
   geom_sf(data = can_box) + coord_sf(datum = NA) +
   theme(plot.margin = margin(0.2, 0.2, 0.2, 0.2, "cm")) +
   theme_void() +
   labs(title = "Month: {current_frame}") +
   transition_manual(as.factor(month), duration = rep(1000,12))
 
-risk_d_p$X <- NULL
-import <- unique(import[, c("provincia", "dengue_prob")])
-colnames(import) <- c("cpro", "dengue_prob")
-risk_d_p <- risk_d_p %>% left_join(import)
-day_prov <- esp_can %>% left_join(risk_d_p)
-ggplot(day_prov) +
-  geom_sf(aes(fill = R0_daily_prov_rel), linewidth = 0.01) +
-  geom_sf(data = can_box) + coord_sf(datum = NA) +
-  theme(plot.margin = margin(0.2, 0.2, 0.2, 0.2, "cm")) +
-  theme_void() +
-  labs(title = "Day: {current_frame}") +
-  transition_manual(as.factor(date))
+# risk_d_p$X <- NULL
+# import <- unique(import[, c("provincia", "dengue_prob")])
+# colnames(import) <- c("cpro", "dengue_prob")
+# risk_d_p <- risk_d_p %>% left_join(import)
+# day_prov <- esp_can %>% left_join(risk_d_p)
+# ggplot(day_prov) +
+#   geom_sf(aes(fill = R0_daily_prov_rel), linewidth = 0.01) +
+#   geom_sf(data = can_box) + coord_sf(datum = NA) +
+#   theme(plot.margin = margin(0.2, 0.2, 0.2, 0.2, "cm")) +
+#   theme_void() +
+#   labs(title = "Day: {current_frame}") +
+#   transition_manual(as.factor(date))
 
-dengue_R0$cpro <- NULL
-day_R0 <- esp_can %>% left_join(dengue_R0)
-day_R0$cpro <- as.numeric(day_R0$cpro)
-day_R0 <- day_R0[which(day_R0$date == "2019-05-01"),]
-ggplot(day_R0) +
-  geom_sf(aes(fill = R0_daily_muni), linewidth = 0.01)
 
-esp_can$R0 <- rnorm(nrow(esp_can),0,1)
-ggplot(esp_can) + 
-  geom_sf(aes(fill =R0))
-
-risk_m_p$month1 <- ifelse(risk_m_p$month <10, paste0("0", risk_m_p$month),
-                          as.character(risk_m_p$month))
-risk_m_p$date <- paste0(risk_m_p$month1,"-2019")
-risk_m_p$month1 <- NULL
+# 
+# risk_m_p$month1 <- ifelse(risk_m_p$month <10, paste0("0", risk_m_p$month),
+#                           as.character(risk_m_p$month))
+# risk_m_p$date <- paste0(risk_m_p$month1,"-2019")
+# risk_m_p$month1 <- NULL

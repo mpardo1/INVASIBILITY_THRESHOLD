@@ -9,9 +9,14 @@ library(data.table)
 library("viridis")
 library("gganimate")
 
-year = 2021
+year = 2022
 Path <- paste0("~/INVASIBILITY_THRESHOLD/output/R0/datasets/R0_summonths_",year,".Rds")
 df_group_tot <- readRDS(Path)
+
+## Data Catu 
+Path <- "~/INVASIBILITY_THRESHOLD/data/Datos_Catu/gi_min_model_pred.RData"
+load(Path)
+unique(gi_min_model_pred$trap_name)
 
 ###----------------- VALIDATION -----------------------#
 ## Map Spain -------
@@ -43,7 +48,12 @@ ggplot(df_pa) +
 df_pa <- df_pa[, c("NATCODE", "PA")]
 df_pa$geometry <- NULL
 
-df_group_m <- df_group_y[,c("NATCODE","R0_avg_alb", "R0_sum_alb")]
+df_group_m <- df_group_tot[,c("NATCODE",
+                              "R0_sum_alb",
+                              "R0_sum_alb_min",
+                              "R0_sum_alb_max",
+                              "R0_avg_alb",
+                              "R0_sum_alb_dai")]
 df_pa <- df_pa %>% left_join(df_group_m)
 
 NATCODE_CAT <- esp_can[which(esp_can$ine.ccaa.name == "Cataluña"),"NATCODE"]
@@ -51,43 +61,39 @@ NATCODE_CAT$geometry <- NULL
 df_pa_CAT <- df_pa[which(as.numeric(df_pa$NATCODE) %in% 
                            as.numeric(NATCODE_CAT$NATCODE)),]
 
-hist(df_pa_CAT[which(df_pa_CAT$PA == 1), "R0_avg_alb"])
+### Sum months suitable:
+hist(df_pa_CAT[which(df_pa_CAT$PA == 1), "R0_sum_alb"])
 ggplot(df_pa_CAT[which(df_pa_CAT$PA == 1),]) +
-  geom_histogram(aes(R0_avg_alb), binwidth = 0.2,
-                 fill =  "#E1CE7A") + xlab("Annual average suitability") +
+  geom_histogram(aes(R0_sum_alb), binwidth = 0.2,
+                 fill =  "#E1CE7A") + xlab("Number months suitable") +
   theme_bw()
 
+## Average R0 annual:
 ggplot(df_pa_CAT[which(df_pa_CAT$PA == 1),]) +
-  geom_histogram(aes(R0_sum_alb), binwidth = 0.8,
-                 fill =  "#E1CE7A") + xlab("Number of months suitable") +
+  geom_histogram(aes(R0_sum_alb), binwidth = 0.2,
+                 fill =  "#E1CE7A") + xlab("Number months suitable") +
   theme_bw()
 
-ggplot(df_pa_CAT) +
-  geom_histogram(aes(R0_sum_alb, fill = as.factor(PA)), binwidth = 0.5) + 
-  xlab("Number of months suitable") +
-  theme_bw()
 
-ggplot(df_pa_CAT) +
-  geom_histogram(aes(R0_avg_alb, fill= as.factor(PA)), binwidth = 0.5)
 #-------------------------------P/(P+A)----------------------------------------#
-### Range Annual average R0
-df_range <- function(df_pa_CAT){
-  df_pa_CAT$range <- ifelse(df_pa_CAT$R0_avg_alb  < 1, "<1",
-                            ifelse(df_pa_CAT$R0_avg_alb  >= 1 & df_pa_CAT$R0_avg_alb  < 2, "[1,2)",
-                                   ifelse(df_pa_CAT$R0_avg_alb  >= 2 & df_pa_CAT$R0_avg_alb  < 3, "[2,3)",
-                                          ifelse(df_pa_CAT$R0_avg_alb  >= 3 & df_pa_CAT$R0_avg_alb  < 4, "[3,4)",
-                                                 ifelse(df_pa_CAT$R0_avg_alb  >= 4 & df_pa_CAT$R0_avg_alb  < 5, "[4,5)",
-                                                        ifelse(df_pa_CAT$R0_avg_alb  >= 5 & df_pa_CAT$R0_avg_alb  < 6, "[5,6]",">6") )))))
-  df_r_1 <- df_pa_CAT[which(df_pa_CAT$PA == 1),] %>% 
-    group_by(range) %>% summarize(num_1 = n())
-  df_r_0 <- df_pa_CAT[which(df_pa_CAT$PA == 0),] %>% 
-    group_by(range) %>% summarize(num_0 = n())
-  
-  df_r <- df_r_1 %>% left_join(df_r_0)
-  df_r$prop_1 <- df_r$num_1/(df_r$num_1+df_r$num_0)
-  return(df_r)
-  
-}
+# ### Range Annual average R0
+# df_range <- function(df_pa_CAT){
+#   df_pa_CAT$range <- ifelse(df_pa_CAT$R0_avg_alb  < 1, "<1",
+#                             ifelse(df_pa_CAT$R0_avg_alb  >= 1 & df_pa_CAT$R0_avg_alb  < 2, "[1,2)",
+#                                    ifelse(df_pa_CAT$R0_avg_alb  >= 2 & df_pa_CAT$R0_avg_alb  < 3, "[2,3)",
+#                                           ifelse(df_pa_CAT$R0_avg_alb  >= 3 & df_pa_CAT$R0_avg_alb  < 4, "[3,4)",
+#                                                  ifelse(df_pa_CAT$R0_avg_alb  >= 4 & df_pa_CAT$R0_avg_alb  < 5, "[4,5)",
+#                                                         ifelse(df_pa_CAT$R0_avg_alb  >= 5 & df_pa_CAT$R0_avg_alb  < 6, "[5,6]",">6") )))))
+#   df_r_1 <- df_pa_CAT[which(df_pa_CAT$PA == 1),] %>% 
+#     group_by(range) %>% summarize(num_1 = n())
+#   df_r_0 <- df_pa_CAT[which(df_pa_CAT$PA == 0),] %>% 
+#     group_by(range) %>% summarize(num_0 = n())
+#   
+#   df_r <- df_r_1 %>% left_join(df_r_0)
+#   df_r$prop_1 <- df_r$num_1/(df_r$num_1+df_r$num_0)
+#   return(df_r)
+#   
+# }
 
 ###### Sum number of months ###
 df_num_months <- function(df_pa_CAT){
@@ -97,7 +103,7 @@ df_num_months <- function(df_pa_CAT){
     group_by(R0_sum_alb) %>% summarize(num_0 = n())
   
   df_r <- df_r_1 %>% left_join(df_r_0)
-  df_r$prop_1 <- df_r$num_1/(df_r$num_1+df_r$num_0)
+  df_r$prop_1 <- ifelse(is.na(df_r$num_0),1,df_r$num_1/(df_r$num_1+df_r$num_0))
   return(df_r)
   
 }
@@ -106,7 +112,7 @@ df_num_months <- function(df_pa_CAT){
 df_pa <- df_pa[, c("NATCODE", "PA")]
 df_pa$geometry <- NULL
 
-df_group_m <- df_group_y[,c("NATCODE","R0_avg_alb", "R0_sum_alb")]
+df_group_m <- df_group_tot[,c("NATCODE", "R0_sum_alb")]
 df_pa <- df_pa %>% left_join(df_group_m)
 
 NATCODE_CAT <- esp_can[which(esp_can$ine.ccaa.name == "Cataluña"),"NATCODE"]
@@ -114,10 +120,11 @@ NATCODE_CAT$geometry <- NULL
 df_pa_CAT <- df_pa[which(as.numeric(df_pa$NATCODE) %in% 
                            as.numeric(NATCODE_CAT$NATCODE)),]
 
-df_r_CAT <- df_range(df_pa_CAT)
-df_r_CAT$ccaa <- "Catalunya"
 df_sum_CAT <- df_num_months(df_pa_CAT)
 df_sum_CAT$ccaa <- "Catalunya"
+
+ggplot(df_sum_CAT) +
+  geom_point(aes(R0_sum_alb,prop_1))
 
 ## Compute the plots for Andalucoa
 df_pa <- df_pa[, c("NATCODE", "PA")]
