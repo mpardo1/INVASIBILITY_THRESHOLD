@@ -28,15 +28,10 @@ esp_can$NATCODE <- as.numeric(paste0("34",
 can_box <- esp_get_can_box()
 
 # Presence absence data Albopictus Spain:
-Path = "~/INVASIBILITY_THRESHOLD/data/PA/PresenceAbsence_MA_BG2.Rds"
-df_pa <- readRDS(Path)
-df_pa <- df_pa %>% group_by(NATCODE) %>%
-  summarise(sum = sum(A_PRIM_DET_OFICIAL),
-            sum_MA = sum(A_PRIM_DET_CITSCI))
-df_pa$PA <- ifelse(df_pa$sum == 0 & df_pa$sum_MA == 0,0,1 )
-df_pa <- esp_can %>% left_join(df_pa)
-df_pa[which(is.na(df_pa$PA)),"PA"] <- 0
+Path = "~/INVASIBILITY_THRESHOLD/data/PA/Albopictus_Spain_Pa.csv"
+df_pa <- read.csv(Path)
 
+df_pa <- esp_can %>% left_join(df_pa)
 ggplot(df_pa) +
   geom_sf(aes(fill = as.factor(PA)), linewidth = 0.01) +
   geom_sf(data = can_box) + coord_sf(datum = NA) +
@@ -73,7 +68,6 @@ ggplot(df_pa_CAT[which(df_pa_CAT$PA == 1),]) +
   geom_histogram(aes(R0_sum_alb), binwidth = 0.2,
                  fill =  "#E1CE7A") + xlab("Number months suitable") +
   theme_bw()
-
 
 #-------------------------------P/(P+A)----------------------------------------#
 # ### Range Annual average R0

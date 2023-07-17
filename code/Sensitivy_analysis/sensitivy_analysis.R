@@ -256,6 +256,24 @@ ggplot(df_out) +
                      legend.text.align = 0)
 
 #-----------------Albopictus--------------------------#
+## R0
+vec <- seq(5,35,0.01)
+hum_cte <- 2000
+rain_cte <- 3
+out <- sapply(vec,R0_func_alb,hum=hum_cte, rain=3)
+
+library("latex2exp")
+df_out <- data.frame(vec, out)
+ggplot(df_out) +
+  geom_line(aes(vec,out)) + theme_bw() +
+  ylab(TeX("$R_M$")) + xlab("Temperatura") +
+  geom_hline(aes(yintercept = 1),
+             linetype = "dashed", color = "red")+ 
+  theme(legend.position = c(0.18,0.8),
+    text = element_text(size = letsize),
+    legend.text.align = 0) +
+  scale_x_continuous(breaks=seq(5,35,5))
+
 # R0 with hacthing rate
 vec <- seq(0,30,0.01)
 hum_cte <- 2000

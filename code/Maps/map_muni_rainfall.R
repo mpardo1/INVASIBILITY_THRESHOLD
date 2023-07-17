@@ -223,7 +223,6 @@ plot3d(x=df_xy$Var1,y=df_xy$Var2,z=df_xy$z, col = my_palette[df_xy$z * 100],
        xlab = "Human density (km2)", ylab = "Rainfall(mm day)",
        zlab = "Haching rate") 
 
-
 rgl.postscript("~/Documents/PHD/2023//Mosquito\ invasibility/Plots/my_plot.ps", fmt = "eps")
 
 

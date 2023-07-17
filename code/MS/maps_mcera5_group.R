@@ -197,10 +197,15 @@ pop22$cmun <- ifelse(pop22$CMUN<10, paste0("00",pop22$CMUN),
 pop22$cpro <- ifelse(pop22$CPRO<10,
                      paste0("0",pop22$CPRO),as.character(pop22$CPRO))
 esp_can <- esp_can %>% left_join(pop22)
-nrow(esp_can[which(is.na(esp_can$POB22)),])
+test_pop <- esp_can[which(is.na(esp_can$POB22)),
+                    c("name", "NATCODE", "POB22")]
+test_pop$geometry <- NULL
+nrow(test_pop)
 esp_can[which(is.na(esp_can$POB22)),"POB22"] <- 0
 esp_can_pop <- setDT(esp_can[,c("NATCODE","name", "POB22")])
 esp_can_pop$geometry <- NULL
+# Path <- "~/INVASIBILITY_THRESHOLD/output/pop/pop22.Rds"
+# saveRDS(esp_can_pop, Path)
 df_group <- df_group %>% left_join(esp_can_pop)
 df_group$diff_pop <- abs(df_group$pop - df_group$POB22)
 hist(df_group$diff_pop)
@@ -209,7 +214,7 @@ hist(df_group$diff_pop)
 # ggplot(esp_can) + geom_sf(aes(fill = as.factor(null_name)), lwd = 0)
 
 ### Test weather data.
-df_day <- df_group[which(df_group$date == as.Date("2021-03-02")),]
+df_day <- df_group[which(df_group$date == as.Date("2022-03-02")),]
 df_day <- esp_can %>% left_join(df_day)
 ggplot(df_day) + 
   geom_sf(aes(fill = prec1)) +
@@ -297,58 +302,98 @@ df_group_mon[which(df_group_mon$bool_R0_jap == 0 & df_group_mon$tmean < 15),]
 
 # R0_func_jap(13.7,56,0.6)
 ##------------------ Plots months------------------#
-# library(RColorBrewer)
-# library(ggpubr)
-# plot_months <- function(df, month){
-#   df1 <- df[which(df$month == month),]
-#   # Create a palette function using colorRampPalette
-#   plot <- ggplot(df1) +
-#     geom_sf(aes(fill = R0), colour = NA) +
-#     geom_sf(data = can_box) + coord_sf(datum = NA) +
-#     scale_fill_distiller(palette = "Spectral",
-#                          limits = c(min(df$R0),max(df$R0))) +
-#     ggtitle(as.character(month)) + 
-#     theme_bw() + 
-#     theme(plot.title = element_text(hjust = 0.5))
-#   return(plot)
-# }
-# 
-# df_group_mon <- esp_can %>% left_join(df_group_mon)
-# df_group_mon$R0 <- df_group_mon$R0_mon_alb
-# month = 10
-# plot_10 <- plot_months(df_group_mon,month)
-# ggarr <- ggarrange(plot_3,plot_4,plot_5,
-#           plot_6,plot_7,plot_8,
-#           plot_9,plot_10,plot_11,
-#           nrow=3,ncol = 3, common.legend = TRUE)
-# 
-# ggarr
-# 
-# Path <- paste0("~/Documentos/PHD/2023/INVASIBILITY/Plots/Fede_deathline/AlbMonthWhole.pdf")
-# dev.copy2pdf(file=Path, width = 7, height = 5)
-# Path <- paste0("~/Documentos/PHD/2023/INVASIBILITY/Plots/Fede_deathline/AlbMonthWhole.png")
-# ggsave(Path, plot = ggarr)
+library(RColorBrewer)
+library(ggpubr)
+library("latex2exp")
+plot_months <- function(df, month){
+  df1 <- df[which(df$month == month),]
+  # Create a palette function using colorRampPalette
+  plot <- ggplot(df1) +
+    geom_sf(aes(fill = R0), colour = NA) +
+    geom_sf(data = can_box) + coord_sf(datum = NA) +
+    scale_fill_distiller(palette = "Spectral",
+                         limits = c(min(df$R0),max(df$R0)),
+                         name = TeX("$R_M$")) +
+    ggtitle(as.character(month)) +
+    theme_bw() +
+    theme(plot.title = element_text(hjust = 0.5))
+  return(plot)
+}
 
-## ----------PLOT TEMP----------#
+## Para hacer un cuadrado con seis plots cambio el numero de 
+# month y el nombre del plot y lo hago para cada especie.
+df_group_mon <- esp_can %>% left_join(df_group_mon)
+df_group_mon$R0 <- df_group_mon$R0_mon_jap
+month = 3
+plot_3 <- plot_months(df_group_mon,month)
+ggarr <- ggarrange(plot_3,plot_4,plot_5,
+          plot_6,plot_7,plot_8,
+          plot_9,plot_10,plot_11,
+          nrow=3,ncol = 3, common.legend = TRUE)
+
+ggarr
+
+Path <-paste0("~/Documentos/PHD/2023/INVASIBILITY/Plots/MS/JapMonths",year,".pdf")
+dev.copy2pdf(file=Path, width = 7, height = 5)
+
+ggsave(Path, plot = ggarr)
+
+## ----------PLOT ANNUAL AVERAGE SEASON----------#
 ## Group by year:
-df_group_y <- df_group_mon %>% group_by(NATCODE) %>%
-  summarise(tmean = mean(tmean),
-            tmin = min(tmin),
-            tmax = max(tmax),
-            prec = sum(prec),
+df_group_mon$geometry <- NULL
+df_group_mon <- setDT(df_group_mon)
+df_group_y <- df_group_mon[,.(tmean = mean(tmean),
+            prec = mean(prec),
             dens =min(dens),
+            R0_an_alb = mean(R0_mon_alb),
+            R0_an_aeg = mean(R0_mon_aeg),
+            R0_an_jap = mean(R0_mon_jap),
             R0_sum_alb = sum(bool_R0_alb),
             R0_sum_aeg = sum(bool_R0_aeg),
-            R0_sum_jap = sum(bool_R0_jap),
-            R0_sum_alb_min = sum(bool_R0_alb_min),
-            R0_sum_aeg_min = sum(bool_R0_aeg_min),
-            R0_sum_jap_min = sum(bool_R0_jap_min),
-            R0_sum_alb_max = sum(bool_R0_alb_max),
-            R0_sum_aeg_max = sum(bool_R0_aeg_max),
-            R0_sum_jap_max = sum(bool_R0_jap_max))
+            R0_sum_jap = sum(bool_R0_jap)), by = list(NATCODE)]
+
+df_group_y[, R0_anual_alb := mapply(R0_func_alb, tmean, prec, dens)]
+df_group_y[, R0_anual_aeg := mapply(R0_func_aeg, tmean, prec, dens)]
+df_group_y[, R0_anual_jap := mapply(R0_func_jap, tmean, prec, dens)]
+
+df_group_y <- esp_can %>% left_join(df_group_y)
+ggplot(df_group_y) +
+      geom_sf(aes(fill = R0_an_alb), colour = NA) +
+      geom_sf(data = can_box) + coord_sf(datum = NA) +
+      scale_fill_distiller(palette = "Spectral",
+                           name = TeX("$R_M$")) +
+      theme_bw() +
+      theme(plot.title = element_text(hjust = 0.5))
+
+# ## Just season:
+# df_group_y <- df_group_mon[which(df_group_mon$month<12 & df_group_mon$month>3 ),
+#                            .(tmean = mean(tmean),
+#                               prec = mean(prec),
+#                               dens =min(dens),
+#                              R0_an_alb = mean(R0_mon_alb),
+#                              R0_an_aeg = mean(R0_mon_aeg),
+#                              R0_an_jap = mean(R0_mon_jap),
+#                               R0_sum_alb = sum(bool_R0_alb),
+#                               R0_sum_aeg = sum(bool_R0_aeg),
+#                               R0_sum_jap = sum(bool_R0_jap)), by = list(NATCODE)]
+# 
+### Compute the RM for the diferent species with the annual mean temperature
+# df_group_y[, R0_anual_alb := mapply(R0_func_alb, tmean, prec, dens)]
+# df_group_y[, R0_anual_aeg := mapply(R0_func_aeg, tmean, prec, dens)]
+# df_group_y[, R0_anual_jap := mapply(R0_func_jap, tmean, prec, dens)]
+
+## Construct the maps
+# df_group_y <- esp_can %>% left_join(df_group_y)
+# ggplot(df_group_y) +
+#   geom_sf(aes(fill = R0_anual_alb), colour = NA) +
+#   geom_sf(data = can_box) + coord_sf(datum = NA) +
+#   scale_fill_distiller(palette = "Spectral",
+#                        name = TeX("$R_M$")) +
+#   theme_bw() +
+#   theme(plot.title = element_text(hjust = 0.5))
 
 ## Test if variables make sense:
-df_group_y <- esp_can %>% left_join(df_group_y)
+# df_group_y <- esp_can %>% left_join(df_group_y)
 ggplot(df_group_y) + 
   geom_sf(aes(fill = tmean)) +
   scale_fill_viridis_c()
@@ -459,6 +504,46 @@ plot_sum_jap
 Path <- paste0("~/Documentos/PHD/2023/INVASIBILITY/Plots/MS/max_JapSum",year,".pdf")
 dev.copy2pdf(file=Path, width = 7, height = 5)
 
+### ---------Average year monthly maps------------------#
+max_R0 <- max(df_group_y$R0_an_aeg, df_group_y$R0_an_alb, df_group_y$R0_an_jap)
+ggplot(df_group_y) +
+  geom_sf(aes(fill = R0_an_alb), colour = NA) +
+  geom_sf(data = can_box) + coord_sf(datum = NA) +
+  scale_fill_distiller(palette = "Spectral",
+                       name = TeX("$R0 annual$"),
+                       limits =c(0,max_R0)) +
+  theme_bw() +
+  theme(plot.title = element_text(hjust = 0.5))
+
+Path <- paste0("~/Documentos/PHD/2023/INVASIBILITY/Plots/MS/avg_montly_AlbSum",year,".pdf")
+dev.copy2pdf(file=Path, width = 7, height = 5)
+
+## Aegypti
+ggplot(df_group_y) +
+  geom_sf(aes(fill = R0_an_aeg), colour = NA) +
+  geom_sf(data = can_box) + coord_sf(datum = NA) +
+  scale_fill_distiller(palette = "Spectral",
+                       name = TeX("$R0 annual$"),
+                       limits =c(0,max_R0)) +
+  theme_bw() +
+  theme(plot.title = element_text(hjust = 0.5))
+
+Path <- paste0("~/Documentos/PHD/2023/INVASIBILITY/Plots/MS/avg_montly_AegSum",year,".pdf")
+dev.copy2pdf(file=Path, width = 7, height = 5)
+
+## Japonicus
+ggplot(df_group_y) +
+  geom_sf(aes(fill = R0_an_jap), colour = NA) +
+  geom_sf(data = can_box) + coord_sf(datum = NA) +
+  scale_fill_distiller(palette = "Spectral",
+                       name = TeX("$R0 annual$"),
+                       limits =c(0,max_R0)) +
+  theme_bw() +
+  theme(plot.title = element_text(hjust = 0.5))
+
+Path <- paste0("~/Documentos/PHD/2023/INVASIBILITY/Plots/MS/avg_montly_JapSum",year,".pdf")
+dev.copy2pdf(file=Path, width = 7, height = 5)
+
 ###--------TEST------------###
 ### Use the R0 compute daily and after average
 df_group_mon <- df_group[, .(tmean = mean(tmean),
@@ -488,6 +573,8 @@ df_group_y[, R0_avg_aeg := mapply(R0_func_aeg, tmean, meanprec, dens)]
 df_group_y[, R0_avg_jap := mapply(R0_func_jap, tmean, meanprec, dens)]
 
 ### Extract the average R0 for the mosquito season
+df_group_mon$geometry <- NULL
+df_group_mon <- setDT(df_group_mon)
 df_group_sum <- df_group_mon[which(df_group_mon$month >3 & df_group_mon$month <11),]
 df_group_sum <- df_group_sum[, .(tmean = mean(tmean),
                                prec = sum(prec), 
@@ -499,12 +586,12 @@ df_group_sum[, R0_avg_aeg_sum := mapply(R0_func_aeg, tmean, meanprec, dens)]
 df_group_sum[, R0_avg_jap_sum := mapply(R0_func_jap, tmean, meanprec, dens)]
 
 df_group_tot <- (df_group_y[,c("NATCODE",
-                              "R0_sum_alb_dai",
-                              "R0_sum_aeg_dai",
-                              "R0_sum_jap_dai",
-                              "R0_avg_jap",
-                              "R0_avg_alb",
-                              "R0_avg_aeg")] %>% 
+                              "R0_sum_alb",
+                              "R0_sum_aeg",
+                              "R0_sum_jap",
+                              "R0_an_alb",
+                              "R0_an_aeg",
+                              "R0_an_jap")] %>% 
   left_join(df_group_y1) ) %>% left_join(df_group_sum[,c("NATCODE",
                                                          "R0_avg_alb_sum",
                                                          "R0_avg_aeg_sum",
@@ -538,4 +625,3 @@ dev.copy2pdf(file=Path, width = 7, height = 5)
 ggplot(df_group_y) + 
   geom_sf(aes(fill = prec)) +
   scale_fill_viridis_c()
-

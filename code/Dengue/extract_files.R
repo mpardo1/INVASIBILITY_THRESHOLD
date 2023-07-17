@@ -45,9 +45,9 @@ TFD_f_alb <- function(temp){Briere_func(0.0488,8.02,35.65,temp)} # Fecundity
 pEA_f_alb <- function(temp){Quad_func(0.00361,9.04,39.33,temp)} # Survival probability Egg-Adult
 MDR_f_alb <- function(temp){Briere_func(0.0000638,8.6,39.66,temp)} # Mosquito Development Rate
 lf_f_alb <- function(temp){Quad_func(1.43,13.41,31.51,temp)} # Adult life span
-b_f_alb <- function(temp){Briere_func(0.000723,16,36.3,temp)} # Adult life span
-c_f_alb <- function(temp){Briere_func(0.00433,2.8,36.7,temp)} # Adult life span
-pdr_f_alb <- function(temp){Briere_func(0.00433,2.8,36.7,temp)} # Adult life span
+b_f_alb <- function(temp){Briere_func(0.000735,15.84,36.4,temp)} # Adult life span
+c_f_alb <- function(temp){Briere_func(0.000439,3.62,36.82,temp)} # Adult life span
+pdr_f_alb <- function(temp){Briere_func(0.000109,10.39,43.05,temp)} # Adult life span
 
 # R0 function by temperature:
 R0_func_alb <- function(Te, hum){
@@ -177,6 +177,19 @@ esp_can$pob19 <- ifelse(is.na(esp_can$pob19),
                         esp_can$pob19)
 ggplot(esp_can) + geom_sf(aes(fill=pob19), lwd = 0)
 esp_can$pop_km <- esp_can$pob19/esp_can$area
+## Check population density
+range(esp_can$pop_km)
+esp_can$dens_range <- ifelse(esp_can$pop_km < 1, 0,
+                      ifelse(esp_can$pop_km < 10, 1,
+                      ifelse(esp_can$pop_km < 100,2,
+                      ifelse(esp_can$pop_km < 500,3,
+                      ifelse(esp_can$pop_km < 1000,4,
+                      ifelse(esp_can$pop_km < 5000,5,
+                      ifelse(esp_can$pop_km < 10000,6,7 ) ) )))))
+
+ggplot(esp_can) +
+  geom_sf(aes(fill=as.factor(dens_range)), lwd = 0) +
+  scale_fill_viridis_d(name = "Poputaion \n density")
 # hist(esp_can$pop_km)
 # 
 ## Join with weather data
@@ -200,6 +213,7 @@ import <- unique(import[, c("provincia", "dengue_cases",
                             "malaria_prob")])
 import$geom <- NULL
 import <- unique(import)
+
 #Compute R0 for Spain for 2019
 dengue_df[, R0_mean := mapply(R0_func_alb, tmean, pop_km)]
 dengue_p <- esp_can %>%
@@ -223,7 +237,6 @@ dengue_df <- dengue_df %>% left_join(df_pa)
 dengue_df$risk_PA <- dengue_df$risk*dengue_df$PA
 
 #### Check and write csv:
-
 # R0 Dengue and risk daily municipalities daily:
 head(dengue_df)
 dengue_df$R0_daily_muni <- dengue_df$R0_mean
@@ -283,7 +296,40 @@ dengue_R0_mon <- dengue_df_mon[,c("NATCODE","cpro","R0_mon_muni","R0_mon_muni_re
 write.csv(dengue_R0_mon,
           "~/Dengue/output/risk_dengue_2019_monthly_muni.csv")
 
+### Season Map Dengue R0 #####
+dengue_df_y_s <- dengue_R0_mon[which(dengue_R0_mon$month > 2 &
+                                       dengue_R0_mon$month < 12),]
+dengue_df_y_s <- dengue_df_y_s[,.( meanR0 = mean(R0_mon_muni)),by = list(NATCODE)]
+# dengue_df_y_s <- dengue_R0_mon[,.( meanR0 = mean(R0_mon_muni)),by = list(NATCODE)]
+dengue_df_y_s$R0_rel <- dengue_df_y_s$meanR0/max(dengue_df_y_s$meanR0)
+dengue_df_y_s <- esp_can %>% left_join(dengue_df_y_s)
+library("latex2exp")
+ggplot(dengue_df_y_s) +
+  geom_sf(aes(fill = R0_rel), colour = NA) +
+  geom_sf(data = can_box) + coord_sf(datum = NA) +
+  scale_fill_distiller(palette = "Spectral",
+                       name = TeX("$R0_{DENV}$")) +
+  theme_bw() +
+  theme(plot.title = element_text(hjust = 0.5))
+
+## Check higher R0 if less dens
+ggplot(dengue_df_y_s) + 
+  geom_point(aes(pop_km,R0_rel)) +
+  xlab("Population density") +
+  ylab("R0 DENV") +
+  theme_bw()
+
 ## Check results map:
+# Whether the municipalities with less human density has higher R0
+ggplot(dengue_df_mon) + 
+  geom_point(aes(dens,R0_rel), size = 0.5) + 
+  xlab("Population density") + ylab("R0 DENV") +
+  theme_bw()
+
+test <- dengue_df_mon[,c("dens","R0_rel",
+                         "pop", "area", "tmean")]
+
+##### Range R0
 dengue_R0_mon_plot <- dengue_R0_mon
 dengue_R0_mon_plot$cpro <- NULL
 dengue_R0_mon_plot <- esp_can %>% left_join(dengue_R0_mon_plot)
@@ -305,11 +351,10 @@ ggplot(dengue_R0_mon_plot) +
   labs(title = "Month: {current_frame}") +
   transition_manual(as.factor(month), duration = rep(1000,12))
 
-
 # plot Risk specific months
 ## Sin PA
-month_n = 9
-plot_9 <- ggplot(dengue_R0_mon_plot[which(dengue_R0_mon_plot$month == month_n &
+month_n = 5
+plot_5 <- ggplot(dengue_R0_mon_plot[which(dengue_R0_mon_plot$month == month_n &
                                   is.na(dengue_R0_mon_plot$risk)==FALSE),]) +
   geom_sf(aes(fill = as.factor(risk_range)), linewidth = 0.01) +
   geom_sf(data = can_box) + coord_sf(datum = NA) +
@@ -319,7 +364,7 @@ plot_9 <- ggplot(dengue_R0_mon_plot[which(dengue_R0_mon_plot$month == month_n &
         plot.margin = margin(0.1,0.1,0.1,0.1, "cm"))
 
 # Con PA
-plot_9_PA <- ggplot(dengue_R0_mon_plot[which(dengue_R0_mon_plot$month == month_n &
+plot_5_PA <- ggplot(dengue_R0_mon_plot[which(dengue_R0_mon_plot$month == month_n &
                                             is.na(dengue_R0_mon_plot$risk)==FALSE),]) +
   geom_sf(aes(fill = as.factor(risk_range_PA)), linewidth = 0.01) +
   geom_sf(data = can_box) + coord_sf(datum = NA) +
@@ -344,9 +389,9 @@ df_aux <-dengue_R0_mon_plot[which(is.na(dengue_R0_mon_plot$risk)==FALSE),"R0_mon
 df_aux$geometry <- NULL
 min_R0 <- min(df_aux$R0_mon_muni)
 max_R0 <- max(df_aux$R0_mon_muni)
-month_n = 11
+month_n = 3
 ### RO normal absoluto
-plot_11 <- ggplot(dengue_R0_mon_plot[which(dengue_R0_mon_plot$month == month_n &
+plot_3 <- ggplot(dengue_R0_mon_plot[which(dengue_R0_mon_plot$month == month_n &
                                   is.na(dengue_R0_mon_plot$R0_mon_muni)==FALSE),]) +
   geom_sf(aes(fill = R0_mon_muni_rel), linewidth = 0.01) +
   geom_sf(data = can_box) + coord_sf(datum = NA) +
@@ -358,8 +403,8 @@ plot_11 <- ggplot(dengue_R0_mon_plot[which(dengue_R0_mon_plot$month == month_n &
 
 library("latex2exp")
 ## R0 relativo
-month_n = 11
-plot_11 <- ggplot(dengue_R0_mon_plot[which(dengue_R0_mon_plot$month == month_n &
+month_n = 2
+plot_2 <- ggplot(dengue_R0_mon_plot[which(dengue_R0_mon_plot$month == month_n &
                                              is.na(dengue_R0_mon_plot$R0_mon_muni)==FALSE),]) +
   geom_sf(aes(fill = R0_mon_muni_rel), linewidth = 0.01) +
   geom_sf(data = can_box) + coord_sf(datum = NA) +
@@ -376,6 +421,10 @@ ggarr <- ggarrange(plot_3,plot_4,plot_5,
           plot_9,plot_10,plot_11,
           nrow=3,ncol = 3, common.legend = TRUE)
 ggarr
+
+test <- dengue_R0_mon_plot[which(dengue_R0_mon_plot$month == month_n &
+                           is.na(dengue_R0_mon_plot$R0_mon_muni)==FALSE),]
+ggplot(test) + geom_point(aes(pop_km,R0_mon_muni_rel))
 
 ### Plot R0>1 or R0_rel>0
 dengue_R0_mon_plot$geometry <- NULL
@@ -399,6 +448,12 @@ ggplot(dengue_R0_mon_plot_a) +
                     name = "Nº months\n suitable",
                     limits = factor(seq(0,12,1))) +
   theme_bw() 
+
+## Check Zivko map:
+Path <- "~/Documentos/PHD/2023/Dengue/risk_dengue_2019_daily_muni.csv"
+df_denv <- read.csv(Path)
+hist(df_denv$R0_daily_muni_rel)
+hist(df_denv$R0_daily_muni_rel[which(df_denv$R0_daily_muni_rel>0.5)])
 ####--------------------DAILY PROVINCES---------------------####
 # # test = dengue_df %>% group_by(NATCODE, date) %>% summarise(n=n())
 # dengue_df1 <- dengue_df[which(dengue_df$cpro != 51 & dengue_df$cpro != 52),]
