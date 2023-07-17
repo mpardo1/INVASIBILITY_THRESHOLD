@@ -9,8 +9,8 @@ library(data.table)
 library("viridis")
 library("gganimate")
 
-year = 2022
-Path <- paste0("~/INVASIBILITY_THRESHOLD/output/R0/datasets/R0_summonths_",year,".Rds")
+## year = 2022, we will use this year to validate the data
+Path <- paste0("~/INVASIBILITY_THRESHOLD/output/R0/datasets/R0_2022.Rds")
 df_group_tot <- readRDS(Path)
 
 ## Data Catu 
@@ -102,23 +102,91 @@ df_num_months <- function(df_pa_CAT){
   
 }
 
-## Compute the plots for cataluña
+df_avg_months <- function(df_pa_CAT){
+  df_r_1 <- df_pa_CAT[which(df_pa_CAT$PA == 1),] %>% 
+    group_by(R0_rang_alb) %>% summarize(num_1 = n())
+  df_r_0 <- df_pa_CAT[which(df_pa_CAT$PA == 0),] %>% 
+    group_by(R0_rang_alb) %>% summarize(num_0 = n())
+  
+  df_r <- df_r_1 %>% left_join(df_r_0)
+  df_r$prop_1 <- ifelse(is.na(df_r$num_0),1,
+                        df_r$num_1/(df_r$num_1+df_r$num_0))
+  return(df_r)
+}
+
+## Compute the plots
 df_pa <- df_pa[, c("NATCODE", "PA")]
 df_pa$geometry <- NULL
 
+###------------------SUM MONTHS------------------#
 df_group_m <- df_group_tot[,c("NATCODE", "R0_sum_alb")]
 df_pa <- df_pa %>% left_join(df_group_m)
 
-NATCODE_CAT <- esp_can[which(esp_can$ine.ccaa.name == "Cataluña"),"NATCODE"]
-NATCODE_CAT$geometry <- NULL
-df_pa_CAT <- df_pa[which(as.numeric(df_pa$NATCODE) %in% 
-                           as.numeric(NATCODE_CAT$NATCODE)),]
+unique(esp_can$ine.ccaa.name)
 
-df_sum_CAT <- df_num_months(df_pa_CAT)
-df_sum_CAT$ccaa <- "Catalunya"
+plot_sum_p <- function(ccaa){
+  NATCODE_CAT <- esp_can[which(esp_can$ine.ccaa.name == ccaa),"NATCODE"]
+  NATCODE_CAT$geometry <- NULL
+  df_pa_CAT <- df_pa[which(as.numeric(df_pa$NATCODE) %in% 
+                             as.numeric(NATCODE_CAT$NATCODE)),]
+  
+  df_sum_CAT <- df_num_months(df_pa_CAT)
+  df_sum_CAT$ccaa <- ccaa
+  
+  ggplot(df_sum_CAT) +
+    geom_point(aes(R0_sum_alb,prop_1)) +
+    xlab("R0 nº months") + 
+    ylab("Proportion of municipalities with presence") +
+    ylim(c(0,1)) +
+    ggtitle(ccaa) +  
+    theme_bw()
+}
 
-ggplot(df_sum_CAT) +
-  geom_point(aes(R0_sum_alb,prop_1))
+ccaa = "Cataluña"
+plot_sum_p(ccaa)
+ccaa = "Comunitat Valenciana"
+plot_sum_p(ccaa)
+ccaa = "País Vasco"
+plot_sum_p(ccaa)
+
+####------------------Average R0--------------##
+df_group_m <- df_group_tot[,c("NATCODE", "R0_an_alb")]
+df_pa <- df_pa %>% left_join(df_group_m)
+df_pa$R0_avg_alb <- df_pa$R0_an_alb
+
+plot_avg_p <- function(ccaa){
+  NATCODE_CAT <- esp_can[which(esp_can$ine.ccaa.name == ccaa),"NATCODE"]
+  NATCODE_CAT$geometry <- NULL
+  df_pa_CAT <- df_pa[which(as.numeric(df_pa$NATCODE) %in% 
+                             as.numeric(NATCODE_CAT$NATCODE)),]
+  
+  range(df_pa_CAT$R0_an_alb)
+  df_pa_CAT$R0_rang_alb <- ifelse(df_pa_CAT$R0_an_alb < 0.5, 0, 
+                           ifelse(df_pa_CAT$R0_an_alb < 0.7, 1,
+                           ifelse(df_pa_CAT$R0_an_alb < 1, 2,
+                           ifelse(df_pa_CAT$R0_an_alb < 1.2, 3,
+                           ifelse(df_pa_CAT$R0_an_alb < 1.5, 4,
+                           ifelse(df_pa_CAT$R0_an_alb < 1.7, 5,6))))))
+  
+  df_sum_CAT <- df_avg_months(df_pa_CAT)
+  df_sum_CAT$ccaa <- ccaa
+  
+  ggplot(df_sum_CAT) +
+    geom_point(aes(R0_rang_alb,prop_1)) +
+    xlab("R0 Average monthly year") + 
+    ylab("Proportion of municipalities with presence") +
+    ylim(c(0,1)) +
+    ggtitle(ccaa) +  
+    theme_bw()
+}
+
+unique(esp_can$ine.ccaa.name)
+ccaa = "Cataluña"
+plot_avg_p(ccaa)
+ccaa = "Comunitat Valenciana"
+plot_avg_p(ccaa)
+ccaa = "País Vasco"
+plot_avg_p(ccaa)
 
 ## Compute the plots for Andalucoa
 df_pa <- df_pa[, c("NATCODE", "PA")]

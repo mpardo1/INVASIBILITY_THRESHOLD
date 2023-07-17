@@ -298,7 +298,8 @@ df_group_mon$bool_R0_jap_max <- ifelse(df_group_mon$R0_mon_jap_max < 1,0,1)
 
 ## Test:
 ggplot(df_group_mon) + geom_point(aes(tmean, bool_R0_jap))
-df_group_mon[which(df_group_mon$bool_R0_jap == 0 & df_group_mon$tmean < 15),]
+df_group_mon[which(df_group_mon$bool_R0_jap == 0 &
+                     df_group_mon$tmean < 15),]
 
 # R0_func_jap(13.7,56,0.6)
 ##------------------ Plots months------------------#
@@ -350,7 +351,14 @@ df_group_y <- df_group_mon[,.(tmean = mean(tmean),
             R0_an_jap = mean(R0_mon_jap),
             R0_sum_alb = sum(bool_R0_alb),
             R0_sum_aeg = sum(bool_R0_aeg),
-            R0_sum_jap = sum(bool_R0_jap)), by = list(NATCODE)]
+            R0_sum_jap = sum(bool_R0_jap),
+            R0_sum_alb_min = sum(bool_R0_alb_min),
+            R0_sum_aeg_min = sum(bool_R0_aeg_min),
+            R0_sum_jap_min = sum(bool_R0_jap_min),
+            R0_sum_alb_max = sum(bool_R0_alb_max),
+            R0_sum_aeg_max = sum(bool_R0_aeg_max),
+            R0_sum_jap_max = sum(bool_R0_jap_max)),
+            by = list(NATCODE)]
 
 df_group_y[, R0_anual_alb := mapply(R0_func_alb, tmean, prec, dens)]
 df_group_y[, R0_anual_aeg := mapply(R0_func_aeg, tmean, prec, dens)]
@@ -505,7 +513,9 @@ Path <- paste0("~/Documentos/PHD/2023/INVASIBILITY/Plots/MS/max_JapSum",year,".p
 dev.copy2pdf(file=Path, width = 7, height = 5)
 
 ### ---------Average year monthly maps------------------#
-max_R0 <- max(df_group_y$R0_an_aeg, df_group_y$R0_an_alb, df_group_y$R0_an_jap)
+max_R0 <- max(df_group_y$R0_an_aeg,
+              df_group_y$R0_an_alb,
+              df_group_y$R0_an_jap)
 ggplot(df_group_y) +
   geom_sf(aes(fill = R0_an_alb), colour = NA) +
   geom_sf(data = can_box) + coord_sf(datum = NA) +
@@ -546,19 +556,23 @@ dev.copy2pdf(file=Path, width = 7, height = 5)
 
 ###--------TEST------------###
 ### Use the R0 compute daily and after average
-df_group_mon <- df_group[, .(tmean = mean(tmean),
+df_group_mon1 <- df_group[, .(tmean = mean(tmean),
                              prec = sum(prec), 
                              dens = min(dens),
-                             R0_mon_alb = mean(R0_dai_alb),
-                             R0_mon_aeg = mean(R0_dai_aeg),
-                             R0_mon_jap = mean(R0_dai_jap)), 
+                             R0_mon_alb_dai = mean(R0_dai_alb),
+                             R0_mon_aeg_dai = mean(R0_dai_aeg),
+                             R0_mon_jap_dai = mean(R0_dai_jap)), 
                          by=list(NATCODE,month)]
 
-df_group_mon$bool_R0_alb <- ifelse(df_group_mon$R0_mon_alb < 1,0,1)
-df_group_mon$bool_R0_aeg <- ifelse(df_group_mon$R0_mon_aeg < 1,0,1)
-df_group_mon$bool_R0_jap <- ifelse(df_group_mon$R0_mon_jap < 1,0,1)
+df_group_mon1$bool_R0_alb <- ifelse(df_group_mon1$R0_mon_alb_dai < 1,0,1)
+df_group_mon1$bool_R0_aeg <- ifelse(df_group_mon1$R0_mon_aeg_dai < 1,0,1)
+df_group_mon1$bool_R0_jap <- ifelse(df_group_mon1$R0_mon_jap_dai < 1,0,1)
 
+## Rename df and delete other variables:
 df_group_y1 <- df_group_y
+df_group_y1 <- df_group_y1[,c(8,c(19:34))]
+df_group_y1$geometry <- NULL
+
 df_group_y <- df_group_mon[, .(tmean = mean(tmean),
                              prec = sum(prec), 
                              meanprec = mean(prec),
@@ -572,34 +586,36 @@ df_group_y[, R0_avg_alb := mapply(R0_func_alb, tmean, meanprec, dens)]
 df_group_y[, R0_avg_aeg := mapply(R0_func_aeg, tmean, meanprec, dens)]
 df_group_y[, R0_avg_jap := mapply(R0_func_jap, tmean, meanprec, dens)]
 
-### Extract the average R0 for the mosquito season
-df_group_mon$geometry <- NULL
-df_group_mon <- setDT(df_group_mon)
-df_group_sum <- df_group_mon[which(df_group_mon$month >3 & df_group_mon$month <11),]
-df_group_sum <- df_group_sum[, .(tmean = mean(tmean),
-                               prec = sum(prec), 
-                               meanprec = mean(prec),
-                               dens = min(dens)), 
-                           by=list(NATCODE)]
-df_group_sum[, R0_avg_alb_sum := mapply(R0_func_alb, tmean, meanprec, dens)]
-df_group_sum[, R0_avg_aeg_sum := mapply(R0_func_aeg, tmean, meanprec, dens)]
-df_group_sum[, R0_avg_jap_sum := mapply(R0_func_jap, tmean, meanprec, dens)]
-
-df_group_tot <- (df_group_y[,c("NATCODE",
-                              "R0_sum_alb",
-                              "R0_sum_aeg",
-                              "R0_sum_jap",
-                              "R0_an_alb",
-                              "R0_an_aeg",
-                              "R0_an_jap")] %>% 
-  left_join(df_group_y1) ) %>% left_join(df_group_sum[,c("NATCODE",
-                                                         "R0_avg_alb_sum",
-                                                         "R0_avg_aeg_sum",
-                                                         "R0_avg_jap_sum")])
-
+df_group_y <- df_group_y %>% left_join(df_group_y1)
 ## Save file for the validation with PA data
-Path <- paste0("~/INVASIBILITY_THRESHOLD/output/R0/datasets/R0_summonths_",year,".Rds")
-saveRDS(df_group_tot, Path)
+Path <- paste0("~/INVASIBILITY_THRESHOLD/output/R0/datasets/R0_",year,".Rds")
+saveRDS(df_group_y, Path)
+
+# ### Extract the average R0 for the mosquito season
+# df_group_mon$geometry <- NULL
+# df_group_mon <- setDT(df_group_mon)
+# df_group_sum <- df_group_mon[which(df_group_mon$month >3 & df_group_mon$month <11),]
+# df_group_sum <- df_group_sum[, .(tmean = mean(tmean),
+#                                prec = sum(prec), 
+#                                meanprec = mean(prec),
+#                                dens = min(dens)), 
+#                            by=list(NATCODE)]
+# df_group_sum[, R0_avg_alb_sum := mapply(R0_func_alb, tmean, meanprec, dens)]
+# df_group_sum[, R0_avg_aeg_sum := mapply(R0_func_aeg, tmean, meanprec, dens)]
+# df_group_sum[, R0_avg_jap_sum := mapply(R0_func_jap, tmean, meanprec, dens)]
+# 
+# df_group_tot <- (df_group_y[,c("NATCODE",
+#                               "R0_sum_alb",
+#                               "R0_sum_aeg",
+#                               "R0_sum_jap",
+#                               "R0_an_alb",
+#                               "R0_an_aeg",
+#                               "R0_an_jap")] %>% 
+#   left_join(df_group_y1) ) %>% left_join(df_group_sum[,c("NATCODE",
+#                                                          "R0_avg_alb_sum",
+#                                                          "R0_avg_aeg_sum",
+#                                                          "R0_avg_jap_sum")])
+
 
 ### Plots maps
 df_group_y <- esp_can %>% left_join(df_group_y)
