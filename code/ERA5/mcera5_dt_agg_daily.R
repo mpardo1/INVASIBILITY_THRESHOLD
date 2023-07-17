@@ -154,7 +154,7 @@ R0_func_jap <- function(Te, rain,hum){
 }
 #----------------------------------------------------------------------#
 ## Read the data for the R0 computed daily:
-Path <- "~/INVASIBILITY_THRESHOLD/output/pop/pop22.Rds"
+# Path <- "~/INVASIBILITY_THRESHOLD/output/pop/pop22.Rds"
 esp_can_pop <- readRDS( Path)
 
 extract_weather <- function(year_n){
@@ -192,5 +192,5 @@ extract_weather <- function(year_n){
 
 year = 2022
 out <- extract_weather(year)
-Path <- paste0("~/INVASIBILITY_THRESHOLD/output/mcera5/process_Daily_ERA5_daily_mcera_",year,".Rds")
+Path <- paste0("~/INVASIBILITY_THRESHOLD/output/mcera5/process_hourly_daily_ERA5_daily_mcera_",year,".Rds")
 saveRDS(out,Path)
