@@ -171,7 +171,7 @@ R0_func_jap <- function(Te, rain,hum){
 
 #----------------------------------------------------------------------#
 ## Read the data for the R0 computed daily:
-year = 2022
+year = 2020
 Path <- paste0("/home/marta/INVASIBILITY_THRESHOLD/output/mcera5/process_Daily_ERA5_daily_mcera_",year,".Rds")
 # saveRDS(dt_weather,Path)
 df_group <- setDT(readRDS(Path))
@@ -451,9 +451,6 @@ plot_summonths <- function(df){
 df_group_y$R0 <- df_group_y$R0_sum_alb
 plot_sum_alb <- plot_summonths(df_group_y)
 plot_sum_alb
-
-Path <- paste0("~/Documentos/PHD/2023/INVASIBILITY/Plots/Fede_deathline/AlbMonthSum.png")
-ggsave(Path, plot = plot_sum_alb)
 
 Path <- paste0("~/Documentos/PHD/2023/INVASIBILITY/Plots/MS/AlboSum",year,".pdf")
 dev.copy2pdf(file=Path, width = 7, height = 5)

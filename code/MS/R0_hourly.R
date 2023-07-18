@@ -90,25 +90,6 @@ R0_func_alb <- function(Te, rain, hum){
   return(R0)
 }
 
-# vec = seq(0,40,0.1)
-# out <- unlist(lapply(vec,a_f_alb))
-# max(out)
-# vec = seq(0,40,0.1)
-# out <- unlist(lapply(vec,TFD_f_alb))
-# max(out)
-# vec = seq(0,40,0.1)
-# out <- unlist(lapply(vec,lf_f_alb))
-# max(out)
-# vec = seq(0,40,0.1)
-# out <- unlist(lapply(vec,dE_f_alb))
-# max(out)
-# vec = seq(0,40,0.1)
-# out <- unlist(lapply(vec,pLA_f_alb))
-# max(out)
-# vec = seq(0,10,0.1)
-# out <- unlist(lapply(vec,h_f, hum=0))
-# max(out)
-
 ####------------------------------Aegypti------------------------####
 a_f_aeg <- function(temp){Briere_func(0.000202,13.35,40.08,temp)} # Biting rate
 EFD_f_aeg <- function(temp){Briere_func(0.00856,14.58,34.61,temp)} # Fecundity
@@ -198,16 +179,33 @@ ho_R0_y <- ho_R0_mon[, .(tmean = mean(tmean),
                    by=list(NATCODE)]
 
 ho_R0_y <- esp_can %>% left_join(ho_R0_y)
-ggplot(ho_R0_y) +
+library("latex2exp")
+colors <- c("#43A2CA", "#7BCCC4", "#BAE4BC", "#F0F9E8",
+            "#FFF7EC","#FEE8C8","#FDD49E","#FDBB84",
+            "#FC8D59","#EF6548","#D7301F", "#B30000",
+            "#7F0000") 
+plot_sum_alb <- ggplot(ho_R0_y) +
   geom_sf(aes(fill = as.factor(R0_h_sum)), colour = NA) +
   geom_sf(data = can_box) + coord_sf(datum = NA) +
-  scale_fill_viridis_d(name = TeX("$R_M$")) +
+  scale_fill_manual(values = colors,
+                    name = "Nº months\n suitable",
+                    limits = factor(seq(0,12,1))) +
   theme_bw() +
   theme(plot.title = element_text(hjust = 0.5))
 
-ggplot(ho_R0_y) +
+plot_sum_alb
+Path <- paste0("~/Documentos/PHD/2023/INVASIBILITY/Plots/SM/AlbMonthSumHourly.png")
+ggsave(Path, plot = plot_sum_alb)
+
+plot_sum_alb <- ggplot(ho_R0_y) +
   geom_sf(aes(fill = as.factor(R0_d_sum)), colour = NA) +
   geom_sf(data = can_box) + coord_sf(datum = NA) +
-  scale_fill_viridis_d(name = TeX("$R_M$")) +
+  scale_fill_manual(values = colors,
+                    name = "Nº months\n suitable",
+                    limits = factor(seq(0,12,1))) +
   theme_bw() +
   theme(plot.title = element_text(hjust = 0.5))
+
+plot_sum_alb
+Path <- paste0("~/Documentos/PHD/2023/INVASIBILITY/Plots/SM/AlbMonthSumDaily.png")
+ggsave(Path, plot = plot_sum_alb)
