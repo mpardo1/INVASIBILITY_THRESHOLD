@@ -20,11 +20,13 @@ Fitting_aeg <- nls(proportion_surv ~ (-cont*(temp-Tmin)*(temp - Tmax)),
 
 summary(Fitting_aeg)
 
-# Fitting_aeg <- nls(proportion_surv ~ cont*temp+cont1,
-#                    data = df_aeg,
-#                    start = list(cont = 0.001, cont1 = 0))
-# 
-# summary(Fitting_aeg)
+Fitting_aeg_lin <- nls(proportion_surv ~ cont*temp+cont1,
+                   data = df_aeg,
+                   start = list(cont = 0.001, cont1 = 0))
+
+summary(Fitting_aeg_lin)
+
+AIC(Fitting_aeg,Fitting_aeg_lin)
 
 mod <- function(te){
   t0 <- as.numeric(Fitting_aeg$m$getPars()[2])
@@ -246,11 +248,13 @@ Fitting_dE <- nls(develop_rate ~ c*temp*(temp-c1)*(c2-temp)^(1/2),
 
 summary(Fitting_dE)
 
-# Fitting_dE <- nls(develop_rate ~ c*temp+c1,
-#                   data = df_dE,
-#                   start = list(c = 0.001, c1 = 0))
-# 
-# summary(Fitting_dE)
+Fitting_dE_lin <- nls(develop_rate ~ c*temp+c1,
+                  data = df_dE,
+                  start = list(c = 0.001, c1 = 0))
+
+summary(Fitting_dE_lin)
+
+AIC(Fitting_dE,Fitting_dE_lin)
 
 mod <- function(te){
   c <- as.numeric(Fitting_dE$m$getPars()[1])
@@ -360,12 +364,13 @@ Fitting_dE_aeg <- nls(develop_rate ~ c*temp*(temp-c1)*(c2-temp)^(1/2),
 
 summary(Fitting_dE_aeg)
 
-# Fitting_dE_aeg <- nls(develop_rate ~ c*temp + c1,
-#                       data = df_dE_aeg,
-#                       start = list(c = 0.0003, c1 = 0))
-# 
-# summary(Fitting_dE_aeg)
+Fitting_dE_aeg_lin <- nls(develop_rate ~ c*temp + c1,
+                      data = df_dE_aeg,
+                      start = list(c = 0.0003, c1 = 0))
 
+summary(Fitting_dE_aeg_lin)
+
+AIC(Fitting_dE_aeg, Fitting_dE_aeg_lin)
 
 mod <- function(te){
   c <- as.numeric(Fitting_dE_aeg$m$getPars()[1])
@@ -478,13 +483,13 @@ ggplot(fec) + geom_point(aes(Temp, Number.eggs)) +
   geom_line(data =df_out_aeg,aes(temp, egg)) + ylim (c(0,100))
 
 ### Linear function
-Fitting_Egg_aeg <- nls(Number.eggs ~ -c*Temp + c1,
+Fitting_Egg_aeg_lin <- nls(Number.eggs ~ -c*Temp + c1,
                        data = fec,
                        start = list(c = 0.0001, c1 = 0))
 
-summary(Fitting_Egg_aeg)
+summary(Fitting_Egg_aeg_lin)
 
-
+AIC(Fitting_Egg_aeg, Fitting_Egg_aeg_lin)
 mod <- function(te){
   c <- as.numeric(Fitting_Egg_aeg$m$getPars()[1])
   c1 <- as.numeric(Fitting_Egg_aeg$m$getPars()[2])

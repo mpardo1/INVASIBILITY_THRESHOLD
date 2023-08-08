@@ -1,3 +1,8 @@
+### Code to do the sensitivity analysis for the R0
+# it computes numerically the derivatives of R0 with respect of 
+# each variable I have check that this numerical derivatives are
+# equals to the ones done by hand (done in sensitivity_analytic.R)
+
 rm(list=ls())
 library(tidyverse)
 library(ggplot2)

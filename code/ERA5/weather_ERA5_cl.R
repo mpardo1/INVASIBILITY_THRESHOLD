@@ -1,3 +1,6 @@
+## Proces the nc files from mcera5
+## It has to be run in the cluster with 10 cores
+
 rm(list=ls())
 library(mcera5)
 library(mapSpain)
@@ -7,6 +10,7 @@ library(tidyverse)
 library(parallel)
 library(data.table)
 
+# Function to process the weather from the nc files
 extract_weather <- function(ind){
   print(paste0("ind:",ind))
   # Specify desired single point (within the bounds of your .nc file) 
@@ -59,7 +63,7 @@ esp_can <- esp_can[,c("NATCODE", "centroid", "pob19", "area")]
 # List the path of an .nc file that was downloaded via
 # request_era5()
 
-year = 2022
+year = 2004
 my_nc <- paste0(getwd(),"/era5_Spain_",year,".nc")
 # Number of cores used in the parallelization
 num_cores = 10
@@ -67,7 +71,108 @@ num_cores = 10
 climat_each_muni <- mclapply(c(1:nrow(esp_can)), 
                              extract_weather, 
                              mc.cores = num_cores)
-
+# Save the resultant file:
 saveRDS(climat_each_muni,
         paste0("~/INVASIBILITY_THRESHOLD/output/mcera5/ERA5_daily_mcera_",year,".Rds"))
+
+
+year = 2005
+my_nc <- paste0(getwd(),"/era5_Spain_",year,".nc")
+# Number of cores used in the parallelization
+num_cores = 10
+# Parallelize function in order to obtain value R0 for each municipality
+climat_each_muni <- mclapply(c(1:nrow(esp_can)), 
+                             extract_weather, 
+                             mc.cores = num_cores)
+# Save the resultant file:
+saveRDS(climat_each_muni,
+        paste0("~/INVASIBILITY_THRESHOLD/output/mcera5/ERA5_daily_mcera_",year,".Rds"))
+
+
+year = 2006
+my_nc <- paste0(getwd(),"/era5_Spain_",year,".nc")
+# Number of cores used in the parallelization
+num_cores = 10
+# Parallelize function in order to obtain value R0 for each municipality
+climat_each_muni <- mclapply(c(1:nrow(esp_can)), 
+                             extract_weather, 
+                             mc.cores = num_cores)
+# Save the resultant file:
+saveRDS(climat_each_muni,
+        paste0("~/INVASIBILITY_THRESHOLD/output/mcera5/ERA5_daily_mcera_",year,".Rds"))
+
+
+year = 2007
+my_nc <- paste0(getwd(),"/era5_Spain_",year,".nc")
+# Number of cores used in the parallelization
+num_cores = 10
+# Parallelize function in order to obtain value R0 for each municipality
+climat_each_muni <- mclapply(c(1:nrow(esp_can)), 
+                             extract_weather, 
+                             mc.cores = num_cores)
+# Save the resultant file:
+saveRDS(climat_each_muni,
+        paste0("~/INVASIBILITY_THRESHOLD/output/mcera5/ERA5_daily_mcera_",year,".Rds"))
+
+year = 2008
+my_nc <- paste0(getwd(),"/era5_Spain_",year,".nc")
+# Number of cores used in the parallelization
+num_cores = 10
+# Parallelize function in order to obtain value R0 for each municipality
+climat_each_muni <- mclapply(c(1:nrow(esp_can)), 
+                             extract_weather, 
+                             mc.cores = num_cores)
+# Save the resultant file:
+saveRDS(climat_each_muni,
+        paste0("~/INVASIBILITY_THRESHOLD/output/mcera5/ERA5_daily_mcera_",year,".Rds"))
+
+year = 2009
+my_nc <- paste0(getwd(),"/era5_Spain_",year,".nc")
+# Number of cores used in the parallelization
+num_cores = 10
+# Parallelize function in order to obtain value R0 for each municipality
+climat_each_muni <- mclapply(c(1:nrow(esp_can)), 
+                             extract_weather, 
+                             mc.cores = num_cores)
+# Save the resultant file:
+saveRDS(climat_each_muni,
+        paste0("~/INVASIBILITY_THRESHOLD/output/mcera5/ERA5_daily_mcera_",year,".Rds"))
+
+year = 2010
+my_nc <- paste0(getwd(),"/era5_Spain_",year,".nc")
+# Number of cores used in the parallelization
+num_cores = 10
+# Parallelize function in order to obtain value R0 for each municipality
+climat_each_muni <- mclapply(c(1:nrow(esp_can)), 
+                             extract_weather, 
+                             mc.cores = num_cores)
+# Save the resultant file:
+saveRDS(climat_each_muni,
+        paste0("~/INVASIBILITY_THRESHOLD/output/mcera5/ERA5_daily_mcera_",year,".Rds"))
+
+year = 2011
+my_nc <- paste0(getwd(),"/era5_Spain_",year,".nc")
+# Number of cores used in the parallelization
+num_cores = 10
+# Parallelize function in order to obtain value R0 for each municipality
+climat_each_muni <- mclapply(c(1:nrow(esp_can)), 
+                             extract_weather, 
+                             mc.cores = num_cores)
+# Save the resultant file:
+saveRDS(climat_each_muni,
+        paste0("~/INVASIBILITY_THRESHOLD/output/mcera5/ERA5_daily_mcera_",year,".Rds"))
+
+
+year = 2012
+my_nc <- paste0(getwd(),"/era5_Spain_",year,".nc")
+# Number of cores used in the parallelization
+num_cores = 10
+# Parallelize function in order to obtain value R0 for each municipality
+climat_each_muni <- mclapply(c(1:nrow(esp_can)), 
+                             extract_weather, 
+                             mc.cores = num_cores)
+# Save the resultant file:
+saveRDS(climat_each_muni,
+        paste0("~/INVASIBILITY_THRESHOLD/output/mcera5/ERA5_daily_mcera_",year,".Rds"))
+
 

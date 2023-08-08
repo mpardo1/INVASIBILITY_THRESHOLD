@@ -1,10 +1,12 @@
+## Compute the thermal responses for Aedes Japonicus from literature data
+# compare also different functions and compute its AIC value
+
 rm(list= ls())
 library(thermPerf)
 library(ggplot2)
 library(tidyverse)
 library(nls2)
 
-## Compute the thermal responses for Aedes Japonicus
 ## Data taken from https://parasitesandvectors.biomedcentral.com/articles/10.1186/s13071-018-2659-1
 ## https://www.researchgate.net/publication/235430511_The_ecology_of_the_exotic_mosquito_Ochlerotatus_Finlaya_japonicus_japonicus_Theobald_1901_Diptera_Culicidae_and_an_examination_of_its_role_in_the_West_Nile_virus_cycle_in_New_Jersey
 Path <- "~/INVASIBILITY_THRESHOLD/data/japonicus/adult_larva_lifespan.csv"
@@ -27,13 +29,16 @@ mod <- function(te){
   c1 <- as.numeric(Fitting_deltaA$m$getPars()[2])
   c*te+c1
 }
-## Quadratic Fit
-# Fitting_deltaA <- nls(lifespan ~ cont*Temp^2 + cont1*Temp +cont2,
-#                       data = Japonicus,
-#                       start = list(cont = 0.001, cont1 = 0.0, cont2 = 0.0))
-# 
-# summary(Fitting_deltaA)
-# 
+# Quadratic Fit
+Fitting_deltaA_quad <- nls(lifespan ~ cont*Temp^2 + cont1*Temp +cont2,
+                      data = Japonicus,
+                      start = list(cont = 0.001, cont1 = 0.0, cont2 = 0.0))
+
+summary(Fitting_deltaA_quad)
+
+# Compute the AIC value
+AIC(Fitting_deltaA,Fitting_deltaA_quad)
+
 # mod <- function(te){
 #   c <- as.numeric(Fitting_deltaA$m$getPars()[1])
 #   c1 <- as.numeric(Fitting_deltaA$m$getPars()[2])
@@ -162,18 +167,30 @@ plot_dE <- ggplot(developL) +
   geom_point(aes(Temp,First_instar_mean)) + theme_bw()
 plot_dE
 
+# Compute the fit for the Briere function:
 Fitting_dE <- nls(First_instar_mean ~ cont*Temp*(Temp-cont1)*(cont2-Temp)^(1/2) ,
                   data = developL,
                   start = list(cont = 0.00035, cont1 = 9.5, cont2 = 36))
 
 summary(Fitting_dE)
 
-# Fitting_dE <- nls(First_instar_mean ~ cont*Temp + cont1 ,
-#                   data = developL,
-#                   start = list(cont = 0.00035, cont1 = 0))
-# 
-# summary(Fitting_dE)
-# 
+# Compute the fit for the Quadratic function:
+Fitting_dE_quad <- nls(First_instar_mean ~ cont*(Temp-cont1)*(Temp - cont2) ,
+                  data = developL,
+                  start = list(cont = 0.00035, cont1 = 9.5, cont2 = 36))
+
+summary(Fitting_dE_quad)
+
+# Compute the fit for the Linear function:
+Fitting_dE_lin <- nls(First_instar_mean ~ cont*Temp + cont1 ,
+                  data = developL,
+                  start = list(cont = 0.00035, cont1 = 0))
+
+summary(Fitting_dE_lin)
+
+# Compute the AIC value for the three models:
+AIC(Fitting_dE_lin,Fitting_dE,Fitting_dE_quad)
+
 mod <- function(te){
   c <- as.numeric(Fitting_dE$m$getPars()[1])
   c1 <- as.numeric(Fitting_dE$m$getPars()[2])
@@ -280,7 +297,8 @@ Japonicus <- rbind(Japonicus, c(34,0))
 plot_dL <- ggplot(Japonicus) + 
   geom_point(aes(Temp,FemaledL)) + theme_bw()
 plot_dL
-                
+           
+# Briere function fit    
 Fitting_dL <- nls(FemaledL ~ cont*Temp*(Temp-cont1)*(cont2-Temp)^(1/2) ,
                   data = Japonicus, algorithm = "port",
                   start = list(cont = 0.0035, cont1 = 9.5, cont2 = 36), 
@@ -288,11 +306,14 @@ Fitting_dL <- nls(FemaledL ~ cont*Temp*(Temp-cont1)*(cont2-Temp)^(1/2) ,
 
 summary(Fitting_dL)
 
-# Fitting_dL <- nls(FemaledL ~ cont*Temp + cont1,
-#                   data = Japonicus,
-#                   start = list(cont = 0.00035, cont1 = 0))
-# summary(Fitting_dL)
+# Linear function fit
+Fitting_dL_lin <- nls(FemaledL ~ cont*Temp + cont1,
+                  data = Japonicus,
+                  start = list(cont = 0.00035, cont1 = 0))
+summary(Fitting_dL_lin)
 
+# Compute the AIC value
+AIC(Fitting_dL,Fitting_dL_lin)
 mod <- function(te){
   c <- as.numeric(Fitting_dL$m$getPars()[1])
   c1 <- as.numeric(Fitting_dL$m$getPars()[2])
@@ -378,6 +399,7 @@ plotdL
 
 ###----------------------------------------------
 ## Paper Germany:
+#https://parasitesandvectors.biomedcentral.com/articles/10.1186/s13071-018-2659-1
 Lmortality <- data.frame(Temp = c(0,5,10,12,14,15,17,19,20,23,25,26,27,28,29,31),
                          mean_mort_perc = c(100,99.5,16,38.5,18,15,19,29.5,11.3,48.5,13.8,6,41.5,12.5,70.5,87.5),
                          sd_mort_perc = c(0,1.1,5.5,14.2,4.8,7.9,9.6,12.4,6.5,27.6,8.4,5.2,31.1,7.7,22.2,6.4))
@@ -395,6 +417,7 @@ plot_deltaL <- ggplot(Lmortality) +
   geom_point(aes(Temp,mean_mort_perc)) + theme_bw()
 plot_deltaL
 
+## Quadratic normal fit
 Fitting_deltaL <- nls(mean_mort_perc ~ cont*Temp^2 + cont1*Temp + cont2,
                       data = Lmortality,
                       start = list(cont = 15, cont1 = -20,
@@ -402,11 +425,15 @@ Fitting_deltaL <- nls(mean_mort_perc ~ cont*Temp^2 + cont1*Temp + cont2,
 
 summary(Fitting_deltaL)
 
-# Fitting_deltaL <- nls(mean_mort_perc ~ cont*Temp + cont1,
-#                       data = Lmortality,
-#                       start = list(cont = 0, cont1 = 0))
-# 
-# summary(Fitting_deltaL)
+# Linear function fit
+Fitting_deltaL_lin <- nls(mean_mort_perc ~ cont*Temp + cont1,
+                      data = Lmortality,
+                      start = list(cont = 0, cont1 = 0))
+
+summary(Fitting_deltaL_lin)
+
+# AIC for the two models:
+AIC(Fitting_deltaL,Fitting_deltaL_lin)
 
 mod <- function(te){
   c <- as.numeric(Fitting_deltaL$m$getPars()[1])
