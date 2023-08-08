@@ -41,6 +41,7 @@ extract_weather <- function(ind){
 uid <- "187470"
 cds_api_key <- "fbef7343-1aef-44c1-a7c3-573285248e5d"
 
+# Password: 161992Marta
 ecmwfr::wf_set_key(user = uid,
                    key = cds_api_key,
                    service = "cds")
@@ -51,7 +52,7 @@ ymn <- 27
 ymx <- 44
 
 # Temporal grid
-year = 2004
+year = 2013
 st_time <- lubridate::ymd(paste0(year,":01:01"))
 en_time <- lubridate::ymd(paste0(year,":12:31"))
 

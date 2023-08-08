@@ -37,7 +37,7 @@ extract_weather <- function(ind){
   return(point_out)
 }
 
-setwd("~//INVASIBILITY_THRESHOLD/data/mcera5/")
+setwd("~/INVASIBILITY_THRESHOLD/data/mcera5/")
 # Designate your desired bounding coordinates (in WGS84 / EPSG:4326)
 xmn <- -19
 xmx <- 4.5
