@@ -1,3 +1,5 @@
+## Extract the weather from the ERA5 with the mcera5 package for the 
+# year selected.
 rm(list=ls())
 library(mcera5)
 library(mapSpain)

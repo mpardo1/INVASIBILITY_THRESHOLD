@@ -1,3 +1,5 @@
+## Aggregate to daily scale: From the hourly computed R0 and weather 
+# files it aggregated to daily other wise the files are to heavy to manage
 rm(list=ls())
 library(mcera5)
 library(sf)

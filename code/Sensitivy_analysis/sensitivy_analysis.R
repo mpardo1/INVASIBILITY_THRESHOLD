@@ -2,6 +2,8 @@
 # it computes numerically the derivatives of R0 with respect of 
 # each variable I have check that this numerical derivatives are
 # equals to the ones done by hand (done in sensitivity_analytic.R)
+# Also, there is a plot for each variable in the R0 to see its shape 
+# for the three species.
 
 rm(list=ls())
 library(tidyverse)
@@ -72,7 +74,7 @@ h_f <- function(hum, rain){
 }
 
 #### -------------------------- Albopictus ------------------------- ####
-## Thermal responses Aedes Albopictus from Mordecai 2017:
+## Thermal responses Aedes Albopictus from Mordecai 2017 and from literature:
 a_f_alb <- function(temp){Briere_func(0.000193,10.25,38.32,temp)} # Biting rate
 TFD_f_alb <- function(temp){Briere_func(0.0488,8.02,35.65,temp)} # Fecundity
 pLA_f_alb <- function(temp){Quad_func(0.002663,6.668,38.92,temp)} # Survival probability Egg-Adult
@@ -140,8 +142,10 @@ R0_func_jap <- function(Te, rain,hum){
   return(R0)
 }
 
+
+##--------------Variable comparison between species----------------#
 ### Difference between fecundity and bitting rate:
-# bitting rate
+# biting rate
 vec <- seq(0,40,0.01)
 aegypti <- sapply(vec,a_f_aeg)
 albopictus <- sapply(vec,a_f_alb)
@@ -305,7 +309,9 @@ out <- sapply(vec,function(x){R0_func_alb(rain_cte,x,te_cte)})
 df_out <- data.frame(vec, out)
 ggplot(df_out) +
   geom_line(aes(vec,out))
+#----------------------------------------------------------#
 
+#---------------SENSITIVITY ANALYSIS-------------------------#
 # Derivative with respect to Temperature
 vec <- seq(0,40,0.0001)
 hum_cte <- 500
@@ -512,3 +518,235 @@ ggplot(df_plot) +
   xlim(c(8,40)) + theme_bw() + ylab("Relative R0") +
   xlab("Temperature(Cº)")
 
+####----------SENSITIVITY ANALYSIS each variable------------##
+
+##### Albopictus #####
+# Derivative of the fecundity, f:
+df <- function(Te, rain, hum){
+  a <- a_f_alb(Te)
+  f <- (1/2)*TFD_f_alb(Te)
+  deltaa <- lf_f_alb(Te)
+  dE <- dE_f_alb(Te)
+  probla <- pLA_f_alb(Te)
+  h <- h_f(hum,rain)
+  deltaE = 0.1
+  c = 0.0488
+  tmin = 8.02
+  tmax = 35.65
+  dR0 <- (1/3)*(((f*a)/deltaa)*probla*((h*dE)/(h*dE+deltaE)))^(-2/3)
+  dB <- c*(2*Te-tmin)*(tmax-Te)^(1/2) -
+    (c/2)*(Te^2-tmin*Te)*(tmax-Te)^(-1/2)
+  df <- dR0*((a/deltaa)*probla*(h*dE/(h*dE+deltaE)))*dB
+  return(df)
+}
+
+# Derivative of the biting rate, a:
+da <- function(Te, rain, hum){
+  a <- a_f_alb(Te)
+  f <- (1/2)*TFD_f_alb(Te)
+  deltaa <- lf_f_alb(Te)
+  dE <- dE_f_alb(Te)
+  probla <- pLA_f_alb(Te)
+  h <- h_f(hum,rain)
+  deltaE = 0.1
+  c = 0.000193
+  tmin = 10.25
+  tmax = 38.32
+  dR0 <- (1/3)*((f*a*deltaa)*probla*((h*dE)/(h*dE+deltaE)))^(-2/3)
+  dB <- c*(2*Te-tmin)*(tmax-Te)^(1/2) - 
+    (c/2)*(Te^2-tmin*Te)*(tmax-Te)^(-1/2)
+  da <- dR0*((f*deltaa)*probla*((h*dE)/(h*dE+deltaE)))*dB
+  return(da)
+}
+
+# Derivative pLA:
+dpLA <- function(Te, rain, hum){
+  a <- a_f_alb(Te)
+  f <- (1/2)*TFD_f_alb(Te)
+  deltaa <- lf_f_alb(Te)
+  dE <- dE_f_alb(Te)
+  probla <- pLA_f_alb(Te)
+  h <- h_f(hum,rain)
+  deltaE = 0.1
+  c = 0.002663
+  tmin = 6.668
+  tmax = 38.92
+  dR0 <- (1/3)*((f*a*deltaa)*probla*((h*dE)/(h*dE+deltaE)))^(-2/3)
+  dQ <- -c*((Te-tmax)+(Te-tmin))
+  dpLA <- dR0*((f*a*deltaa)*((h*dE)/(h*dE+deltaE)))*dQ
+  return(dpLA)
+}
+
+# Derivative dE:
+ddE <- function(Te, rain, hum){
+  a <- a_f_alb(Te)
+  f <- (1/2)*TFD_f_alb(Te)
+  deltaa <- lf_f_alb(Te)
+  dE <- dE_f_alb(Te)
+  probla <- pLA_f_alb(Te)
+  h <- h_f(hum,rain)
+  deltaE = 0.1
+  c = 0.00006881
+  tmin = 8.869
+  tmax = 35.09
+  dR0 <- (1/3)*((f*a*deltaa)*probla*((h*dE)/(h*dE+deltaE)))^(-2/3)
+  dB <- c*(2*Te-tmin)*(tmax-Te)^(1/2) - 
+    (c/2)*(Te^2-tmin*Te)*(tmax-Te)^(-1/2)
+  ddE <- dR0*((f*a*deltaa)*probla*((h*(h*dE+deltaE)-dE*h^2)/(h*dE+deltaE)^2))*dB
+  return(ddE)
+}
+
+# Derivative of the fecundity
+vec <- seq(0,40,0.001)
+rain_cte <- 8
+hum_cte <- 0
+out_f <- sapply(vec,df,rain=rain_cte, hum=hum_cte)
+df_out_f <- data.frame(vec, out =out_f)
+df_out_f$var <- "f"
+out_a <- sapply(vec,da,rain=rain_cte, hum=hum_cte)
+df_out_a <- data.frame(vec, out =out_a)
+df_out_a$var <- "a"
+out_pLA <- sapply(vec,dpLA,rain=rain_cte, hum=hum_cte)
+df_out_pLA <- data.frame(vec, out =out_pLA)
+df_out_pLA$var <- "pLA"
+out_dE <- sapply(vec,ddE,rain=rain_cte, hum=hum_cte)
+df_out_dE <- data.frame(vec, out =out_dE)
+df_out_dE$var <- "dE"
+df_out <- rbind(df_out_f,df_out_a,df_out_pLA,df_out_dE )
+plot_d <- ggplot(df_out) +
+  geom_line(aes(vec,out)) + 
+  xlab("Temperature") + ylab("ddE") +
+  theme_bw()
+plot_ddE
+
+##### Aegipty #####
+# Derivative of the fecundity, f:
+df <- function(Te, rain, hum){
+  a <- a_f_alb(Te)
+  f <- (1/2)*TFD_f_alb(Te)
+  deltaa <- lf_f_alb(Te)
+  dE <- dE_f_alb(Te)
+  probla <- pLA_f_alb(Te)
+  h <- h_f(hum,rain)
+  deltaE = 0.1
+  c = 0.0488
+  tmin = 8.02
+  tmax = 35.65
+  dR0 <- (1/3)*(((f*a)/deltaa)*probla*((h*dE)/(h*dE+deltaE)))^(-2/3)
+  dB <- c*(2*Te-tmin)*(tmax-Te)^(1/2) -
+    (c/2)*(Te^2-tmin*Te)*(tmax-Te)^(-1/2)
+  df <- dR0*((a/deltaa)*probla*(h*dE/(h*dE+deltaE)))*dB
+  return(df)
+}
+
+# Derivative of the biting rate, a:
+da <- function(Te, rain, hum){
+  a <- a_f_alb(Te)
+  f <- (1/2)*TFD_f_alb(Te)
+  deltaa <- lf_f_alb(Te)
+  dE <- dE_f_alb(Te)
+  probla <- pLA_f_alb(Te)
+  h <- h_f(hum,rain)
+  deltaE = 0.1
+  c = 0.000193
+  tmin = 10.25
+  tmax = 38.32
+  dR0 <- (1/3)*((f*a*deltaa)*probla*((h*dE)/(h*dE+deltaE)))^(-2/3)
+  dB <- c*(2*Te-tmin)*(tmax-Te)^(1/2) - 
+    (c/2)*(Te^2-tmin*Te)*(tmax-Te)^(-1/2)
+  da <- dR0*((f*deltaa)*probla*((h*dE)/(h*dE+deltaE)))*dB
+  return(da)
+}
+
+# Derivative pLA:
+dpLA <- function(Te, rain, hum){
+  a <- a_f_alb(Te)
+  f <- (1/2)*TFD_f_alb(Te)
+  deltaa <- lf_f_alb(Te)
+  dE <- dE_f_alb(Te)
+  probla <- pLA_f_alb(Te)
+  h <- h_f(hum,rain)
+  deltaE = 0.1
+  c = 0.002663
+  tmin = 6.668
+  tmax = 38.92
+  dR0 <- (1/3)*((f*a*deltaa)*probla*((h*dE)/(h*dE+deltaE)))^(-2/3)
+  dQ <- -c*((Te-tmax)+(Te-tmin))
+  dpLA <- dR0*((f*a*deltaa)*((h*dE)/(h*dE+deltaE)))*dQ
+  return(dpLA)
+}
+
+# Derivative dE:
+ddE <- function(Te, rain, hum){
+  a <- a_f_alb(Te)
+  f <- (1/2)*TFD_f_alb(Te)
+  deltaa <- lf_f_alb(Te)
+  dE <- dE_f_alb(Te)
+  probla <- pLA_f_alb(Te)
+  h <- h_f(hum,rain)
+  deltaE = 0.1
+  c = 0.00006881
+  tmin = 8.869
+  tmax = 35.09
+  dR0 <- (1/3)*((f*a*deltaa)*probla*((h*dE)/(h*dE+deltaE)))^(-2/3)
+  dB <- c*(2*Te-tmin)*(tmax-Te)^(1/2) - 
+    (c/2)*(Te^2-tmin*Te)*(tmax-Te)^(-1/2)
+  ddE <- dR0*((f*a*deltaa)*probla*((h*(h*dE+deltaE)-dE*h^2)/(h*dE+deltaE)^2))*dB
+  return(ddE)
+}
+
+# Derivative of the fecundity
+vec <- seq(0,40,0.01)
+rain_cte <- 8
+hum_cte <- 0
+out <- sapply(vec,df,rain=rain_cte, hum=hum_cte)
+df_out <- data.frame(vec, out)
+plot_df <- ggplot(df_out) +
+  geom_line(aes(vec,out)) + 
+  xlab("Temperature") + ylab("df") +
+  theme_bw()
+plot_df
+
+## Derivative of the bitting rate
+vec <- seq(0,40,0.0001)
+rain_cte <- 8
+hum_cte <- 0
+out <- sapply(vec,da,rain=rain_cte, hum=hum_cte)
+df_out <- data.frame(vec, out)
+plot_da <- ggplot(df_out) +
+  geom_line(aes(vec,out)) + 
+  xlab("Temperature") + ylab("da") +
+  theme_bw()
+plot_da
+
+## Derivative of the pLA
+vec <- seq(0,40,0.0001)
+rain_cte <- 8
+hum_cte <- 0
+out <- sapply(vec,dpLA,rain=rain_cte, hum=hum_cte)
+df_out <- data.frame(vec, out)
+plot_dpLA <- ggplot(df_out) +
+  geom_line(aes(vec,out)) + 
+  xlab("Temperature") + ylab("pLA") +
+  theme_bw()
+plot_dpLA
+
+## Derivative of the dE
+vec <- seq(0,40,0.0001)
+rain_cte <- 8
+hum_cte <- 0
+out <- sapply(vec,ddE,rain=rain_cte, hum=hum_cte)
+df_out <- data.frame(vec, out)
+plot_ddE <- ggplot(df_out) +
+  geom_line(aes(vec,out)) + 
+  xlab("Temperature") + ylab("ddE") +
+  theme_bw()
+plot_ddE
+
+## Thermal responses Aedes Albopictus from Mordecai 2017 and from literature:
+# a_f_alb <- function(temp){Briere_func(0.000193,10.25,38.32,temp)} # Biting rate
+# TFD_f_alb <- function(temp){Briere_func(0.0488,8.02,35.65,temp)} # Fecundity
+# pLA_f_alb <- function(temp){Quad_func(0.002663,6.668,38.92,temp)} # Survival probability Egg-Adult
+# MDR_f_alb <- function(temp){Briere_func(0.0000638,8.6,39.66,temp)} # Mosquito Development Rate
+# lf_f_alb <- function(temp){Quad_func(1.43,13.41,31.51,temp)} # Adult life span
+# dE_f_alb <- function(temp){Briere_func(0.00006881,8.869,35.09,temp)} # Adult life span
