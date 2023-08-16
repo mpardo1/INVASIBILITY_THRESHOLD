@@ -62,31 +62,6 @@ esp_can <- esp_can %>% left_join(census,
 esp_can <- esp_can[,c("NATCODE", "centroid", "pob19", "area")]
 # List the path of an .nc file that was downloaded via
 # request_era5()
-year = 2006
-my_nc <- paste0(getwd(),"/era5_Spain_",year,".nc")
-# Number of cores used in the parallelization
-num_cores = 10
-# Parallelize function in order to obtain value R0 for each municipality
-climat_each_muni <- mclapply(c(1:nrow(esp_can)), 
-                             extract_weather, 
-                             mc.cores = num_cores)
-# Save the resultant file:
-saveRDS(climat_each_muni,
-        paste0("~/INVASIBILITY_THRESHOLD/output/mcera5/ERA5_daily_mcera_",year,".Rds"))
-
-
-year = 2007
-my_nc <- paste0(getwd(),"/era5_Spain_",year,".nc")
-# Number of cores used in the parallelization
-num_cores = 10
-# Parallelize function in order to obtain value R0 for each municipality
-climat_each_muni <- mclapply(c(1:nrow(esp_can)), 
-                             extract_weather, 
-                             mc.cores = num_cores)
-# Save the resultant file:
-saveRDS(climat_each_muni,
-        paste0("~/INVASIBILITY_THRESHOLD/output/mcera5/ERA5_daily_mcera_",year,".Rds"))
-
 year = 2008
 my_nc <- paste0(getwd(),"/era5_Spain_",year,".nc")
 # Number of cores used in the parallelization
