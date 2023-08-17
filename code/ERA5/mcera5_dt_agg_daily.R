@@ -156,7 +156,7 @@ R0_func_jap <- function(Te, rain,hum){
 }
 #----------------------------------------------------------------------#
 ## Read the data for the R0 computed daily:
-Path <- "~/INVASIBILITY_TH RESHOLD/output/pop/pop22.Rds"
+Path <- "~/INVASIBILITY_THRESHOLD/output/pop/pop22.Rds"
 esp_can_pop <- readRDS( Path)
 
 extract_weather <- function(year_n){
