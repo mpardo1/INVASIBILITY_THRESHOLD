@@ -192,7 +192,22 @@ extract_weather <- function(year_n){
   return(dt_weather)
 }
 
-year = 2022
+year = 2004
+out <- extract_weather(year)
+Path <- paste0("~/INVASIBILITY_THRESHOLD/output/mcera5/process_hourly_daily_ERA5_daily_mcera_",year,".Rds")
+saveRDS(out,Path)
+
+year = 2005
+out <- extract_weather(year)
+Path <- paste0("~/INVASIBILITY_THRESHOLD/output/mcera5/process_hourly_daily_ERA5_daily_mcera_",year,".Rds")
+saveRDS(out,Path)
+
+year = 2006
+out <- extract_weather(year)
+Path <- paste0("~/INVASIBILITY_THRESHOLD/output/mcera5/process_hourly_daily_ERA5_daily_mcera_",year,".Rds")
+saveRDS(out,Path)
+
+year = 2007
 out <- extract_weather(year)
 Path <- paste0("~/INVASIBILITY_THRESHOLD/output/mcera5/process_hourly_daily_ERA5_daily_mcera_",year,".Rds")
 saveRDS(out,Path)

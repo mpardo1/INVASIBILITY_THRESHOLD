@@ -241,7 +241,8 @@ ggplot(df_out) +
   ylab("dE") +
   theme_bw()
 
-# R0
+###---------------------------------------------------------##
+#------------------------- R0---------------------------##
 vec <- seq(5,40,0.001)
 aegypti <- sapply(vec,R0_func_aeg, hum = 500,rain = 8)
 albopictus <- sapply(vec,R0_func_alb, hum = 500,rain = 8) 
@@ -252,17 +253,30 @@ df_out <- data.frame(vec, aegypti = aegypti,
                      japonicus = japonicus)
 df_out <- reshape2::melt( df_out, id.vars = "vec")
 
-letsize = 14
+library(RColorBrewer)
+name_pal = "Dark2"
+display.brewer.pal(3, name_pal)
+pal <- brewer.pal(3, name_pal)
+letsize = 16
 library("latex2exp")
 ggplot(df_out) + 
-  geom_line(aes(vec,value, color=variable)) +
+  geom_line(aes(vec,value, color=variable), size = 1) +
   geom_hline(yintercept = 1, linetype = "dashed", color = "red") +
-  ylab(TeX("$R_M$")) + scale_color_viridis_d(name = "") +
+  ylab(TeX("$R_M$")) + scale_color_manual(name = "", values =pal) +
   xlab("Temperature") +
   scale_x_continuous(breaks = seq(5,41,4)) +
   theme_bw() + theme(legend.position = c(0.18,0.8),
                      text = element_text(size = letsize),
                      legend.text.align = 0)
+
+##----------------Max,Min, PEAK VALUES---------------#
+# Compute the min and max temperature for suitability and
+# the temperature for the suitability peak for the three species
+specie = "albopictus"
+df_aux <- df_out[which(df_out$variable == specie),]
+min(df_aux[which(df_aux$value >1), "vec"])
+max(df_aux[which(df_aux$value >1), "vec"])
+df_aux[which(df_aux[, "value"] == max(df_aux[, "value"])), "vec"]
 
 #-----------------Albopictus--------------------------#
 ## R0
@@ -275,7 +289,7 @@ library("latex2exp")
 df_out <- data.frame(vec, out)
 ggplot(df_out) +
   geom_line(aes(vec,out)) + theme_bw() +
-  ylab(TeX("$R_M$")) + xlab("Temperatura") +
+  ylab(TeX("$R_M$")) + xlab("Temperature") +
   geom_hline(aes(yintercept = 1),
              linetype = "dashed", color = "red")+ 
   theme(legend.position = c(0.18,0.8),

@@ -171,7 +171,7 @@ R0_func_jap <- function(Te, rain,hum){
 
 #----------------------------------------------------------------------#
 ## Read the data for the R0 computed daily:
-year = 2020
+year = 2022
 Path <- paste0("/home/marta/INVASIBILITY_THRESHOLD/output/mcera5/process_Daily_ERA5_daily_mcera_",year,".Rds")
 # saveRDS(dt_weather,Path)
 df_group <- setDT(readRDS(Path))
@@ -317,7 +317,8 @@ plot_months <- function(df, month){
                          name = TeX("$R_M$")) +
     ggtitle(as.character(month)) +
     theme_bw() +
-    theme(plot.title = element_text(hjust = 0.5))
+    theme(plot.title = element_text(hjust = 0.5),
+          legend.position = c(0.1,0.8))
   return(plot)
 }
 
@@ -338,6 +339,49 @@ Path <-paste0("~/Documentos/PHD/2023/INVASIBILITY/Plots/MS/JapMonths",year,".pdf
 dev.copy2pdf(file=Path, width = 7, height = 5)
 
 ggsave(Path, plot = ggarr)
+
+
+### PLOT MONTH COMPARISON SPECIES #####
+## Change some parts of the plots in order to compare one month between species
+library("paletteer")
+pal = paletteer_c("ggthemes::Red-Green-Gold Diverging", 30) 
+# Definir colores base
+
+plot_months <- function(df, month,esp){
+  df1 <- df[which(df$month == month),]
+  
+  plot <- ggplot(df1) +
+    geom_sf(aes(fill = R0), colour = NA) +
+    geom_sf(data = can_box) + coord_sf(datum = NA) +
+    scale_fill_viridis_c(option = "C",
+                         limits = c(0,6),
+                         name = TeX("$R_M$")) +
+    ggtitle(esp) +
+    theme_bw() +
+    theme(plot.title = element_text(hjust = 0.5,face = "italic"),
+          legend.position = c(0.1,0.8))
+  return(plot)
+}
+
+## Month that you want to see the comparison
+month = 7
+df_group_mon$R0 <- df_group_mon$R0_mon_alb
+plot_alb <- plot_months(df_group_mon,month, "Aedes albopictus")
+plot_alb
+df_group_mon$R0 <- df_group_mon$R0_mon_aeg
+plot_aeg <- plot_months(df_group_mon,month, "Aedes aegypti")
+plot_aeg
+df_group_mon$R0 <- df_group_mon$R0_mon_jap
+plot_jap <- plot_months(df_group_mon,month, "Aedes japonicus")
+plot_jap
+
+ggarr = ggarrange(plot_alb +
+                    theme(legend.position = "none"),
+                  plot_aeg +
+                    theme(legend.position = "none"), 
+                  ncol = 2 )
+ggarrange(ggarr, plot_jap, ncol = 1,
+          common.legend = TRUE, widths = c(1,0.8))
 
 ## ----------PLOT ANNUAL AVERAGE SEASON----------#
 ## Group by year:
@@ -429,6 +473,13 @@ ggplot(df_group_y) +
 # Whole map group by number of months suitable
 library(RColorBrewer)
 library(ggpubr)
+library(RColorBrewer)
+name_pal = "RdYlGn"
+display.brewer.pal(11, name_pal)
+pal <- rev(brewer.pal(11, name_pal))
+pal[12] = "#860000"
+pal[13] = "#610000"
+letsize = 16
 plot_summonths <- function(df){
   num_colors <- 13
   # Create a palette function using colorRampPalette
@@ -441,7 +492,7 @@ plot_summonths <- function(df){
   ggplot(df) +
     geom_sf(aes(fill = as.factor(R0)), colour = NA) +
     geom_sf(data = can_box) + coord_sf(datum = NA) +
-    scale_fill_manual(values = colors,
+    scale_fill_manual(values = pal,
                       name = "Nº months\n suitable",
                       limits = factor(seq(0,12,1))) +
     theme_bw() 
@@ -466,6 +517,18 @@ plot_sum_jap <- plot_summonths(df_group_y)
 plot_sum_jap
 Path <- paste0("~/Documentos/PHD/2023/INVASIBILITY/Plots/MS/JapSum",year,".pdf")
 dev.copy2pdf(file=Path, width = 7, height = 5)
+
+# Extract the legend
+legend_only <- get_legend(plot_sum_alb+
+                            theme(legend.position = "top"))
+ggarrange(plot_sum_alb + ggtitle("A")+
+            theme(legend.position = "none"),
+          plot_sum_aeg + ggtitle("B")+
+            theme(legend.position = "none"),
+          plot_sum_jap + ggtitle("C")+
+            theme(legend.position = "none"),
+          legend_only,
+          ncol=2, nrow = 2)
 
 ### With minimum temp :
 ## Computed with sum months maps 
