@@ -134,11 +134,8 @@ R0_func_jap <- function(Te, rain,hum){
   dE <- dE_f_jap(Te)
   dL <- dL_f_jap(Te)
   h <- h_f(hum,rain)
-  if(dL == 0 | f == 0 | a == 0 | dE == 0 | h == 0 | Te<0){
-    R0 <- 0
-  }else{
-    R0 <- ((f*a*lf)*(dL/(dL+deltaL))*(h*dE/(h*dE+deltE)))^(1/3)
-  }
+  R0 <- ((f*a*lf)*(dL/(dL+deltaL))*(h*dE/(h*dE+deltE)))^(1/3)
+  R0 <- ifelse(is.na(R0),0,R0)
   return(R0)
 }
 
@@ -326,8 +323,9 @@ ggplot(df_out) +
 #----------------------------------------------------------#
 
 #---------------SENSITIVITY ANALYSIS-------------------------#
+## Albopictus
 # Derivative with respect to Temperature
-vec <- seq(0,40,0.0001)
+vec <- seq(0,40,0.01)
 hum_cte <- 500
 rain_cte <- 8
 out_alb <- sapply(vec,R0_func_alb,hum=hum_cte, rain=rain_cte)
@@ -339,13 +337,15 @@ plot_t <- ggplot(df_out_alb) +
   theme_bw()
 plot_t
 
-ind <- df_out_alb[which(df_out_alb$out_alb != 0),1]
-numd1_t <- grad(function(x){R0_func_alb(rain_cte,hum_cte,x)}, ind)
-devf_t <- data.frame(ind,numd1_t)
-dev_t <- ggplot(devf_t) +
+ind <- df_out_alb[which(df_out_alb$out_alb != 0),"vec"]
+df_test <- df_out_alb[ind,]
+numd1_t <- grad(function(x){R0_func_alb(x,rain_cte,hum_cte)}, ind)
+devf_t_alb <- data.frame(ind,numd1_t)
+dev_t <- ggplot(devf_t_alb ) +
   geom_line(aes(ind,numd1_t)) + 
   xlab("Temperature(Cº)") + ylab("dR0/dT") +
   theme_bw()
+dev_t
 
 # Derivative with respect to Rainfall
 vec <- seq(0,20,0.01)
@@ -358,9 +358,9 @@ plot_r <- ggplot(df_out) +
   xlab("Rainfall(mm)") + ylab("R0") +
   theme_bw()
 ind <- df_out[which(df_out$out != 0),1]
-numd1_r <- grad(function(x){R0_func_alb(x,hum_cte,te_cte)}, ind)
-devf_r <- data.frame(ind,numd1_r)
-dev_r <- ggplot(devf_r) +
+numd1_r <- grad(function(x){R0_func_alb(te_cte,x,hum_cte)}, ind)
+devf_r_alb <- data.frame(ind,numd1_r)
+dev_r <- ggplot(devf_r_alb) +
   geom_line(aes(ind,numd1_r))  + 
   xlab("Rainfall(mm)") + ylab("dR0/dR") +
   theme_bw()
@@ -378,9 +378,9 @@ plot_h <- ggplot(df_out) +
   theme_bw()
 
 ind <- df_out[which(df_out$out != 0),1]
-numd1_h <- grad(function(x){R0_func_alb(rain_cte,x,te_cte)}, ind)
-devf_h <- data.frame(ind,numd1_h)
-dev_h <- ggplot(devf_h) +
+numd1_h <- grad(function(x){R0_func_alb(te_cte, rain_cte,x)}, ind)
+devf_h_alb <- data.frame(ind,numd1_h)
+dev_h <- ggplot(devf_h_alb) +
   geom_line(aes(ind,numd1_h)) + 
   xlab("Human density(km2)") + ylab("dR0/dH") +
   theme_bw()
@@ -391,7 +391,7 @@ ggarrange(plot_t,plot_r,plot_h)
 
 #####------ Aegypti ------------##
 # Derivative with respect to Temperature
-vec <- seq(0,40,0.0001)
+vec <- seq(0,40,0.01)
 hum_cte <- 500
 rain_cte <- 8
 out_aeg <- sapply(vec,R0_func_aeg,hum=hum_cte, rain=rain_cte)
@@ -404,12 +404,13 @@ plot_t <- ggplot(df_out_aeg) +
 plot_t
 
 ind <- df_out_aeg[which(df_out_aeg$out_aeg != 0),1]
-numd1_t <- grad(function(x){R0_func_aeg(rain_cte,hum_cte,x)}, ind)
-devf_t <- data.frame(ind,numd1_t)
-dev_t <- ggplot(devf_t) +
+numd1_t <- grad(function(x){R0_func_aeg(x,rain_cte,hum_cte)}, ind)
+devf_t_aeg <- data.frame(ind,numd1_t)
+dev_t <- ggplot(devf_t_aeg) +
   geom_line(aes(ind,numd1_t)) + 
   xlab("Temperature(Cº)") + ylab("dR0/dT") +
   theme_bw()
+dev_t
 
 # Derivative with respect to Rainfall
 vec <- seq(0,20,0.01)
@@ -422,9 +423,9 @@ plot_r <- ggplot(df_out) +
   xlab("Rainfall(mm)") + ylab("R0") +
   theme_bw()
 ind <- df_out[which(df_out$out != 0),1]
-numd1_r <- grad(function(x){R0_func_aeg(x,hum_cte,te_cte)}, ind)
-devf_r <- data.frame(ind,numd1_r)
-dev_r <- ggplot(devf_r) +
+numd1_r <- grad(function(x){R0_func_aeg(te_cte,x,hum_cte)}, ind)
+devf_r_aeg <- data.frame(ind,numd1_r)
+dev_r <- ggplot(devf_r_aeg) +
   geom_line(aes(ind,numd1_r))  + 
   xlab("Rainfall(mm)") + ylab("dR0/dR") +
   theme_bw()
@@ -441,9 +442,9 @@ plot_h <- ggplot(df_out) +
   theme_bw()
 
 ind <- df_out[which(df_out$out != 0),1]
-numd1_h <- grad(function(x){R0_func_aeg(rain_cte,x,te_cte)}, ind)
-devf_h <- data.frame(ind,numd1_h)
-dev_h <- ggplot(devf_h) +
+numd1_h <- grad(function(x){R0_func_aeg(te_cte,rain_cte,x)}, ind)
+devf_h_aeg <- data.frame(ind,numd1_h)
+dev_h <- ggplot(devf_h_aeg) +
   geom_line(aes(ind,numd1_h)) + 
   xlab("Human density(km2)") + ylab("dR0/dH") +
   theme_bw()
@@ -459,7 +460,7 @@ ggplot(df) +
   geom_point(aes(vec,out))
 
 # Derivative with respect to Temperature
-vec <- seq(0,40,0.0001)
+vec <- seq(0,40,0.01)
 hum_cte <- 500
 rain_cte <- 8
 out_jap <- sapply(vec,R0_func_jap,hum=hum_cte, rain=rain_cte)
@@ -472,12 +473,13 @@ plot_t <- ggplot(df_out_jap) +
 plot_t
 
 ind <- df_out_jap[which(df_out_jap$out_jap != 0),1]
-numd1_t <- grad(function(x){R0_func_jap(rain_cte,hum_cte,x)}, ind)
-devf_t <- data.frame(ind,numd1_t)
-dev_t <- ggplot(devf_t) +
+numd1_t <- grad(function(x){R0_func_jap(x,rain_cte,hum_cte)}, ind[1:2300])
+devf_t_jap <- data.frame(ind=ind[1:2300],numd1_t)
+dev_t <- ggplot(devf_t_jap) +
   geom_line(aes(ind,numd1_t)) + 
   xlab("Temperature(Cº)") + ylab("dR0/dT") +
   theme_bw()
+dev_t
 
 # Derivative with respect to Rainfall
 vec <- seq(0,20,0.01)
@@ -490,9 +492,9 @@ plot_r <- ggplot(df_out) +
   xlab("Rainfall(mm)") + ylab("R0") +
   theme_bw()
 ind <- df_out[which(df_out$out != 0),1]
-numd1_r <- grad(function(x){R0_func_jap(x,hum_cte,te_cte)}, ind)
-devf_r <- data.frame(ind,numd1_r)
-dev_r <- ggplot(devf_r) +
+numd1_r <- grad(function(x){R0_func_jap(te_cte,x,hum_cte)}, ind)
+devf_r_jap <- data.frame(ind,numd1_r)
+dev_r <- ggplot(devf_r_jap) +
   geom_line(aes(ind,numd1_r))  + 
   xlab("Rainfall(mm)") + ylab("dR0/dR") +
   theme_bw()
@@ -509,9 +511,9 @@ plot_h <- ggplot(df_out) +
   theme_bw()
 
 ind <- df_out[which(df_out$out != 0),1]
-numd1_h <- grad(function(x){R0_func_jap(rain_cte,x,te_cte)}, ind)
-devf_h <- data.frame(ind,numd1_h)
-dev_h <- ggplot(devf_h) +
+numd1_h <- grad(function(x){R0_func_jap(te_cte,rain_cte,x)}, ind)
+devf_h_jap <- data.frame(ind,numd1_h)
+dev_h <- ggplot(devf_h_jap) +
   geom_line(aes(ind,numd1_h)) + 
   xlab("Human density(km2)") + ylab("dR0/dH") +
   theme_bw()
@@ -520,6 +522,66 @@ library(ggpubr)
 ggarrange(dev_t,dev_r,dev_h)
 ggarrange(plot_t,plot_r,plot_h)
 
+# Colors to match the other plots in the text
+alb_col = pal[2]
+aeg_col = pal[1]
+jap_col = pal[3]
+
+## Create a plot with temperature derivative for the three species:
+devf_t <- devf_t_alb %>% 
+  left_join(devf_t_aeg, by = join_by(ind)) %>% 
+  left_join(devf_t_jap, by = join_by(ind))
+
+colnames(devf_t) <- c("temperature", "albopictus", "aegypti", "japonicus")
+df_plot <- reshape2::melt(devf_t, id.vars = "temperature")
+dt <- ggplot(df_plot) + 
+  geom_line(aes(temperature, value, color = variable), size = 0.8) + 
+  xlab("Temperature") +
+  scale_color_manual(name = "", values = c(alb_col,aeg_col,jap_col),
+                     labels = c( expression(italic("Ae. albopictus")),
+                                 expression(italic("Ae. aegypti")),
+                                 expression(italic("Ae. japonicus")))) +
+  ylim(c(-5,5)) + theme_bw() + theme(legend.position = c(0.25,0.25),
+                                     text = element_text(size = letsize),
+                                     legend.text.align = 0)
+dt
+
+## Create a plot with rainfall derivative for the three species:
+devf_r <- devf_r_alb %>% 
+  left_join(devf_r_aeg, by = join_by(ind)) %>% 
+  left_join(devf_r_jap, by = join_by(ind))
+
+colnames(devf_r) <- c("rainfall", "albopictus", "aegypti", "japonicus")
+df_plot <- reshape2::melt(devf_r, id.vars = "rainfall")
+dr <- ggplot(df_plot) + 
+  geom_line(aes(rainfall, value, color = variable), size = 0.8) +
+  xlab("Rainfall") +
+  scale_color_manual(name = "", values = c(alb_col,aeg_col,jap_col)) +
+  theme_bw() + theme(legend.position = "none",
+                                     text = element_text(size = letsize),
+                                     legend.text.align = 0)
+dr
+
+## Create a plot with human density derivative for the three species:
+devf_h <- devf_h_alb %>% 
+  left_join(devf_h_aeg, by = join_by(ind)) %>% 
+  left_join(devf_h_jap, by = join_by(ind))
+
+colnames(devf_h) <- c("Human_density", "albopictus", "aegypti", "japonicus")
+df_plot <- reshape2::melt(devf_h, id.vars = "Human_density")
+dh <- ggplot(df_plot) + 
+  geom_line(aes(Human_density, value, color = variable), size = 0.8) +
+  xlab("Human density") +
+  scale_color_manual(name = "", values = c(alb_col,aeg_col,jap_col)) +
+  theme_bw() + theme(legend.position = "none",
+                     text = element_text(size = letsize),
+                     legend.text.align = 0)
+dh  
+
+ggarrange(ggarrange(dt,dr + ylab("")),dh, ncol = 1)
+
+#--------------------------------------------------------------------------#
+## Plot the three RM together
 df_out_tot <- data.frame(temp = df_out_jap$vec, 
                          Albopictus=df_out_alb$out_alb/max(df_out_alb$out_alb),
                          Aegypti=df_out_aeg$out_aeg/max(df_out_aeg$out_aeg),
@@ -930,10 +992,14 @@ plot_dJap <- ggplot(df_out) +
 
 plot_dJap
 
-ggarrange(plot_dAlb + ylab("dx/dT") + xlab(""),
-          plot_ddeltaA + ylab("") + xlab(""),
-          plot_dAeg  + ylab("dx/dT"),
-          plot_dJap + ylab(""),
+ggarrange(plot_dAlb + ylab("dx/dT") + xlab("") + 
+            ggtitle(expression(italic("Ae. Albopitus"))),
+          plot_ddeltaA + ylab("") + xlab("") + 
+            ggtitle(expression(italic("Ae. Albopitus"))),
+          plot_dAeg  + ylab("dx/dT") + 
+            ggtitle(expression(italic("Ae. Aegypti"))),
+          plot_dJap + ylab("") + 
+            ggtitle(expression(italic("Ae. Japonicus"))),
           common.legend = TRUE)
 
 ## Thermal responses Aedes Aegypti from Mordecai 2017 and from literature:

@@ -211,3 +211,39 @@ year = 2007
 out <- extract_weather(year)
 Path <- paste0("~/INVASIBILITY_THRESHOLD/output/mcera5/process_hourly_daily_ERA5_daily_mcera_",year,".Rds")
 saveRDS(out,Path)
+
+year = 2008
+out <- extract_weather(year)
+Path <- paste0("~/INVASIBILITY_THRESHOLD/output/mcera5/process_hourly_daily_ERA5_daily_mcera_",year,".Rds")
+saveRDS(out,Path)
+
+year = 2009
+out <- extract_weather(year)
+Path <- paste0("~/INVASIBILITY_THRESHOLD/output/mcera5/process_hourly_daily_ERA5_daily_mcera_",year,".Rds")
+saveRDS(out,Path)
+
+year = 2010
+out <- extract_weather(year)
+Path <- paste0("~/INVASIBILITY_THRESHOLD/output/mcera5/process_hourly_daily_ERA5_daily_mcera_",year,".Rds")
+saveRDS(out,Path)
+
+year = 2011
+out <- extract_weather(year)
+Path <- paste0("~/INVASIBILITY_THRESHOLD/output/mcera5/process_hourly_daily_ERA5_daily_mcera_",year,".Rds")
+saveRDS(out,Path)
+
+
+year = 2012
+out <- extract_weather(year)
+Path <- paste0("~/INVASIBILITY_THRESHOLD/output/mcera5/process_hourly_daily_ERA5_daily_mcera_",year,".Rds")
+saveRDS(out,Path)
+
+year = 2013
+out <- extract_weather(year)
+Path <- paste0("~/INVASIBILITY_THRESHOLD/output/mcera5/process_hourly_daily_ERA5_daily_mcera_",year,".Rds")
+saveRDS(out,Path)
+
+year = 2022
+out <- extract_weather(year)
+Path <- paste0("~/INVASIBILITY_THRESHOLD/output/mcera5/process_hourly_daily_ERA5_daily_mcera_",year,".Rds")
+saveRDS(out,Path)

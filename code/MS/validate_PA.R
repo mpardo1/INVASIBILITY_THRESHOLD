@@ -605,12 +605,22 @@ PA <- PA_alb %>% left_join(PA_jap)
 PA$esp <- ifelse(PA$Albopictus == 1 & PA$Japonicus == 0, "Albopictus",
                  ifelse(PA$Albopictus == 0 & PA$Japonicus == 1, "Japonicus", 
                         ifelse(PA$Albopictus == 1 & PA$Japonicus == 1, "Both","Not detected")   ))
+# Size letter
+letsize = 15
+name_pal = "Dark2"
+display.brewer.pal(3, name_pal)
+pal <- brewer.pal(3, name_pal)
+# Colors to match the other plots in the text
+alb_col = pal[2]
+aeg_col = pal[1]
+jap_col = pal[3]
 
+# Join with the municipalities data
 PA <- esp_can %>% left_join(PA)
 PA[which(is.na(PA$esp)),"esp"] <- "Not detected"
 PA_esp <- ggplot(PA) + 
   geom_sf(aes(fill = as.factor(esp)), linewidth = 0.05) +
-  scale_fill_manual(values = c("#ffa62b","#ee4266",  "#0ead69","white") , 
+  scale_fill_manual(values = c(alb_col,aeg_col,jap_col,"white") , 
                     name = "") +
   geom_sf(data = can_box) + coord_sf(datum = NA) + theme_bw() +
   theme(legend.position = c(0.8, 0.2),

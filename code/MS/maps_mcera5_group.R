@@ -469,16 +469,16 @@ ggplot(df_group_y) +
 #   labs(title = "Month: {current_frame}") +
 #   transition_manual(as.factor(month))
 
-
 # Whole map group by number of months suitable
 library(RColorBrewer)
 library(ggpubr)
 library(RColorBrewer)
-name_pal = "RdYlGn"
+name_pal = "RdYlBu"
 display.brewer.pal(11, name_pal)
 pal <- rev(brewer.pal(11, name_pal))
-pal[12] = "#860000"
-pal[13] = "#610000"
+pal[11]
+pal[12] = "#74011C"
+pal[13] = "#4B0011"
 letsize = 16
 plot_summonths <- function(df){
   num_colors <- 13
@@ -521,12 +521,15 @@ dev.copy2pdf(file=Path, width = 7, height = 5)
 # Extract the legend
 legend_only <- get_legend(plot_sum_alb+
                             theme(legend.position = "top"))
-ggarrange(plot_sum_alb + ggtitle("A")+
-            theme(legend.position = "none"),
-          plot_sum_aeg + ggtitle("B")+
-            theme(legend.position = "none"),
-          plot_sum_jap + ggtitle("C")+
-            theme(legend.position = "none"),
+ggarrange(plot_sum_alb + ggtitle(expression(italic("Ae. albopictus")))+
+            theme(legend.position = "none",
+                  plot.title = element_text(hjust = 0.5)),
+          plot_sum_aeg + ggtitle(expression(italic("Ae. aegypti")))+
+            theme(legend.position = "none",
+                  plot.title = element_text(hjust = 0.5)),
+          plot_sum_jap + ggtitle(expression(italic("Ae. japonicus")))+
+            theme(legend.position = "none",
+                  plot.title = element_text(hjust = 0.5)),
           legend_only,
           ncol=2, nrow = 2)
 
