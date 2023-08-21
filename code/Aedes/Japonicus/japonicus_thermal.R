@@ -1,6 +1,5 @@
 ## Compute the thermal responses for Aedes Japonicus from literature data
 # compare also different functions and compute its AIC value
-
 rm(list= ls())
 library(thermPerf)
 library(ggplot2)
@@ -520,12 +519,14 @@ plotdeltaL
 
 ###----------------------------------------------
 library(ggpubr)
+sizelet = 14
 ggarrange(plotdE  +
-            theme(text = element_text(size = 15)) + xlab("") ,
+            theme(text = element_text(size = sizelet)) + xlab("") ,
           plotdL +
-            theme(text = element_text(size = 15)) + xlab(""),
+            theme(text = element_text(size = sizelet)) +
+            ylab("Development rate from Larva to Egg") + xlab(""),
           plotdeltaL + ylim(c(0,1.3)) +
-            theme(text = element_text(size = 15)),
+            theme(text = element_text(size = sizelet)),
           plotdeltaA  +
-            theme(text = element_text(size = 15)))
+            theme(text = element_text(size = sizelet)))
 

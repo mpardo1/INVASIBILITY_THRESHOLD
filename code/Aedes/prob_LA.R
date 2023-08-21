@@ -454,6 +454,22 @@ ggarrange( plotdE +
             ylab("Probability from Larvae to Adult")
          )
 
+## Both toguether:
+sizelet = 14
+ggarrange( plotalb  +
+              theme(text = element_text(size = sizelet)) +
+              ylab("Probability from Larvae to Adult") +
+             xlab("") + ylim(c(0,1.3)) +
+             ggtitle(expression(italic("Ae. Albopictus"))) ,
+          plotaeg  + 
+            theme(text = element_text(size = sizelet)) +
+            xlab("") + ylim(c(0,1.3)) + ylab("") +
+            ggtitle(expression(italic("Ae. Aegypti"))),
+          plotdE + ylim(c(0,0.55)) + ylab("Egg development rate") +
+            theme(text = element_text(size = sizelet)),
+          plotdE_aeg + ylim(c(0,0.55)) + ylab("") +
+             theme(text = element_text(size = sizelet))
+)
 
 ## Eggs per femae paper: https://onlinelibrary.wiley.com/doi/full/10.1111/jvec.12187
 fec <- data.frame(Temp = c(16,22,28,33,36,16,22,28,33,36,16,22,28,33,36, 20,26,30,35), 

@@ -138,7 +138,7 @@ plot_sum_p <- function(ccaa){
   
   ggplot(df_sum_CAT) +
     geom_point(aes(R0_sum_alb,prop_1)) +
-    xlab("R0 nº months") + 
+    xlab("Nº months\n suitable") + 
     ylab("Proportion of municipalities with presence") +
     ylim(c(0,1)) +
     ggtitle(ccaa) +  
@@ -156,7 +156,7 @@ plot_sum_p_max <- function(ccaa){
   
   ggplot(df_sum_CAT) +
     geom_point(aes(R0_sum_alb_max,prop_1)) +
-    xlab("R0 nº months") + 
+    xlab("Nº months\n suitable") + 
     ylab("Proportion of municipalities with presence") +
     ylim(c(0,1)) +
     ggtitle(ccaa) +  
@@ -174,7 +174,7 @@ plot_sum_p_min <- function(ccaa){
   
   ggplot(df_sum_CAT) +
     geom_point(aes(R0_sum_alb_min,prop_1)) +
-    xlab("R0 nº months") + 
+    xlab("Nº months\n suitable") + 
     ylab("Proportion of municipalities with presence") +
     ylim(c(0,1)) +
     ggtitle(ccaa) +  

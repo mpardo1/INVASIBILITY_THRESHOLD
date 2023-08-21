@@ -604,9 +604,9 @@ ggplot(df_plot) +
 # lf_f_alb <- function(temp){Quad_func(1.43,13.41,31.51,temp)} # Adult life span
 # dE_f_alb <- function(temp){Briere_func(0.00006881,8.869,35.09,temp)} # Adult life span
 library(RColorBrewer)
-name_pal = "Dark2"
-display.brewer.pal(8, name_pal)
-pal <- brewer.pal(8, name_pal)
+name_pal = "Paired"
+display.brewer.pal(9, name_pal)
+pal <- brewer.pal(9, name_pal)
 
 col_a = pal[1]
 col_f = pal[6]
@@ -616,6 +616,7 @@ col_deltaL = pal[4]
 col_dL = pal[5]
 col_dE = pal[2]
 col_pLA = pal[8]
+col_R = pal[9]
 
 ##### Albopictus #####
 # Derivative of the fecundity, f:
@@ -735,6 +736,14 @@ df_out_dE$var <- "dE"
 out_ddeltaA <- sapply(vec,ddeltaA,rain=rain_cte, hum=hum_cte)
 df_out_ddeltaA <- data.frame(vec, out =out_ddeltaA)
 df_out_ddeltaA$var <- "ddeltaA"
+
+# Change the name of the df with the derivative of RM respect to T
+colnames(devf_t_alb) <- c("vec", "out")
+devf_t_alb$var <- "RM"
+devf_t_alb <- devf_t_alb[, c("vec", "out", "var")]
+
+# Artificially create data frames in order to have a legend with all the variables
+# And then when I do the ggarrange I have one legend with all variables
 df_out_lf <- data.frame(vec = 0,
                         out = 0,
                         var = "lf")
@@ -748,23 +757,27 @@ df_out_dL <- data.frame(vec = 0,
                             out = 0,
                             var = "dL")
 
+# Join all the data frames
 df_out <- rbind(df_out_f,df_out_a,df_out_pLA,
                 df_out_dE,df_out_lf,df_out_deltaA,
-                df_out_deltaL,df_out_dL)
+                df_out_deltaL,df_out_dL,devf_t_alb)
 
 library("latex2exp")
 plot_dAlb <- ggplot(df_out) +
-  geom_line(aes(vec,out, color = var)) + 
+  geom_line(aes(vec,out, color = var), size = 0.8) + 
   xlab("Temperature") + ylab("derivative") +
-  scale_color_manual(values = pal,
+  scale_color_manual(name = "",values = pal,
                      labels = c("a",TeX("$ d_E$"),
                                 TeX(" $ \\delta_A$"),TeX(" $ \\delta_L$"),
-                                TeX(" $ d_L$"),"f", "lf", TeX( " $ p_{LA}$") )) + 
-  theme(legend.text.align = 0) +
-  theme_bw() +
+                                TeX(" $ d_L$"),"f", "lf",
+                                TeX( " $ p_{LA}$"), TeX( " $ R_M$") )) + 
+  theme(legend.text.align = 0,
+        text = element_text(size = letsize)) +
+  theme_bw() + ylim(c(-0.4,0.64)) +
   labs(color=NULL)
 plot_dAlb
 
+# The plot for deltaA it is separated since it has a much bigger range
 plot_ddeltaA <- ggplot(df_out_ddeltaA) +
   geom_line(aes(vec,out), color = col_deltaA, size = 0.8) + 
   xlab("Temperature") + ylab("derivative") +
@@ -866,19 +879,28 @@ df_out_dE$var <- "dE"
 out_ddeltaA <- sapply(vec,ddeltaA,rain=rain_cte, hum=hum_cte)
 df_out_ddeltaA <- data.frame(vec, out =out_ddeltaA)
 df_out_ddeltaA$var <- "ddeltaA"
+
+# Change the name of the df with the derivative of RM respect to T
+colnames(devf_t_aeg) <- c("vec", "out")
+devf_t_aeg$var <- "RM"
+devf_t_aeg <- devf_t_aeg[, c("vec", "out", "var")]
+## Join all data frames
 df_out <- rbind(df_out_a,df_out_pLA,
-                df_out_dE,df_out_ddeltaA )
+                df_out_dE,df_out_ddeltaA, devf_t_aeg )
 
 plot_dAeg <- ggplot(df_out) +
-  geom_line(aes(vec,out, color = var)) + 
+  geom_line(aes(vec,out, color = var), size = 0.8) + 
   xlab("Temperature") + ylab("derivative") +
   ylim(c(-2,4.7)) +
-  scale_color_manual(values = c(col_a,col_deltaA,col_dE,col_pLA)) +
+  scale_color_manual(values = c(col_a,col_deltaA,
+                                col_dE,col_pLA, col_R)) +
+  theme(legend.text.align = 0,
+        text = element_text(size = letsize)) +
   theme_bw()  +
   labs(color=NULL)
 plot_dAeg
 
-##### JAponicus #####
+##### Japonicus #####
 #####----------------Japonicus-----------------####
 # dE_f_jap <- function(temp){Briere_func(0.0002859,6.360,35.53 ,temp)} # Mosquito Development Rate
 # dL_f_jap <- function(temp){Briere_func(7.000e-05,9.705e+00,3.410e+01,temp)} # Survival probability Egg-Adult
@@ -979,14 +1001,23 @@ df_out_dE$var <- "dE"
 out_ddeltaL <- sapply(vec,ddeltaL,rain=rain_cte, hum=hum_cte)
 df_out_ddeltaL <- data.frame(vec, out =out_ddeltaL)
 df_out_ddeltaL$var <- "ddeltaL"
+
+# Change the name of the df with the derivative of RM respect to T
+colnames(devf_t_jap) <- c("vec", "out")
+devf_t_jap$var <- "RM"
+devf_t_jap <- devf_t_jap[,c("vec", "out", "var")]
+
+# Join all the df with all the derivatives
 df_out <- rbind(df_out_dL,df_out_lf,
-                df_out_dE,df_out_ddeltaL )
+                df_out_dE,df_out_ddeltaL, devf_t_jap )
 
 plot_dJap <- ggplot(df_out) +
-  geom_line(aes(vec,out, color = var)) + 
+  geom_line(aes(vec,out, color = var), size = 0.8) + 
   xlab("Temperature") + ylab("derivative") +
-  scale_color_manual(values = c(col_deltaL,col_dE,col_dL,col_lf)) +
+  scale_color_manual(values = c(col_deltaL,col_dE,col_dL,col_lf, col_R)) +
   ylim(c(-1,1)) +
+  theme(legend.text.align = 0,
+        text = element_text(size = letsize)) +
   theme_bw() +
   labs(color=NULL)
 

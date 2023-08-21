@@ -171,10 +171,14 @@ R0_func_jap <- function(Te, rain,hum){
 
 #----------------------------------------------------------------------#
 ## Read the data for the R0 computed daily:
-year = 2022
-Path <- paste0("/home/marta/INVASIBILITY_THRESHOLD/output/mcera5/process_Daily_ERA5_daily_mcera_",year,".Rds")
+# year = 2022
+# Path <- paste0("/home/marta/INVASIBILITY_THRESHOLD/output/mcera5/process_Daily_ERA5_daily_mcera_",year,".Rds")
+year = 2020
+Path <- paste0("/home/marta/INVASIBILITY_THRESHOLD/output/mcera5/process_hourly_daily_ERA5_daily_mcera_",
+               year,".Rds")
 # saveRDS(dt_weather,Path)
 df_group <- setDT(readRDS(Path))
+
 df_group$id <- 1
 test <- df_group[,.(n = sum(id)), by = list(NATCODE)]
 min(test$n)
@@ -190,15 +194,19 @@ esp_can$NATCODE <- as.numeric(paste0("34",esp_can$codauto,
 df_group$month <- lubridate::month(df_group$date)
 
 # Population 2022:
-Path <- "/home/marta/INVASIBILITY_THRESHOLD/data/pop/pobmun22.csv"
-pop22 <- read.csv(Path, sep = ",")
+# Path <- "/home/marta/INVASIBILITY_THRESHOLD/data/pop/pobmun22.csv"
+# pop22 <- read.csv(Path, sep = ",")
+Path <- "/home/marta/INVASIBILITY_THRESHOLD/data/pop/pobmun04.csv"
+pop22 <- read.csv(Path, sep = ";")
 pop22$cmun <- ifelse(pop22$CMUN<10, paste0("00",pop22$CMUN),
                      ifelse(pop22$CMUN<100, paste0("0",pop22$CMUN),as.character(pop22$CMUN)))
 pop22$cpro <- ifelse(pop22$CPRO<10,
                      paste0("0",pop22$CPRO),as.character(pop22$CPRO))
+pop22$POB22 <- strtoi(pop22$TOTAL)
 esp_can <- esp_can %>% left_join(pop22)
 test_pop <- esp_can[which(is.na(esp_can$POB22)),
                     c("name", "NATCODE", "POB22")]
+
 test_pop$geometry <- NULL
 nrow(test_pop)
 esp_can[which(is.na(esp_can$POB22)),"POB22"] <- 0
@@ -209,15 +217,12 @@ esp_can_pop$geometry <- NULL
 df_group <- df_group %>% left_join(esp_can_pop)
 df_group$diff_pop <- abs(df_group$pop - df_group$POB22)
 hist(df_group$diff_pop)
-# NATNA <- df_group[which(is.na(df_group$POB22)),"NATCODE"]   
-# esp_can$null_name <- ifelse(is.na(esp_can$POB22),1,0)
-# ggplot(esp_can) + geom_sf(aes(fill = as.factor(null_name)), lwd = 0)
 
 ### Test weather data.
-df_day <- df_group[which(df_group$date == as.Date("2022-03-02")),]
+df_day <- df_group[which(df_group$date == as.Date("2004-03-05")),]
 df_day <- esp_can %>% left_join(df_day)
 ggplot(df_day) + 
-  geom_sf(aes(fill = prec1)) +
+  geom_sf(aes(fill = prec1), lwd = 0) +
   scale_fill_viridis_c()
 
 hist(df_group$prec1)
