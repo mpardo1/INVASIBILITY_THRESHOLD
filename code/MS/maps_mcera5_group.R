@@ -475,7 +475,6 @@ ggplot(df_group_y) +
 #   transition_manual(as.factor(month))
 
 # Whole map group by number of months suitable
-library(RColorBrewer)
 library(ggpubr)
 library(RColorBrewer)
 name_pal = "RdYlBu"
