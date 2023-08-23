@@ -23,20 +23,36 @@ intersect_df <- data.frame(point = numeric(0), geometry = numeric(0))
 
 # Intersect data from climate to mapSpain -----------------------------------
 # There are points that do not intersect any geometry
-for(i in c(1:nrow(prec_sf))){
-  print(paste0("step:",i))
+# for(i in c(1:nrow(prec_sf))){
+#   print(paste0("step:",i))
+#   points <- prec_sf[i,"geometry"]
+#   intersections_lp <- st_intersects(geometry,points) %>% lengths > 0
+#   if(length(which(intersections_lp==TRUE)) > 0){
+#     print("Intersect")
+#     intersect_df[nrow(intersect_df) + 1,] <- c(i,which(intersections_lp==TRUE))
+#   }
+# }
+# 
+# # Add the NATCODE and the geometry point ------------------------------------ 
+# intersect_df$geom <- prec_sf[intersect_df$point,"geometry"]
+# intersect_df$NATCODE <- esp_can[intersect_df$geometry,"NATCODE"]
+
+# Paralelize code ----------------------------------------------------------
+inters <- function(i){
   points <- prec_sf[i,"geometry"]
   intersections_lp <- st_intersects(geometry,points) %>% lengths > 0
   if(length(which(intersections_lp==TRUE)) > 0){
-    print("Intersect")
-    intersect_df[nrow(intersect_df) + 1,] <- c(i,which(intersections_lp==TRUE))
+    intersect_df <- c(i,which(intersections_lp==TRUE))
   }
+  
+  return(intersect_df)
 }
 
-# Add the NATCODE and the geometry point ------------------------------------ 
-intersect_df$geom <- prec_sf[intersect_df$point,"geometry"]
-intersect_df$NATCODE <- esp_can[intersect_df$geometry,"NATCODE"]
+num_cores = 10
+intersect_df <- mclapply(c(1:nrow(prec_sf)), 
+                         inters, 
+                         mc.cores = num_cores)
 
 # Save Rds with the intersection --------------------------------------------
 saveRDS(intersect_df,
-        "~/INVASIBILITY_THRESHOLD/data/future-climate/intersect_d.Rds")
+        "~/INVASIBILITY_THRESHOLD/data/future-climate/intersect_df_parall.Rds")
