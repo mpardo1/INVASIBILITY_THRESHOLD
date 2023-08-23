@@ -1,3 +1,4 @@
+### Code to do a validation between female traps counts and R0
 rm(list=ls())
 library(mcera5)
 library(mapSpain)
@@ -128,7 +129,7 @@ name_pal = "Dark2"
 pal = brewer.pal(3, name_pal)
 
 ## Function with the plots
-plotcorr <- function(city_name){
+plotcorr <- function(city_name, year){
   trap_data_filt <- trap_data[which(trap_data$city == city_name),] %>%
     group_by(city, start_date) %>% 
     summarise(start_date, female_norm = mean(female_norm),
@@ -136,16 +137,46 @@ plotcorr <- function(city_name){
   plot_df <- reshape2::melt(trap_data_filt[, c("start_date",
                                                "female_norm",
                                                "R0_alb_norm")], id.vars = "start_date")
-  ## Plot the results 
-  plot1 <- ggplot(plot_df) + 
-    geom_line(aes(start_date, value, colour = variable)) +
-    ggtitle(city_name) +
-    scale_color_manual(name ="",
-                       labels = c("Number female normalized",
-                                  "Relative R_M"),
-                       values = c(pal[1], pal[2]))  +
-    theme_bw() + 
-    theme(legend.position = "bottom")
+  
+  # Add a zero female at the beggining of each year in order to show
+  # a nice plot other wise the last year number of females join the first record 
+  # next year
+  plot_df$year <- lubridate::year(plot_df$start_date)
+  plot_df$start_date <- as.Date(plot_df$start_date)
+  year_date <- plot_df %>%
+    group_by(year) %>% summarize(min_date = min(start_date))
+  for(i in c(1:nrow(year_date))){
+    plot_df[(nrow(plot_df)+1),1] <- as.Date(year_date$min_date[i]) -1
+    plot_df[(nrow(plot_df)),2] <- "R0_alb_norm"
+    plot_df[(nrow(plot_df)),3:4] <-c(0, lubridate::year(year_date$min_date[i]))
+  }
+  
+  if(class(year) == "numeric"){
+    ## Plot the results 
+    plot1 <- ggplot(plot_df[which(lubridate::year(as.Date(plot_df$start_date)) == year),]) + 
+      geom_line(aes(start_date, value, colour = variable)) +
+      ggtitle(paste0(city_name," ", year)) +
+      scale_color_manual(name ="",
+                         labels = c("Number female normalized",
+                                    "Relative R_M"),
+                         values = c(pal[1], pal[2]))  +
+      xlab("Date") +
+      theme_bw() + 
+      theme(legend.position = "bottom")
+  }else{
+    ## Plot the results 
+    plot1 <- ggplot(plot_df) + 
+      geom_line(aes(start_date, value, colour = variable)) +
+      ggtitle(paste0(city_name)) +
+      scale_color_manual(name ="",
+                         labels = c("Number of females normalized",
+                                    TeX("Relative $R_M$")),
+                         values = c(pal[1], pal[2]))  +
+      xlab("Date") +
+      theme_bw() + 
+      theme(legend.position = "bottom")
+  }
+
   
   library("latex2exp")
   pearson <- cor.test(trap_data_filt$R0_alb_norm,
@@ -160,7 +191,7 @@ plotcorr <- function(city_name){
     ggtitle(paste0(" R=", round(as.numeric(pearson$estimate),3),
                    ", p =", format(as.numeric(pearson$p.value), scientific = TRUE, big.mark = ","))) +
     xlab(TeX("Relative $R_M$")) +
-    ylab("Normalized number of female") +
+    ylab("Normalized number of females") +
     theme_bw()
   
   return(list(plot1,plot2))
@@ -168,11 +199,15 @@ plotcorr <- function(city_name){
 
 # Compute plots 
 unique(trap_data$city)
-city = unique(trap_data$city)[16]
-plots <- plotcorr(city)
+city = unique(trap_data$city)[1]
+## If instead of a year there is a character the plot it is with all the data
+# with all the years avaliable
+
+year = "2020"
+plots <- plotcorr(city, year)
 ggarrange(plots[[1]],NULL, plots[[2]],
-          nrow = 1, widths = c(1, 0.05, 1),
+          nrow = 1, widths = c(1.2, 0.05, 0.8),
           common.legend = TRUE)
 Path <- paste0("~/Documentos/PHD/2023/INVASIBILITY/Plots/MS/Corr_PA_",city,".pdf")
-dev.copy2pdf(file=Path, width = 7, height = 5)
+dev.copy2pdf(file=Path, width = 7, height = 3)
 
