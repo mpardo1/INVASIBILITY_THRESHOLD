@@ -4,6 +4,7 @@ rm(list = ls())
 library(sf)
 library(terra)
 library(ggplot2)
+library(parallel)
 
 # Read data of raster climatic --------------------------------------------------
 esp_can <- readRDS("~/INVASIBILITY_THRESHOLD/data/future-climate/esp_can.Rds")
