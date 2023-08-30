@@ -1,9 +1,12 @@
 # Code to extract climatic data from Copernicus:
 rm(list=ls())
-require(pacman)
-pacman::p_load(terra, fs, tidyverse, mapSpain, sf, RColorBrewer,
-               ggspatial, hrbrthemes, showtext, rnaturalearthdata,
-               rnaturalearth, extrafont, geodata, data.table, raster)
+library(mapSpain)
+library(terra)
+library(sf)
+library(raster)
+library(tidyverse)
+library(data.table)
+library(parallel)
 
 # Download data from web ---------------------------------------------------
 # https://cds.climate.copernicus.eu/cdsapp#!/dataset/reanalysis-era5-single-levels?tab=form
@@ -104,6 +107,7 @@ num_cores = 12
 climat_each_muni <- mclapply(seq(1,4*30,4), 
                              agg_daily, 
                              mc.cores = num_cores)
+climat_each_muni <- setDT(do.call(cbind, climat_each_muni))
 
 # Save the resultant file ------------------------------------------
 Path <- paste0("~/INVASIBILITY_THRESHOLD/output/ERA5/2022/temp_", month_s, "_2022.Rds")
