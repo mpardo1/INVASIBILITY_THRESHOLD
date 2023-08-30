@@ -99,7 +99,7 @@ agg_daily <- function(i){
 }
 
 # Select month for extraction climate --------------------------------------
-month_s <- "April"
+month_s <- "May"
 nc_raster <- rast_temp(substr(month_s,1,3))
 plot(nc_raster[[2]])
 
