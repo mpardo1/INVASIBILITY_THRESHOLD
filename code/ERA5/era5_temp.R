@@ -7,6 +7,7 @@ library(raster)
 library(tidyverse)
 library(data.table)
 library(parallel)
+# library(geodata)
 
 # Download data from web ---------------------------------------------------
 # https://cds.climate.copernicus.eu/cdsapp#!/dataset/reanalysis-era5-single-levels?tab=form
@@ -29,9 +30,11 @@ rast_temp <- function(month_s){
   crs(nc_raster) <- crs(esp_can)
   
   # Shape Spain --------------------------------------------------------------
-  esp0 <- geodata::gadm(country = 'ESP', level = 0,
-                        path = 'tmpr')
-  plot(esp0)
+  # esp0 <- geodata::gadm(country = 'ESP', level = 0,
+  #                       path = 'tmpr')
+  Path <- paste0("~/INVASIBILITY_THRESHOLD/output/esp.rds")
+  esp0 <- readRDS(Path)
+  # plot(esp0)
   
   # Crop the raster for Spain ------------------------------------------------
   nc_raster <- terra::crop(nc_raster, esp0) %>%
@@ -96,7 +99,7 @@ agg_daily <- function(i){
 }
 
 # Select month for extraction climate --------------------------------------
-month_s <- "February"
+month_s <- "January"
 nc_raster <- rast_temp(substr(month_s,1,3))
 plot(nc_raster[[2]])
 
