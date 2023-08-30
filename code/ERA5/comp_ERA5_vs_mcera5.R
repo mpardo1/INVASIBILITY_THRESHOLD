@@ -17,7 +17,7 @@ esp_can$NATCODE <- as.numeric(paste0("34",esp_can$codauto,
                                      esp_can$LAU_CODE))
 
 # Read data ERA5 ---------------------------------------------
-Path <- "~/INVASIBILITY_THRESHOLD/output/ERA5/temp/2018/temp_out_daily_2018_05.Rds"
+Path <- "~/INVASIBILITY_THRESHOLD/output/ERA5/temp/2018/temp_out_daily_2004_05.Rds"
 era5_18 <- readRDS(Path)
 era5_18 <- as.data.frame(do.call(rbind,era5_18))
 era5_18$month <- lubridate::month(era5_18$date)
