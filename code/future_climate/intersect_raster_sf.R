@@ -57,3 +57,4 @@ intersect_df <- mclapply(c(1:nrow(prec_sf)),
 # Save Rds with the intersection --------------------------------------------
 saveRDS(intersect_df,
         "~/INVASIBILITY_THRESHOLD/data/future-climate/intersect_df_parall.Rds")
+

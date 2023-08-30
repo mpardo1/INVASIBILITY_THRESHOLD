@@ -173,7 +173,7 @@ R0_func_jap <- function(Te, rain,hum){
 ## Read the data for the R0 computed daily:
 # year = 2022
 # Path <- paste0("/home/marta/INVASIBILITY_THRESHOLD/output/mcera5/process_Daily_ERA5_daily_mcera_",year,".Rds")
-year = 2020
+year = 2004
 Path <- paste0("/home/marta/INVASIBILITY_THRESHOLD/output/mcera5/process_hourly_daily_ERA5_daily_mcera_",
                year,".Rds")
 # saveRDS(dt_weather,Path)
@@ -194,43 +194,50 @@ esp_can$NATCODE <- as.numeric(paste0("34",esp_can$codauto,
 df_group$month <- lubridate::month(df_group$date)
 
 # Population 2022:
-# Path <- "/home/marta/INVASIBILITY_THRESHOLD/data/pop/pobmun22.csv"
-# pop22 <- read.csv(Path, sep = ",")
+Path <- "/home/marta/INVASIBILITY_THRESHOLD/data/pop/pobmun22.csv"
+pop22 <- read.csv(Path, sep = ",")
 Path <- "/home/marta/INVASIBILITY_THRESHOLD/data/pop/pobmun04.csv"
 pop22 <- read.csv(Path, sep = ";")
 pop22$cmun <- ifelse(pop22$CMUN<10, paste0("00",pop22$CMUN),
                      ifelse(pop22$CMUN<100, paste0("0",pop22$CMUN),as.character(pop22$CMUN)))
 pop22$cpro <- ifelse(pop22$CPRO<10,
                      paste0("0",pop22$CPRO),as.character(pop22$CPRO))
-pop22$POB22 <- strtoi(pop22$TOTAL)
-esp_can <- esp_can %>% left_join(pop22)
+pop22$POB22 <- gsub('\\.','',pop22$TOTAL)
+pop22$POB22 <- as.numeric(pop22$POB22)
+esp_can <- esp_can %>% left_join(pop22, by = c("cpro","cmun") )
 test_pop <- esp_can[which(is.na(esp_can$POB22)),
                     c("name", "NATCODE", "POB22")]
 
 test_pop$geometry <- NULL
 nrow(test_pop)
 esp_can[which(is.na(esp_can$POB22)),"POB22"] <- 0
-esp_can_pop <- setDT(esp_can[,c("NATCODE","name", "POB22")])
-esp_can_pop$geometry <- NULL
+esp_can$area <- as.numeric(st_area(esp_can))/1000000
+esp_can$dens <- esp_can$POB22/esp_can$area
+esp_can <- setDT(esp_can[,c("NATCODE","name", "dens")])
+esp_can$geometry <- NULL
 # Path <- "~/INVASIBILITY_THRESHOLD/output/pop/pop22.Rds"
 # saveRDS(esp_can_pop, Path)
-df_group <- df_group %>% left_join(esp_can_pop)
-df_group$diff_pop <- abs(df_group$pop - df_group$POB22)
-hist(df_group$diff_pop)
+df_group <- df_group %>% left_join(esp_can)
 
-### Test weather data.
-df_day <- df_group[which(df_group$date == as.Date("2004-03-05")),]
+# Test weather data -------------------------------------------------
+esp_can <- esp_get_munic_siane(moveCAN = TRUE)
+can_box <- esp_get_can_box()
+esp_can$NATCODE <- as.numeric(paste0("34",esp_can$codauto,
+                                     esp_can$cpro,
+                                     esp_can$LAU_CODE))
+df_day <- df_group[which(df_group$date == as.Date("2004-07-05")),]
 df_day <- esp_can %>% left_join(df_day)
 ggplot(df_day) + 
-  geom_sf(aes(fill = prec1), lwd = 0) +
-  scale_fill_viridis_c()
+  geom_sf(aes(fill = tmean ), color = NA) +
+  scale_fill_viridis_c(option = "magma") + 
+  theme_bw()
 
 hist(df_group$prec1)
+rm(df_day)
 
 #---------------------Compute R0-------------------------#
 ## Es el prec1 no el prec !! IMPORTANTEE!!!
 df_group$prec <- as.numeric(df_group$prec1)
-df_group$dens <- as.numeric(df_group$POB22/df_group$area)
 df_group[, R0_dai_alb := mapply(R0_func_alb, tmean, prec, dens)]
 df_group[, R0_dai_aeg := mapply(R0_func_aeg, tmean, prec, dens)]
 df_group[, R0_dai_jap := mapply(R0_func_jap, tmean, prec, dens)]
@@ -327,12 +334,19 @@ plot_months <- function(df, month){
   return(plot)
 }
 
+# Esp can shapefile --------------------------------------------------
+esp_can <- esp_get_munic_siane(moveCAN = TRUE)
+can_box <- esp_get_can_box()
+esp_can$NATCODE <- as.numeric(paste0("34",esp_can$codauto,
+                                     esp_can$cpro,
+                                     esp_can$LAU_CODE))
 ## Para hacer un cuadrado con seis plots cambio el numero de 
 # month y el nombre del plot y lo hago para cada especie.
-df_group_mon <- esp_can %>% left_join(df_group_mon)
+df_group_mon <- esp_can %>% left_join(df_group_mon, by = "NATCODE")
 df_group_mon$R0 <- df_group_mon$R0_mon_jap
-month = 3
-plot_3 <- plot_months(df_group_mon,month)
+month = 11
+plot_11 <- plot_months(df_group_mon,month)
+plot_11
 ggarr <- ggarrange(plot_3,plot_4,plot_5,
           plot_6,plot_7,plot_8,
           plot_9,plot_10,plot_11,
@@ -340,11 +354,9 @@ ggarr <- ggarrange(plot_3,plot_4,plot_5,
 
 ggarr
 
-Path <-paste0("~/Documentos/PHD/2023/INVASIBILITY/Plots/MS/JapMonths",year,".pdf")
-dev.copy2pdf(file=Path, width = 7, height = 5)
-
-ggsave(Path, plot = ggarr)
-
+Path <- paste0("~/Documentos/PHD/2023/INVASIBILITY/Plots/MS/2022/WholeyearAeg",year,".pdf")
+# dev.copy2pdf(file=Path, width = 7, height = 5)
+# ggsave(Path, plot = ggarr)
 
 ### PLOT MONTH COMPARISON SPECIES #####
 ## Change some parts of the plots in order to compare one month between species
@@ -386,7 +398,7 @@ ggarr = ggarrange(plot_alb +
                     theme(legend.position = "none"), 
                   ncol = 2 )
 ggarrange(ggarr, plot_jap, ncol = 1,
-          common.legend = TRUE, widths = c(1,0.8))
+          common.legend = TRUE, widths = c(1.1,0.65))
 
 ## ----------PLOT ANNUAL AVERAGE SEASON----------#
 ## Group by year:
@@ -523,7 +535,7 @@ Path <- paste0("~/Documentos/PHD/2023/INVASIBILITY/Plots/MS/JapSum",year,".pdf")
 dev.copy2pdf(file=Path, width = 7, height = 5)
 
 # Extract the legend
-legend_only <- get_legend(plot_sum_alb+
+legend_only <- get_legend(plot_sum_alb +
                             theme(legend.position = "top"))
 ggarrange(plot_sum_alb + ggtitle(expression(italic("Ae. albopictus")))+
             theme(legend.position = "none",

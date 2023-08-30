@@ -1,3 +1,6 @@
+## Code that Compare the PA data for albopictus in comparison with
+# the number o months in which R0>1 and the avg R0
+
 rm(list=ls())
 library(mcera5)
 library(mapSpain)
@@ -9,17 +12,22 @@ library(data.table)
 library("viridis")
 library("gganimate")
 
+# Load Data --------------------------------------------------------------------
 ## year = 2022, we will use this year to validate the data
 Path <- paste0("~/INVASIBILITY_THRESHOLD/output/R0/datasets/R0_2022.Rds")
 df_group_tot <- readRDS(Path)
+head(df_group_tot)
 
-## Data Catu 
+## Data Catu BG traps
 Path <- "~/INVASIBILITY_THRESHOLD/data/Datos_Catu/gi_min_model_pred.RData"
 load(Path)
 unique(gi_min_model_pred$trap_name)
 
-###----------------- VALIDATION -----------------------#
-## Map Spain -------
+# Presence absence data Albopictus Spain:
+Path = "~/INVASIBILITY_THRESHOLD/data/PA/Albopictus_Spain_Pa.csv"
+df_pa <- read.csv(Path)
+
+# Map Spain --------------------------------------------------------------------
 esp_can <- esp_get_munic_siane(moveCAN = TRUE)
 esp_can$NATCODE <- as.numeric(paste0("34",
                                      esp_can$codauto,
@@ -27,10 +35,7 @@ esp_can$NATCODE <- as.numeric(paste0("34",
                                      esp_can$LAU_CODE))
 can_box <- esp_get_can_box()
 
-# Presence absence data Albopictus Spain:
-Path = "~/INVASIBILITY_THRESHOLD/data/PA/Albopictus_Spain_Pa.csv"
-df_pa <- read.csv(Path)
-
+# Plot PA Albopictus -----------------------------------------------------------
 df_pa <- esp_can %>% left_join(df_pa)
 ggplot(df_pa) +
   geom_sf(aes(fill = as.factor(PA)), linewidth = 0.01) +

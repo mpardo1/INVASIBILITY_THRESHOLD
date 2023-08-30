@@ -26,8 +26,8 @@ library(parallel)
 #-------------------LOCAL----------------------------#
 # install the CDS API
 conda_install("r-reticulate","cdsapi", pip=TRUE) #import python CDS-API
-
 cdsapi <- import("cdsapi")
+
 #-----------------------------------------------------#
 # For this step there must exist the file .cdsapirc
 server = cdsapi$Client() #start the connection

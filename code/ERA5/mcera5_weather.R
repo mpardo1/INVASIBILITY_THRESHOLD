@@ -27,6 +27,7 @@ extract_weather <- function(ind){
   point_out$NATCODE <- esp_can$NATCODE[ind]
   point_out$pop <- esp_can$pob19[ind]
   point_out$area <- esp_can$area[ind]
+  
   # You can then inspect the data frame
   # Gather daily precipitation 
   point_out_precip <- extract_precip(nc =  my_nc, long = x, 
