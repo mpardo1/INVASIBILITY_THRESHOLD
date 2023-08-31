@@ -228,7 +228,7 @@ esp_can$NATCODE <- as.numeric(paste0("34",esp_can$codauto,
 df_day <- df_group[which(df_group$date == as.Date("2004-07-05")),]
 df_day <- esp_can %>% left_join(df_day)
 ggplot(df_day) + 
-  geom_sf(aes(fill = tmean ), color = NA) +
+  geom_sf(aes(fill = prec1 ), color = NA) +
   scale_fill_viridis_c(option = "magma") + 
   theme_bw()
 
