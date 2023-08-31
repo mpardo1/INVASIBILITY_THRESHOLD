@@ -176,6 +176,8 @@ R0_func_jap <- function(Te, rain,hum){
 year = 2004
 Path <- paste0("/home/marta/INVASIBILITY_THRESHOLD/output/mcera5/process_hourly_daily_ERA5_daily_mcera_",
                year,".Rds")
+year = 2020
+Path <- paste0("~/INVASIBILITY_THRESHOLD/output/ERA5/temp/2020/clim_",year,".Rds")
 # saveRDS(dt_weather,Path)
 df_group <- setDT(readRDS(Path))
 
@@ -194,16 +196,17 @@ esp_can$NATCODE <- as.numeric(paste0("34",esp_can$codauto,
 df_group$month <- lubridate::month(df_group$date)
 
 # Population 2022:
-Path <- "/home/marta/INVASIBILITY_THRESHOLD/data/pop/pobmun22.csv"
-pop22 <- read.csv(Path, sep = ",")
-Path <- "/home/marta/INVASIBILITY_THRESHOLD/data/pop/pobmun04.csv"
+Path <- "/home/marta/INVASIBILITY_THRESHOLD/data/pop/pobmun20.csv"
 pop22 <- read.csv(Path, sep = ";")
+# Path <- "/home/marta/INVASIBILITY_THRESHOLD/data/pop/pobmun04.csv"
+# pop22 <- read.csv(Path, sep = ";")
 pop22$cmun <- ifelse(pop22$CMUN<10, paste0("00",pop22$CMUN),
                      ifelse(pop22$CMUN<100, paste0("0",pop22$CMUN),as.character(pop22$CMUN)))
 pop22$cpro <- ifelse(pop22$CPRO<10,
                      paste0("0",pop22$CPRO),as.character(pop22$CPRO))
 pop22$POB22 <- gsub('\\.','',pop22$TOTAL)
 pop22$POB22 <- as.numeric(pop22$POB22)
+pop22$POB22 <- as.numeric(pop22$POB20)
 esp_can <- esp_can %>% left_join(pop22, by = c("cpro","cmun") )
 test_pop <- esp_can[which(is.na(esp_can$POB22)),
                     c("name", "NATCODE", "POB22")]
@@ -225,7 +228,7 @@ can_box <- esp_get_can_box()
 esp_can$NATCODE <- as.numeric(paste0("34",esp_can$codauto,
                                      esp_can$cpro,
                                      esp_can$LAU_CODE))
-df_day <- df_group[which(df_group$date == as.Date("2004-07-05")),]
+df_day <- df_group[which(df_group$date == as.Date("2020-07-05")),]
 df_day <- esp_can %>% left_join(df_day)
 ggplot(df_day) + 
   geom_sf(aes(fill = prec1 ), color = NA) +
@@ -283,7 +286,10 @@ df_group_mon <- df_group[, .(tmean = mean(tmean),
                              prec = sum(prec), 
                              precmean = mean(prec), 
                              dens = min(dens),
-                             dens1 = max(dens)), 
+                             dens1 = max(dens),
+                             R0_dai_alb = mean(R0_dai_alb),
+                             R0_dai_aeg = mean(R0_dai_aeg),
+                             R0_dai_jap = mean(R0_dai_jap)), 
                          by=list(NATCODE,month)]
 
 df_group_mon[, R0_mon_alb := mapply(R0_func_alb, tmean, precmean, dens)]
@@ -307,6 +313,9 @@ df_group_mon$bool_R0_jap_min <- ifelse(df_group_mon$R0_mon_jap_min < 1,0,1)
 df_group_mon$bool_R0_alb_max <- ifelse(df_group_mon$R0_mon_alb_max < 1,0,1)
 df_group_mon$bool_R0_aeg_max <- ifelse(df_group_mon$R0_mon_aeg_max < 1,0,1)
 df_group_mon$bool_R0_jap_max <- ifelse(df_group_mon$R0_mon_jap_max < 1,0,1)
+df_group_mon$bool_R0_alb_dai <- ifelse(df_group_mon$R0_dai_alb < 1,0,1)
+df_group_mon$bool_R0_aeg_dai <- ifelse(df_group_mon$R0_dai_aeg < 1,0,1)
+df_group_mon$bool_R0_jap_dai <- ifelse(df_group_mon$R0_dai_jap < 1,0,1)
 
 ## Test:
 ggplot(df_group_mon) + geom_point(aes(tmean, bool_R0_jap))
@@ -330,7 +339,7 @@ plot_months <- function(df, month){
     ggtitle(as.character(month)) +
     theme_bw() +
     theme(plot.title = element_text(hjust = 0.5),
-          legend.position = c(0.1,0.8))
+          legend.position = c(0.1,0.6))
   return(plot)
 }
 
@@ -343,10 +352,10 @@ esp_can$NATCODE <- as.numeric(paste0("34",esp_can$codauto,
 ## Para hacer un cuadrado con seis plots cambio el numero de 
 # month y el nombre del plot y lo hago para cada especie.
 df_group_mon <- esp_can %>% left_join(df_group_mon, by = "NATCODE")
-df_group_mon$R0 <- df_group_mon$R0_mon_jap
-month = 11
-plot_11 <- plot_months(df_group_mon,month)
-plot_11
+df_group_mon$R0 <- df_group_mon$R0_mon_aeg
+month = 7
+plot_7 <- plot_months(df_group_mon,month)
+plot_7
 ggarr <- ggarrange(plot_3,plot_4,plot_5,
           plot_6,plot_7,plot_8,
           plot_9,plot_10,plot_11,
@@ -354,7 +363,7 @@ ggarr <- ggarrange(plot_3,plot_4,plot_5,
 
 ggarr
 
-Path <- paste0("~/Documentos/PHD/2023/INVASIBILITY/Plots/MS/2022/WholeyearAeg",year,".pdf")
+Path <- paste0("~/Documentos/PHD/2023/INVASIBILITY/Plots/MS/Maps/2020/WholeyearJAP",year,".pdf")
 # dev.copy2pdf(file=Path, width = 7, height = 5)
 # ggsave(Path, plot = ggarr)
 
@@ -371,7 +380,7 @@ plot_months <- function(df, month,esp){
     geom_sf(aes(fill = R0), colour = NA) +
     geom_sf(data = can_box) + coord_sf(datum = NA) +
     scale_fill_viridis_c(option = "C",
-                         limits = c(0,6),
+                         limits = c(0,6.31),
                          name = TeX("$R_M$")) +
     ggtitle(esp) +
     theme_bw() +
@@ -418,7 +427,10 @@ df_group_y <- df_group_mon[,.(tmean = mean(tmean),
             R0_sum_jap_min = sum(bool_R0_jap_min),
             R0_sum_alb_max = sum(bool_R0_alb_max),
             R0_sum_aeg_max = sum(bool_R0_aeg_max),
-            R0_sum_jap_max = sum(bool_R0_jap_max)),
+            R0_sum_jap_max = sum(bool_R0_jap_max),
+            R0_sum_alb_dai = sum(bool_R0_alb_dai),
+            R0_sum_aeg_dai = sum(bool_R0_aeg_dai),
+            R0_sum_jap_dai = sum(bool_R0_jap_dai)),
             by = list(NATCODE)]
 
 df_group_y[, R0_anual_alb := mapply(R0_func_alb, tmean, prec, dens)]
@@ -464,15 +476,15 @@ ggplot(df_group_y) +
 ## Test if variables make sense:
 # df_group_y <- esp_can %>% left_join(df_group_y)
 ggplot(df_group_y) + 
-  geom_sf(aes(fill = tmean)) +
+  geom_sf(aes(fill = tmean), color = NA) +
   scale_fill_viridis_c()
 
 ggplot(df_group_y) + 
-  geom_sf(aes(fill = prec)) +
+  geom_sf(aes(fill = prec), color = NA) +
   scale_fill_viridis_c()
 
 ggplot(df_group_y) + 
-  geom_sf(aes(fill = dens)) +
+  geom_sf(aes(fill = dens), color = NA) +
   scale_fill_viridis_c()
 
 ## ----------------- TRANSITION MAPS ------------------#
@@ -485,6 +497,10 @@ ggplot(df_group_y) +
 #   theme_void() +
 #   labs(title = "Month: {current_frame}") +
 #   transition_manual(as.factor(month))
+
+# Save RDS for validation ---------------------------------------------
+Path <- paste0("~/INVASIBILITY_THRESHOLD/output/R0/datasets/R0_",year,".Rds")
+saveRDS(df_group_y,Path)
 
 # Whole map group by number of months suitable
 library(ggpubr)
@@ -519,19 +535,19 @@ df_group_y$R0 <- df_group_y$R0_sum_alb
 plot_sum_alb <- plot_summonths(df_group_y)
 plot_sum_alb
 
-Path <- paste0("~/Documentos/PHD/2023/INVASIBILITY/Plots/MS/AlboSum",year,".pdf")
+Path <- paste0("~/Documentos/PHD/2023/INVASIBILITY/Plots/MS/Maps/",year,"/New_AlboSum",year,".pdf")
 dev.copy2pdf(file=Path, width = 7, height = 5)
 
 df_group_y$R0 <- df_group_y$R0_sum_aeg
 plot_sum_aeg <- plot_summonths(df_group_y)
 plot_sum_aeg
-Path <- paste0("~/Documentos/PHD/2023/INVASIBILITY/Plots/MS/AegSum",year,".pdf")
+Path <- paste0("~/Documentos/PHD/2023/INVASIBILITY/Plots/MS/Maps/",year,"/New_Sum",year,".pdf")
 dev.copy2pdf(file=Path, width = 7, height = 5)
 
 df_group_y$R0 <- df_group_y$R0_sum_jap
 plot_sum_jap <- plot_summonths(df_group_y)
 plot_sum_jap
-Path <- paste0("~/Documentos/PHD/2023/INVASIBILITY/Plots/MS/JapSum",year,".pdf")
+Path <- paste0("~/Documentos/PHD/2023/INVASIBILITY/Plots/MS/Maps/",year,"/New_JapSum",year,".pdf")
 dev.copy2pdf(file=Path, width = 7, height = 5)
 
 # Extract the legend

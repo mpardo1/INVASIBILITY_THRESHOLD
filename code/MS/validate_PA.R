@@ -1,6 +1,5 @@
 ## Code that Compare the PA data for albopictus in comparison with
 # the number o months in which R0>1 and the avg R0
-
 rm(list=ls())
 library(mcera5)
 library(mapSpain)
@@ -14,7 +13,8 @@ library("gganimate")
 
 # Load Data --------------------------------------------------------------------
 ## year = 2022, we will use this year to validate the data
-Path <- paste0("~/INVASIBILITY_THRESHOLD/output/R0/datasets/R0_2022.Rds")
+year = 2020
+Path <- paste0("~/INVASIBILITY_THRESHOLD/output/R0/datasets/R0_",year,".Rds")
 df_group_tot <- readRDS(Path)
 head(df_group_tot)
 
@@ -52,7 +52,6 @@ df_group_m <- df_group_tot[,c("NATCODE",
                               "R0_sum_alb",
                               "R0_sum_alb_min",
                               "R0_sum_alb_max",
-                              "R0_avg_alb",
                               "R0_sum_alb_dai")]
 df_pa <- df_pa %>% left_join(df_group_m)
 
@@ -74,64 +73,75 @@ ggplot(df_pa_CAT[which(df_pa_CAT$PA == 1),]) +
                  fill =  "#E1CE7A") + xlab("Number months suitable") +
   theme_bw()
 
-#-------------------------------P/(P+A)----------------------------------------
-###### Sum number of months ###
+# Prop presence df ------------------------------------------
 df_num_months <- function(df_pa_CAT){
   df_r_1 <- df_pa_CAT[which(df_pa_CAT$PA == 1),] %>% 
     group_by(R0_sum_alb) %>% summarize(num_1 = n())
   df_r_0 <- df_pa_CAT[which(df_pa_CAT$PA == 0),] %>% 
     group_by(R0_sum_alb) %>% summarize(num_0 = n())
   
-  df_r <- df_r_1 %>% left_join(df_r_0)
-  df_r$prop_1 <- ifelse(is.na(df_r$num_0),1,df_r$num_1/(df_r$num_1+df_r$num_0))
+  df_r <- merge(df_r_1 ,df_r_0, all.x = TRUE, all.y = TRUE)
+  df_r$prop_1 <- ifelse(is.na(df_r$num_0),1,
+                        ifelse(is.na(df_r$num_1),
+                               0,df_r$num_1/(df_r$num_1+df_r$num_0)))
+  
   return(df_r)
   
 }
 
+# Prop presence df min temp ------------------------------------------
 df_num_months_min <- function(df_pa_CAT){
   df_r_1 <- df_pa_CAT[which(df_pa_CAT$PA == 1),] %>% 
     group_by(R0_sum_alb_min) %>% summarize(num_1 = n())
   df_r_0 <- df_pa_CAT[which(df_pa_CAT$PA == 0),] %>% 
     group_by(R0_sum_alb_min) %>% summarize(num_0 = n())
   
-  df_r <- df_r_1 %>% left_join(df_r_0)
-  df_r$prop_1 <- ifelse(is.na(df_r$num_0),1,df_r$num_1/(df_r$num_1+df_r$num_0))
+  df_r <- merge(df_r_1 ,df_r_0, all.x = TRUE, all.y = TRUE)
+  df_r$prop_1 <- ifelse(is.na(df_r$num_0),1,
+                        ifelse(is.na(df_r$num_1),
+                               0,df_r$num_1/(df_r$num_1+df_r$num_0)))
   return(df_r)
 }
 
+# Prop presence df max temp ------------------------------------------
 df_num_months_max <- function(df_pa_CAT){
   df_r_1 <- df_pa_CAT[which(df_pa_CAT$PA == 1),] %>% 
     group_by(R0_sum_alb_max) %>% summarize(num_1 = n())
   df_r_0 <- df_pa_CAT[which(df_pa_CAT$PA == 0),] %>% 
     group_by(R0_sum_alb_max) %>% summarize(num_0 = n())
   
-  df_r <- df_r_1 %>% left_join(df_r_0)
-  df_r$prop_1 <- ifelse(is.na(df_r$num_0),1,df_r$num_1/(df_r$num_1+df_r$num_0))
+  df_r <- merge(df_r_1 ,df_r_0, all.x = TRUE, all.y = TRUE)
+  df_r$prop_1 <- ifelse(is.na(df_r$num_0),1,
+                        ifelse(is.na(df_r$num_1),
+                               0,df_r$num_1/(df_r$num_1+df_r$num_0)))
   return(df_r)
 }
 
+# Prop presence df avg R0 ------------------------------------------
 df_avg_months <- function(df_pa_CAT){
   df_r_1 <- df_pa_CAT[which(df_pa_CAT$PA == 1),] %>% 
     group_by(R0_rang_alb) %>% summarize(num_1 = n())
   df_r_0 <- df_pa_CAT[which(df_pa_CAT$PA == 0),] %>% 
     group_by(R0_rang_alb) %>% summarize(num_0 = n())
   
-  df_r <- df_r_1 %>% left_join(df_r_0)
+  df_r <- merge(df_r_1 ,df_r_0, all.x = TRUE, all.y = TRUE)
   df_r$prop_1 <- ifelse(is.na(df_r$num_0),1,
-                        df_r$num_1/(df_r$num_1+df_r$num_0))
+                        ifelse(is.na(df_r$num_1),
+                               0,df_r$num_1/(df_r$num_1+df_r$num_0)))
   return(df_r)
 }
 
-## Compute the plots
+# Filter df -----------------------------------------------------
 df_pa <- df_pa[, c("NATCODE", "PA")]
 df_pa$geometry <- NULL
 
-###------------------SUM MONTHS------------------#
+# Join map with PA data -----------------------------------------
 df_group_m <- df_group_tot
 df_pa <- df_pa %>% left_join(df_group_m)
 
 unique(esp_can$ine.ccaa.name)
 
+# Func to compute plot PA prop vs summonths --------------------
 plot_sum_p <- function(ccaa){
   NATCODE_CAT <- esp_can[which(esp_can$ine.ccaa.name == ccaa),"NATCODE"]
   NATCODE_CAT$geometry <- NULL
@@ -146,10 +156,12 @@ plot_sum_p <- function(ccaa){
     xlab("Nº months\n suitable") + 
     ylab("Proportion of municipalities with presence") +
     ylim(c(0,1)) +
-    ggtitle(ccaa) +  
+    ggtitle(ccaa) +    
+    scale_x_continuous(breaks = seq(1,12,1)) +
     theme_bw()
 }
 
+# Func to compute plot PA prop vs summonths max temp ----------------
 plot_sum_p_max <- function(ccaa){
   NATCODE_CAT <- esp_can[which(esp_can$ine.ccaa.name == ccaa),"NATCODE"]
   NATCODE_CAT$geometry <- NULL
@@ -164,10 +176,12 @@ plot_sum_p_max <- function(ccaa){
     xlab("Nº months\n suitable") + 
     ylab("Proportion of municipalities with presence") +
     ylim(c(0,1)) +
-    ggtitle(ccaa) +  
+    ggtitle(ccaa) +    
+    scale_x_continuous(breaks = seq(1,12,1)) +
     theme_bw()
 }
 
+# Func to compute plot PA prop vs summonths -----------------------
 plot_sum_p_min <- function(ccaa){
   NATCODE_CAT <- esp_can[which(esp_can$ine.ccaa.name == ccaa),"NATCODE"]
   NATCODE_CAT$geometry <- NULL
@@ -183,89 +197,81 @@ plot_sum_p_min <- function(ccaa){
     ylab("Proportion of municipalities with presence") +
     ylim(c(0,1)) +
     ggtitle(ccaa) +  
+    scale_x_continuous(breaks = seq(1,12,1)) +
     theme_bw()
 }
 
+# DF with ccaa names ----------------------------------------------
 esp_can_ccaa <- esp_can[,c("NATCODE", "ine.ccaa.name")]
 df_pa_ccaa <- esp_can %>% left_join(df_pa)
 
+# Plot for the specific region -------------------------------------
 colors <- c("#43A2CA", "#7BCCC4", "#BAE4BC", "#F0F9E8",
             "#FFF7EC","#FEE8C8","#FDD49E","#FDBB84",
             "#FC8D59","#EF6548","#D7301F", "#B30000",
             "#7F0000") 
 unique(df_pa_ccaa$ine.ccaa.name)
-ggplot(df_pa_ccaa[which(df_pa_ccaa$ine.ccaa.name == "Andalucía"),]) +
+ggplot(df_pa_ccaa[which(df_pa_ccaa$ine.ccaa.name == "Aragón"),]) +
   geom_sf(aes(fill = as.factor(R0_sum_alb)), colour = NA) +
-  geom_sf(data = can_box) + coord_sf(datum = NA) +
+  coord_sf(datum = NA) +
   scale_fill_manual(values = colors,
                     name = "Nº months\n suitable",
-                    limits = factor(seq(0,12,1))) +
+                    limits = factor(seq(0,12,1)),
+                    breaks = factor(seq(0,12,1))) +
   theme_bw() +
   theme(plot.title = element_text(hjust = 0.5))
 
-ccaa = "Cataluña"
+# Select different CCAA tmean ----------------------------------------
+ccaa = "Cataluña" # ccaa = "Comunitat Valenciana"ccaa = "País Vasco"ccaa = "Andalucía"
 plot <- plot_sum_p(ccaa)
-Path <- paste0("~/Documentos/PHD/2023/INVASIBILITY/Plots/MS/PA_SUM_",ccaa,".png")
+plot
+Path <- paste0("~/Documentos/PHD/2023/INVASIBILITY/Plots/MS/Validation/Spatial/Alb/",year,"_",ccaa,".png")
 ggsave(Path, plot = plot)
 
-ccaa = "Comunitat Valenciana"
-plot <- plot_sum_p(ccaa)
-Path <- paste0("~/Documentos/PHD/2023/INVASIBILITY/Plots/MS/PA_SUM_",ccaa,".png")
-ggsave(Path, plot = plot)
-
-ccaa = "País Vasco"
-plot <- plot_sum_p(ccaa)
-Path <- paste0("~/Documentos/PHD/2023/INVASIBILITY/Plots/MS/PA_SUM_",ccaa,".png")
-ggsave(Path, plot = plot)
-
-ccaa = "Andalucía"
-plot <- plot_sum_p(ccaa)
-Path <- paste0("~/Documentos/PHD/2023/INVASIBILITY/Plots/MS/PA_SUM_",ccaa,".png")
-ggsave(Path, plot = plot)
-
-### minimun temperature:
-ccaa = "Cataluña"
+# Minimun temperature --------------------------------------------------------------
+ccaa = "Cataluña" # ccaa = "Comunitat Valenciana"ccaa = "País Vasco"ccaa = "Andalucía"
 plot <- plot_sum_p_min(ccaa)
 Path <- paste0("~/Documentos/PHD/2023/INVASIBILITY/Plots/MS/PA_SUM_MIN",ccaa,".png")
 ggsave(Path, plot = plot)
 
-ccaa = "Comunitat Valenciana"
-plot <- plot_sum_p_min(ccaa)
-Path <- paste0("~/Documentos/PHD/2023/INVASIBILITY/Plots/MS/PA_SUM_MIN",ccaa,".png")
-ggsave(Path, plot = plot)
-
-ccaa = "País Vasco"
-plot <- plot_sum_p_min(ccaa)
-Path <- paste0("~/Documentos/PHD/2023/INVASIBILITY/Plots/MS/PA_SUM_MIN",ccaa,".png")
-ggsave(Path, plot = plot)
-
-ccaa = "Andalucía"
-plot <- plot_sum_p(ccaa)
-Path <- paste0("~/Documentos/PHD/2023/INVASIBILITY/Plots/MS/PA_SUM_",ccaa,".png")
-ggsave(Path, plot = plot)
-
-### maximu temperature:
-ccaa = "Cataluña"
+# Maximun temperature --------------------------------------------------------------
+ccaa = "Cataluña" # ccaa = "Comunitat Valenciana"ccaa = "País Vasco"ccaa = "Andalucía"
 plot <- plot_sum_p_max(ccaa)
 Path <- paste0("~/Documentos/PHD/2023/INVASIBILITY/Plots/MS/PA_SUM_max",ccaa,".png")
 ggsave(Path, plot = plot)
 
-ccaa = "Comunitat Valenciana"
-plot <- plot_sum_p_max(ccaa)
-Path <- paste0("~/Documentos/PHD/2023/INVASIBILITY/Plots/MS/PA_SUM_max",ccaa,".png")
-ggsave(Path, plot = plot)
+# Join more than one ccaa ---------------------------------------------
+list_ccaa = c("Cataluña" , "Comunitat Valenciana", 
+         "País Vasco","Andalucía","Aragón")
 
-ccaa = "País Vasco"
-plot <- plot_sum_p_max(ccaa)
-Path <- paste0("~/Documentos/PHD/2023/INVASIBILITY/Plots/MS/PA_SUM_max",ccaa,".png")
-ggsave(Path, plot = plot)
+NATCODE_CAT <- esp_can[which(esp_can$ine.ccaa.name %in% list_ccaa ),"NATCODE"]
 
-ccaa = "Andalucía"
-plot <- plot_sum_p(ccaa)
-Path <- paste0("~/Documentos/PHD/2023/INVASIBILITY/Plots/MS/PA_SUM_",ccaa,".png")
-ggsave(Path, plot = plot)
+# Add PA data --------------------------------------------------------
+NATCODE_CAT$geometry <- NULL
+df_pa_CAT <- df_pa[which(as.numeric(df_pa$NATCODE) %in% 
+                           as.numeric(NATCODE_CAT$NATCODE)),]
 
-####------------------Average R0--------------##
+# Compute df with prop PA --------------------------------------------
+df_sum_CAT <- data.frame()
+for(i in c(1:length(list_ccaa))){
+  df_aux <- df_num_months(df_pa_CAT[which(df_pa_CAT$ine.ccaa.name == list_ccaa[i] ),])
+  df_aux$ccaa_n <- list_ccaa[i]
+  df_sum_CAT <- rbind(df_aux,df_sum_CAT)
+}
+
+# Plot color related to ccaa ----------------------------------------
+ggplot(df_sum_CAT) +
+  geom_line(aes(R0_sum_alb,prop_1, color =ccaa_n)) +
+  geom_point(aes(R0_sum_alb,prop_1, color =ccaa_n)) +
+  xlab("Nº months\n suitable") + 
+  ylab("Proportion of municipalities with presence") +
+  ylim(c(0,1)) +
+  ggtitle(ccaa) +    
+  scale_color_discrete(name = "") +
+  scale_x_continuous(breaks = seq(1,12,1)) +
+  theme_bw()
+
+# Average R0 ----------------------------------------------------------
 df_group_m <- df_group_tot[,c("NATCODE", "R0_an_alb")]
 df_pa <- df_pa %>% left_join(df_group_m)
 df_pa$R0_avg_alb <- df_pa$R0_an_alb
