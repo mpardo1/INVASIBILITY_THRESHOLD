@@ -108,7 +108,7 @@ plot(nc_raster[[6]])
 time_info <- time(nc_raster)
 
 # Paralelize code --------------------------------------------------
-num_cores = 1
+num_cores = 12
 climat_each_muni <- mclapply(seq(1,4*30,4), 
                              agg_daily, 
                              mc.cores = num_cores)

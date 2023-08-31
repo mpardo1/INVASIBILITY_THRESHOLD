@@ -16,11 +16,11 @@ library(parallel)
 rast_temp <- function(month_s){
   
   # Load data ----------------------------------------------------------------
-  Path <- paste0("~/INVASIBILITY_THRESHOLD/data/ERA5/2022/",month_s,"_temp_2022.grib")
+  Path <- paste0("~/INVASIBILITY_THRESHOLD/data/ERA5/2022/",month_s,"_rain_2022.grib")
   nc_raster <- rast(Path) 
   nc_raster
   coord_ref <- st_crs(nc_raster)
-  # plot(nc_raster[[26]])
+  # plot(nc_raster[[1]])
   
   # Load Spain map municipalities --------------------------------------------
   esp_can <- esp_get_munic_siane(moveCAN = FALSE)
@@ -59,21 +59,20 @@ extract_hourly <- function(ind){
   
   # Extract weather for municipalities ---------------------------------------
   temp_muni <- terra::extract(temp_1, esp_can)
-  colnames(temp_muni) <- c("ID", "K")
+  colnames(temp_muni) <- c("ID", "prec")
   
   # Transfor to Celsius and grop by municipality ----------------------------
-  temp_muni$C_temp <- temp_muni$K - 273.15
   temp_muni <- temp_muni %>% group_by(ID) %>%
-    summarize(tmean = mean(C_temp))
+    summarize(prec = mean(prec))
   
   # Join temp df with shapefile esp -----------------------------------------
   esp_can$ID <- seq(1, nrow(esp_can),1)
   temp_esp <- esp_can %>% left_join(temp_muni)
-  temp_esp$geometry <- NULL
   # ggplot(temp_esp) +
-  #   geom_sf(aes(fill=tmean), colour = NA) +
+  #   geom_sf(aes(fill=prec), colour = NA) +
   #   scale_fill_viridis_c(option = "magma") +
   #   theme_bw()
+  temp_esp$geometry <- NULL
   end_time <- Sys.time()
   print(end_time - start_time)
   
@@ -92,16 +91,14 @@ agg_daily <- function(i){
                                     temp$cpro,
                                     temp$LAU_CODE))
   temp <- temp %>% group_by(NATCODE) %>%
-    summarise(tmean = mean(tmean),
-              tmin = min(tmean),
-              tmax = max(tmean))
+    summarise(prec = sum(prec))
   temp$date <- as.Date(time_info[i])
   
   return(temp)
 }
 
 # Select month for extraction climate --------------------------------------
-month_s <- "September"
+month_s <- "January"
 nc_raster <- rast_temp(substr(month_s,1,3))
 plot(nc_raster[[6]])
 
@@ -109,11 +106,11 @@ time_info <- time(nc_raster)
 
 # Paralelize code --------------------------------------------------
 num_cores = 1
-climat_each_muni <- mclapply(seq(1,4*30,4), 
+climat_each_muni <- mclapply(seq(1,4*31,4), 
                              agg_daily, 
                              mc.cores = num_cores)
 climat_each_muni <- setDT(do.call(rbind, climat_each_muni))
 
 # Save the resultant file ------------------------------------------
-Path <- paste0("~/INVASIBILITY_THRESHOLD/output/ERA5/2022/temp_", month_s, "_2022.Rds")
+Path <- paste0("~/INVASIBILITY_THRESHOLD/output/ERA5/2022/rain_", month_s, "_2022.Rds")
 saveRDS(climat_each_muni,Path)
