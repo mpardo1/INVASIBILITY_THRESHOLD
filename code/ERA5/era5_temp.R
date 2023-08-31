@@ -99,15 +99,15 @@ agg_daily <- function(i){
 }
 
 # Select month for extraction climate --------------------------------------
-month_s <- "February"
+month_s <- "October"
 nc_raster <- rast_temp(substr(month_s,1,3))
-plot(nc_raster[[2]])
+plot(nc_raster[[6]])
 
 time_info <- time(nc_raster)
 
 # Paralelize code --------------------------------------------------
 num_cores = 1
-climat_each_muni <- mclapply(seq(1,4*28,4), 
+climat_each_muni <- mclapply(seq(1,4*31,4), 
                              agg_daily, 
                              mc.cores = num_cores)
 climat_each_muni <- setDT(do.call(cbind, climat_each_muni))
