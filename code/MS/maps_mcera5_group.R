@@ -176,7 +176,7 @@ R0_func_jap <- function(Te, rain,hum){
 year = 2004
 Path <- paste0("/home/marta/INVASIBILITY_THRESHOLD/output/mcera5/process_hourly_daily_ERA5_daily_mcera_",
                year,".Rds")
-year = 2020
+year = 2004
 Path <- paste0("~/INVASIBILITY_THRESHOLD/output/ERA5/temp/2020/clim_",year,".Rds")
 # saveRDS(dt_weather,Path)
 df_group <- setDT(readRDS(Path))
@@ -198,8 +198,8 @@ df_group$month <- lubridate::month(df_group$date)
 # Population 2022:
 Path <- "/home/marta/INVASIBILITY_THRESHOLD/data/pop/pobmun20.csv"
 pop22 <- read.csv(Path, sep = ";")
-# Path <- "/home/marta/INVASIBILITY_THRESHOLD/data/pop/pobmun04.csv"
-# pop22 <- read.csv(Path, sep = ";")
+Path <- "/home/marta/INVASIBILITY_THRESHOLD/data/pop/pobmun04.csv"
+pop22 <- read.csv(Path, sep = ";")
 pop22$cmun <- ifelse(pop22$CMUN<10, paste0("00",pop22$CMUN),
                      ifelse(pop22$CMUN<100, paste0("0",pop22$CMUN),as.character(pop22$CMUN)))
 pop22$cpro <- ifelse(pop22$CPRO<10,
@@ -437,6 +437,12 @@ df_group_y[, R0_anual_alb := mapply(R0_func_alb, tmean, prec, dens)]
 df_group_y[, R0_anual_aeg := mapply(R0_func_aeg, tmean, prec, dens)]
 df_group_y[, R0_anual_jap := mapply(R0_func_jap, tmean, prec, dens)]
 
+# Save DF -------------------------------------------------------------
+Path <- paste0("~/INVASIBILITY_THRESHOLD/output/ERA5/temp/2020/R0_clim_",
+               year,".Rds")
+saveRDS(df_group_y, Path)
+
+# Plot R0 annual avg temp ---------------------------------------------
 df_group_y <- esp_can %>% left_join(df_group_y)
 ggplot(df_group_y) +
       geom_sf(aes(fill = R0_an_alb), colour = NA) +

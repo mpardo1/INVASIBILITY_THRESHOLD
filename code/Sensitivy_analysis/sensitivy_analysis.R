@@ -576,7 +576,8 @@ dh <- ggplot(df_plot) +
   theme_bw() + theme(legend.position = "none",
                      text = element_text(size = letsize),
                      legend.text.align = 0)
-dh  
+
+dh
 
 ggarrange(ggarrange(dt,dr + ylab("")),dh, ncol = 1)
 
@@ -594,29 +595,20 @@ ggplot(df_plot) +
   xlim(c(8,40)) + theme_bw() + ylab("Relative R0") +
   xlab("Temperature(Cº)")
 
-####----------SENSITIVITY ANALYSIS each variable------------##
-#### -------------------------- Albopictus ------------------------- ####
-## Thermal responses Aedes Albopictus from Mordecai 2017 and from literature:
-# a_f_alb <- function(temp){Briere_func(0.000193,10.25,38.32,temp)} # Biting rate
-# TFD_f_alb <- function(temp){Briere_func(0.0488,8.02,35.65,temp)} # Fecundity
-# pLA_f_alb <- function(temp){Quad_func(0.002663,6.668,38.92,temp)} # Survival probability Egg-Adult
-# MDR_f_alb <- function(temp){Briere_func(0.0000638,8.6,39.66,temp)} # Mosquito Development Rate
-# lf_f_alb <- function(temp){Quad_func(1.43,13.41,31.51,temp)} # Adult life span
-# dE_f_alb <- function(temp){Briere_func(0.00006881,8.869,35.09,temp)} # Adult life span
+# SENSITIVITY ANALYSIS each variable ----------------------------------
 library(RColorBrewer)
 name_pal = "Paired"
-display.brewer.pal(9, name_pal)
-pal <- brewer.pal(9, name_pal)
+display.brewer.pal(11, name_pal)
+pal <- brewer.pal(11, name_pal)
 
-col_a = pal[1]
-col_f = pal[6]
-col_lf = pal[7]
-col_deltaA = pal[3]
-col_deltaL = pal[4]
-col_dL = pal[5]
-col_dE = pal[2]
-col_pLA = pal[8]
-col_R = pal[9]
+col_a = pal[2]
+col_f = pal[4]
+col_lf = pal[5]
+col_deltaL = pal[6]
+col_dL = pal[7]
+col_dE = pal[8]
+col_pLA = pal[9]
+col_R = "#FF7F00"
 
 ##### Albopictus #####
 # Derivative of the fecundity, f:
@@ -631,10 +623,10 @@ df <- function(Te, rain, hum){
   c = 0.0488
   tmin = 8.02
   tmax = 35.65
-  dR0 <- (1/3)*(((f*a)/deltaa)*probla*((h*dE)/(h*dE+deltaE)))^(-2/3)
-  dB <- c*(2*Te-tmin)*(tmax-Te)^(1/2) -
-    (c/2)*(Te^2-tmin*Te)*(tmax-Te)^(-1/2)
-  df <- dR0*((a/deltaa)*probla*(h*dE/(h*dE+deltaE)))*dB
+  dR0 <- (1/3)*(((f*a)*deltaa)*probla*((h*dE)/(h*dE+deltaE)))^(-2/3)
+  dB <- (2*Te*c-c*tmin)*(tmax-Te)^(1/2)-
+    (1/2)*(c*Te^2-c*tmin*Te)*(tmax-Te)^(-1/2)
+  df <- dR0*((a*deltaa)*probla*(h*dE/(h*dE+deltaE)))*dB
   df <- ifelse(is.na(df),0,df)
   return(df)
 }
@@ -652,8 +644,8 @@ da <- function(Te, rain, hum){
   tmin = 10.25
   tmax = 38.32
   dR0 <- (1/3)*((f*a*deltaa)*probla*((h*dE)/(h*dE+deltaE)))^(-2/3)
-  dB <- c*(2*Te-tmin)*(tmax-Te)^(1/2) - 
-    (c/2)*(Te^2-tmin*Te)*(tmax-Te)^(-1/2)
+  dB <-  (2*Te*c-c*tmin)*(tmax-Te)^(1/2)+
+    (1/2)*(c*Te^2-c*tmin*Te)*(tmax-Te)^(-1/2)
   da <- dR0*((f*deltaa)*probla*((h*dE)/(h*dE+deltaE)))*dB
   da <- ifelse(is.na(da),0,da)
   return(da)
@@ -672,9 +664,9 @@ ddeltaA <- function(Te, rain, hum){
   tmin = 13.41
   tmax = 31.51
   dR0 <- (1/3)*((f*a*deltaa)*probla*((h*dE)/(h*dE+deltaE)))^(-2/3)
-  dQ <-  (c*(2*Te-(tmin+tmax)))/(-c*((Te-tmax)*(Te-tmin)))
-  ddeltaA <- dR0*((f*a*deltaa^2)*probla*((h*dE)/(h*dE+deltaE)))*dQ
-  ddeltaA <- ifelse(is.na(ddeltaA),0,ddeltaA)
+  dQ <-  -2*Te*tmin+c*tmin+c*tmax
+  ddeltaA <- dR0*((f*a)*probla*((h*dE)/(h*dE+deltaE)))*dQ
+  # ddeltaA <- ifelse(is.na(ddeltaA),0,ddeltaA)
   return(ddeltaA)
 }
 
@@ -691,7 +683,7 @@ dpLA <- function(Te, rain, hum){
   tmin = 6.668
   tmax = 38.92
   dR0 <- (1/3)*((f*a*deltaa)*probla*((h*dE)/(h*dE+deltaE)))^(-2/3)
-  dQ <- -c*((Te-tmax)+(Te-tmin))
+  dQ <-  -2*Te*c+c*tmin+c*tmax
   dpLA <- dR0*((f*a*deltaa)*((h*dE)/(h*dE+deltaE)))*dQ
   dpLA <- ifelse(is.na(dpLA),0,dpLA)
   return(dpLA)
@@ -710,8 +702,8 @@ ddE <- function(Te, rain, hum){
   tmin = 8.869
   tmax = 35.09
   dR0 <- (1/3)*((f*a*deltaa)*probla*((h*dE)/(h*dE+deltaE)))^(-2/3)
-  dB <- c*(2*Te-tmin)*(tmax-Te)^(1/2) - 
-    (c/2)*(Te^2-tmin*Te)*(tmax-Te)^(-1/2)
+  dB <-  (2*Te*c-c*tmin)*(tmax-Te)^(1/2)+
+    (1/2)*(c*Te^2-c*tmin*Te)*(tmax-Te)^(-1/2)
   ddE <- dR0*((f*a*deltaa)*probla*((h*(h*dE+deltaE)-dE*h^2)/(h*dE+deltaE)^2))*dB
   ddE <- ifelse(is.na(ddE),0,ddE)
   return(ddE)
@@ -744,42 +736,63 @@ devf_t_alb <- devf_t_alb[, c("vec", "out", "var")]
 
 # Artificially create data frames in order to have a legend with all the variables
 # And then when I do the ggarrange I have one legend with all variables
-df_out_lf <- data.frame(vec = 0,
-                        out = 0,
-                        var = "lf")
-df_out_deltaA <- data.frame(vec = 0,
-                        out = 0,
-                        var = "deltaA")
 df_out_deltaL <- data.frame(vec = 0,
                         out = 0,
                         var = "deltaL")
 df_out_dL <- data.frame(vec = 0,
                             out = 0,
                             var = "dL")
+df_out_lf_t <- data.frame(vec = 0,
+                        out = 0,
+                        var = "lf")
+df_out_pLA_t <- data.frame(vec = 0,
+                          out = 0,
+                          var = "pLA")
 
-# Join all the data frames
-df_out <- rbind(df_out_f,df_out_a,df_out_pLA,
-                df_out_dE,df_out_lf,df_out_deltaA,
-                df_out_deltaL,df_out_dL,devf_t_alb)
+# Join all the data frames -----------------------------------
+df_out <- rbind(df_out_a,df_out_pLA,df_out_f,
+                df_out_dE,df_out_lf_t,
+                df_out_deltaL,df_out_dL, devf_t_alb)
 
+# Test -------------------------------------------------------
+df_out_t <- rbind(df_out_a,df_out_pLA,
+                df_out_dE,df_out_deltaA,
+                df_out_deltaL,df_out_dL)
+ggplot(df_out_t) +
+  geom_line(aes(vec,out, color = var), size = 0.8) 
+
+# Check plot param -------------------------------------------
+vec = seq(0,40,0.1)
+out_ddeltaA <- sapply(vec,lf_f_alb)
+df_out_ddeltaA <- data.frame(vec = vec, out = out_ddeltaA)
+df_out_ddeltaA$var <- "ddeltaA"
+
+ggplot(df_out_ddeltaA) +
+  geom_line(aes(vec,out))
+
+# Plot derivative Albo ----------------------------------------
 library("latex2exp")
 plot_dAlb <- ggplot(df_out) +
-  geom_line(aes(vec,out, color = var), size = 0.8) + 
-  xlab("Temperature") + ylab("derivative") +
-  scale_color_manual(name = "",values = pal,
-                     labels = c("a",TeX("$ d_E$"),
-                                TeX(" $ \\delta_A$"),TeX(" $ \\delta_L$"),
+   geom_line(aes(vec,out, color = var), size = 0.8) + 
+  xlab("Temperature") + ylab("derivative") +  ylim(c(-0.4,0.64)) +
+  scale_color_manual(name = "",
+                     values = c(col_a,col_dE,
+                                col_lf,col_deltaL,
+                                col_dL,col_f, col_lf,col_pLA,col_R),
+                     labels = c("a",TeX("$ d_E$"),TeX(" $ \\delta_L$"),
                                 TeX(" $ d_L$"),"f", "lf",
                                 TeX( " $ p_{LA}$"), TeX( " $ R_M$") )) + 
   theme(legend.text.align = 0,
         text = element_text(size = letsize)) +
-  theme_bw() + ylim(c(-0.4,0.64)) +
+  theme_bw() +
   labs(color=NULL)
 plot_dAlb
 
 # The plot for deltaA it is separated since it has a much bigger range
-plot_ddeltaA <- ggplot(df_out_ddeltaA) +
-  geom_line(aes(vec,out), color = col_deltaA, size = 0.8) + 
+df_out <- rbind(df_out_ddeltaA)
+plot_ddeltaA <- ggplot(df_out) +
+  geom_line(aes(vec,out, color = var),  size = 0.8) + 
+  scale_color_manual(values = c(col_lf,col_pLA)) +
   xlab("Temperature") + ylab("derivative") +
   theme_bw() +
   labs(color=NULL)
@@ -800,8 +813,8 @@ da <- function(Te, rain, hum){
   tmin = 13.35
   tmax = 40.08
   dR0 <- (1/3)*((f*a*deltaa)*probla*((h*dE)/(h*dE+deltaE)))^(-2/3)
-  dB <- c*(2*Te-tmin)*(tmax-Te)^(1/2) - 
-    (c/2)*(Te^2-tmin*Te)*(tmax-Te)^(-1/2)
+  dB <-  (2*Te*c-c*tmin)*(tmax-Te)^(1/2)+
+    (1/2)*(c*Te^2-c*tmin*Te)*(tmax-Te)^(-1/2)
   da <- dR0*((f*deltaa)*probla*((h*dE)/(h*dE+deltaE)))*dB
   da <- ifelse(is.na(da),0,da)
   return(da)
@@ -820,7 +833,7 @@ dpLA <- function(Te, rain, hum){
   tmin = 9.373
   tmax = 40.26
   dR0 <- (1/3)*((f*a*deltaa)*probla*((h*dE)/(h*dE+deltaE)))^(-2/3)
-  dQ <- -c*((Te-tmax)+(Te-tmin))
+  dQ <-  -2*Te*tmin+c*tmin+c*tmax
   dpLA <- dR0*((f*a*deltaa)*((h*dE)/(h*dE+deltaE)))*dQ
   dpLA <- ifelse(is.na(dpLA),0,dpLA)
   return(dpLA)
@@ -839,9 +852,10 @@ ddE <- function(Te, rain, hum){
   tmin = 14.88
   tmax = 37.42
   dR0 <- (1/3)*((f*a*deltaa)*probla*((h*dE)/(h*dE+deltaE)))^(-2/3)
-  dB <- c*(2*Te-tmin)*(tmax-Te)^(1/2) - 
-    (c/2)*(Te^2-tmin*Te)*(tmax-Te)^(-1/2)
-  ddE <- dR0*((f*a*deltaa)*probla*((h*(h*dE+deltaE)-dE*h^2)/(h*dE+deltaE)^2))*dB
+  dB <-  (2*Te*c-c*tmin)*(Te-tmax)^(1/2)+
+    (1/2)*(c*Te^2-c*tmin*Te)*(Te-tmax)^(-1/2)
+  ddE <- dR0*((f*a*deltaa)*probla*((h*(h*dE+deltaE)-
+                                      dE*h^2)/(h*dE+deltaE)^2))*dB
   return(ddE)
 }
 
@@ -857,8 +871,8 @@ ddeltaA <- function(Te, rain, hum){
   tmin = 9.16
   tmax = 37.73
   dR0 <- (1/3)*((f*a*deltaa)*probla*((h*dE)/(h*dE+deltaE)))^(-2/3)
-  dQ <-  (c*(2*Te-(tmin+tmax)))/(-c*((Te-tmax)*(Te-tmin)))
-  ddeltaA <- dR0*((f*a*deltaa^2)*probla*((h*dE)/(h*dE+deltaE)))*dQ
+  dQ <-  -2*Te*tmin+c*tmin+c*tmax
+  ddeltaA <- dR0*((f*a)*probla*((h*dE)/(h*dE+deltaE)))*dQ
   ddeltaA <- ifelse(is.na(ddeltaA),0,ddeltaA)
   return(ddeltaA)
 }
@@ -917,12 +931,12 @@ ddL <- function(Te, rain, hum){
   dE <- dE_f_jap(Te)
   dL <- dL_f_jap(Te)
   h <- h_f(hum,rain)
-  c = 0.0002859
-  tmin = 6.360
-  tmax = 35.53
+  c = 0.00007
+  tmin = 9.7
+  tmax = 34.10
   dR0 <- (1/3)*((f*a*lf)*(dL/(dL+deltaL))*(h*dE/(h*dE+deltaE)))^(-2/3)
-  dB <- c*(2*Te-tmin)*(tmax-Te)^(1/2) - 
-    (c/2)*(Te^2-tmin*Te)*(tmax-Te)^(-1/2)
+  dB <-  (2*Te*c-c*tmin)*(Te-tmax)^(1/2)+
+    (1/2)*(c*Te^2-c*tmin*Te)*(Te-tmax)^(-1/2)
   dL <- dR0*((f*a*lf)*((dL+deltaL)-dL/(dL+deltaL)^2)*((h*dE)/(h*dE+deltaE)))*dB
   return(dL)
 }
@@ -959,8 +973,8 @@ ddE <- function(Te, rain, hum){
   tmin = 6.360
   tmax = 35.53
   dR0 <- (1/3)*((f*a*lf)*(dL/(dL+deltaL))*(h*dE/(h*dE+deltaE)))^(-2/3)
-  dB <- c*(2*Te-tmin)*(tmax-Te)^(1/2) - 
-    (c/2)*(Te^2-tmin*Te)*(tmax-Te)^(-1/2)
+  dB <-  (2*Te*c-c*tmin)*(Te-tmax)^(1/2)+
+    (1/2)*(c*Te^2-c*tmin*Te)*(Te-tmax)^(-1/2)
   ddE <- dR0*((f*a*lf)*(dL/(dL+deltaL))*((h*(h*dE+deltaE)-dE*h^2)/(h*dE+deltaE)^2))*dB
   ddE <- ifelse(is.na(ddE),0,ddE)
   return(ddE)
@@ -979,7 +993,7 @@ ddeltaL <- function(Te, rain, hum){
   tmin = -0.0806067
   tmax = 1.0332455
   dR0 <- (1/3)*((f*a*lf)*(dL/(dL+deltaL))*(h*dE/(h*dE+deltaE)))^(-2/3)
-  dQN <- 2*c*Te - tmin
+  dQN <- 2*c*Te + tmin
   ddeltaL <- dR0*((f*a*lf)*(-dL/(dL+deltaL)^2)*((h*dE)/(h*dE+deltaE)))*dQN
   ddeltaL <- ifelse(is.na(ddeltaL),0,ddeltaL)
   return(ddeltaL)
@@ -1033,10 +1047,3 @@ ggarrange(plot_dAlb + ylab("dx/dT") + xlab("") +
             ggtitle(expression(italic("Ae. Japonicus"))),
           common.legend = TRUE)
 
-## Thermal responses Aedes Aegypti from Mordecai 2017 and from literature:
-# a_f_aeg <- function(temp){Briere_func(0.000202,13.35,40.08,temp)} # Biting rate
-# EFD_f_aeg <- function(temp){Briere_func(0.00856,14.58,34.61,temp)} # Fecundity
-# pLA_f_aeg <- function(temp){Quad_func(0.004186,9.373,40.26,temp)} # Survival probability Egg-Adult
-# MDR_f_aeg <- function(temp){Briere_func(0.0000786,11.36,39.17,temp)} # Mosquito Development Rate
-# lf_f_aeg <- function(temp){Quad_func(0.148,9.16,37.73,temp)} # Adult life span
-# dE_f_aeg <- function(temp){Briere_func(0.0003775 ,14.88,37.42,temp)} # Adult life span

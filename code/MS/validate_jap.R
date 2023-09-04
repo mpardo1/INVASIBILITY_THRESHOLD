@@ -11,7 +11,8 @@ library("gganimate")
 
 # Load Data --------------------------------------------------------------------
 ## year = 2022, we will use this year to validate the data
-Path <- paste0("~/INVASIBILITY_THRESHOLD/output/R0/datasets/R0_2022.Rds")
+year = 2020
+Path <- paste0("~/INVASIBILITY_THRESHOLD/output/R0/datasets/R0_",year,".Rds")
 df_group_tot <- readRDS(Path)
 head(df_group_tot)
 
@@ -49,9 +50,8 @@ PA_jap_ESP <- PA_jap_ESP[, c("NATCODE", "Japonicus", "ine.ccaa.name")]
 df_group_m <- df_group_tot[,c("NATCODE",
                               "R0_sum_jap",
                               "R0_sum_jap_min",
-                              "R0_sum_jap_max",
-                              "R0_avg_jap",
-                              "R0_sum_jap_dai")]
+                              "R0_sum_jap_max")]
+df_group_m$geometry <- NULL
 PA_jap_ESP <- PA_jap_ESP %>% left_join(df_group_m)
 
 # Proportion of municipalities presence ----------------------------------------
@@ -62,8 +62,14 @@ df_num_months <- function(df_pa_CAT){
   df_r_0 <- df_pa_CAT[which(df_pa_CAT$Japonicus == 0),] %>% 
     group_by(R0_sum_jap) %>% summarize(num_0 = n())
   
-  df_r <- df_r_1 %>% left_join(df_r_0)
-  df_r$prop_1 <- ifelse(is.na(df_r$num_0),1,df_r$num_1/(df_r$num_1+df_r$num_0))
+  df_r <- merge(df_r_1 ,df_r_0,
+                all.x = TRUE, all.y = TRUE)
+  df_r$prop_1 <- ifelse(is.na(df_r$num_0),1,
+                        ifelse(is.na(df_r$num_1),
+                               0,df_r$num_1/(df_r$num_1+df_r$num_0)))
+  df_r$num_1 <- ifelse(is.na(df_r$num_1),0,df_r$num_1)
+  df_r$num_0 <- ifelse(is.na(df_r$num_0),0,df_r$num_0)
+  df_r$sum_muni <- df_r$num_1 + df_r$num_0
   return(df_r)
   
 }
@@ -75,8 +81,14 @@ df_num_months_min <- function(df_pa_CAT){
   df_r_0 <- df_pa_CAT[which(df_pa_CAT$Japonicus == 0),] %>% 
     group_by(R0_sum_jap_min) %>% summarize(num_0 = n())
   
-  df_r <- df_r_1 %>% left_join(df_r_0)
-  df_r$prop_1 <- ifelse(is.na(df_r$num_0),1,df_r$num_1/(df_r$num_1+df_r$num_0))
+  df_r <- merge(df_r_1 ,df_r_0,
+                all.x = TRUE, all.y = TRUE)
+  df_r$prop_1 <- ifelse(is.na(df_r$num_0),1,
+                        ifelse(is.na(df_r$num_1),
+                               0,df_r$num_1/(df_r$num_1+df_r$num_0)))
+  df_r$num_1 <- ifelse(is.na(df_r$num_1),0,df_r$num_1)
+  df_r$num_0 <- ifelse(is.na(df_r$num_0),0,df_r$num_0)
+  df_r$sum_muni <- df_r$num_1 + df_r$num_0
   return(df_r)
 }
 
@@ -87,8 +99,14 @@ df_num_months_max <- function(df_pa_CAT){
   df_r_0 <- df_pa_CAT[which(df_pa_CAT$Japonicus == 0),] %>% 
     group_by(R0_sum_jap_max) %>% summarize(num_0 = n())
   
-  df_r <- df_r_1 %>% left_join(df_r_0)
-  df_r$prop_1 <- ifelse(is.na(df_r$num_0),1,df_r$num_1/(df_r$num_1+df_r$num_0))
+  df_r <- merge(df_r_1 ,df_r_0,
+                all.x = TRUE, all.y = TRUE)
+  df_r$prop_1 <- ifelse(is.na(df_r$num_0),1,
+                        ifelse(is.na(df_r$num_1),
+                               0,df_r$num_1/(df_r$num_1+df_r$num_0)))
+  df_r$num_1 <- ifelse(is.na(df_r$num_1),0,df_r$num_1)
+  df_r$num_0 <- ifelse(is.na(df_r$num_0),0,df_r$num_0)
+  df_r$sum_muni <- df_r$num_1 + df_r$num_0
   return(df_r)
 }
 
@@ -183,7 +201,7 @@ ggplot(PA_jap_ESP[which(PA_jap_ESP$ine.ccaa.name == ccaa),]) +
 PA_jap_ESP$geometry <- NULL
 unique(PA_jap_ESP[which(PA_jap_ESP$Japonicus == 1),"ine.ccaa.name"])
 
-# Cantabria
+# Choose ccaa
 ccaa = "Cantabria"
 ccaa = "País Vasco"
 ccaa = "Cantabria"
@@ -191,9 +209,71 @@ ccaa = "Asturias, Principado de"
 ccaa = "País Vasco"
 
 plot <- plot_sum_p(ccaa)
+plot
 Path <- paste0("~/Documentos/PHD/2023/INVASIBILITY/Plots/MS/JAP_PA_SUM_",ccaa,".png")
 ggsave(Path, plot = plot)
 
+# Plot multiple ccaa together ------------------------------------------------
+# Join more than one ccaa ---------------------------------------------
+list_ccaa = c("Cantabria","País Vasco",
+              "Cantabria","Asturias, Principado de",
+              "País Vasco")
+
+NATCODE_CAT <- esp_can[which(esp_can$ine.ccaa.name %in% list_ccaa ),"NATCODE"]
+
+# Add PA data --------------------------------------------------------
+NATCODE_CAT$geometry <- NULL
+df_pa_CAT <- PA_jap_ESP[which(as.numeric(PA_jap_ESP$NATCODE) %in% 
+                           as.numeric(NATCODE_CAT$NATCODE)),]
+
+# Compute df with prop PA --------------------------------------------
+df_sum_CAT <- data.frame()
+for(i in c(1:length(list_ccaa))){
+  df_aux <- df_num_months(df_pa_CAT[which(df_pa_CAT$ine.ccaa.name == list_ccaa[i] ),])
+  df_aux$ccaa_n <- list_ccaa[i]
+  df_sum_CAT <- rbind(df_aux,df_sum_CAT)
+}
+
+# Plot color related to ccaa ----------------------------------------
+ggplot(df_sum_CAT) +
+  geom_line(aes(R0_sum_jap,prop_1, color =ccaa_n)) +
+  geom_point(aes(R0_sum_jap,prop_1, color =ccaa_n,
+                 size = sum_muni), alpha = 0.6) +
+  xlab("Nº months\n suitable") + 
+  ylab("Proportion of municipalities with presence") +
+  ylim(c(0,1)) + 
+  scale_color_discrete(name = "") +
+  scale_size_continuous(name = "Number municipalities",
+                        breaks = c(5,20,40,60,80),
+                        labels =c("[0,5]","[5,20]",
+                                  "[20,40]","[40,60]",
+                                  "[60,80]")) +
+  scale_x_continuous(breaks = seq(1,12,1)) +
+  theme_bw() +
+  theme(legend.position = c(0.15,0.55),
+        text = element_text(size = 14)) 
+
+# Plot all thre ccaa in one line -----------------------------
+df_group <- df_sum_CAT %>% group_by(R0_sum_jap) %>%
+  summarise(num_1 = sum(num_1),
+            num_0 = sum(num_0),
+            prop_1 = sum(num_1)/(sum(num_0)+sum(num_1)),
+            sum_muni = sum(sum_muni))
+ggplot(df_group) +
+  geom_line(aes(R0_sum_jap,prop_1)) +
+  geom_point(aes(R0_sum_jap,prop_1,
+                 size = sum_muni), alpha = 0.6) +
+  xlab("Nº months\n suitable") + 
+  ylab("Proportion of municipalities with presence") +
+  ylim(c(0,1)) + 
+  scale_size_continuous(name = "Number municipalities",
+                        breaks = c(5,50,100,150),
+                        labels =c("[0,50]","[50,100]",
+                                  "[100,150]","[150,200]")) +
+  scale_x_continuous(breaks = seq(1,12,1)) +
+  theme_bw() +
+  theme(text = element_text(size = 14),
+        legend.position = c(0.2,0.6)) 
 
 # Plot num months min temp vs prop PA ------------------------------------------
 ccaa = "País Vasco"
@@ -210,7 +290,6 @@ ggsave(Path, plot = plot)
 ccaa = "País Vasco"
 ccaa = "Cantabria"
 ccaa = "Asturias, Principado de"
-ccaa = "País Vasco"
 
 plot <- plot_sum_p_max(ccaa)
 Path <- paste0("~/Documentos/PHD/2023/INVASIBILITY/Plots/MS/JAP_PA_SUM_max_",

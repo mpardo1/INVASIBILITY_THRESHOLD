@@ -505,8 +505,21 @@ plot_month <- function(month){
                     left_join(tmin_Jan) %>% left_join(pop))
   df_Jan$tmean <- (df_Jan$tmin + df_Jan$tmax)/2
   
+  # Extract month number
+  month_num <- ifelse(month == "Jan", 1, ifelse(
+                        month == "Feb", 2, ifelse(
+                          month == "Mar", 3, ifelse(
+                            month == "Apr", 4, ifelse(
+                              month == "May", 5, ifelse(
+                                month == "Jun", 6, ifelse(
+                                  month == "Jul", 7, ifelse(
+                                    month == "Aug", 8, ifelse(
+                                      month == "Sep", 9, ifelse(
+                                        month == "Oct", 10, ifelse(
+                                          month == "Nov", 11, 12)))))))))))
+  
   # The rainfall it is accumulated months, but we need an average per day.
-  df_Jan$prec <- df_Jan$prec/as.numeric(days_in_month(1))
+  df_Jan$prec <- df_Jan$prec/as.numeric(days_in_month(month_num))
   df_Jan[, R0_alb := mapply(R0_func_alb, tmean, prec, dens)]
   df_Jan[, R0_aeg := mapply(R0_func_aeg, tmean, prec, dens)]
   df_Jan[, R0_jap := mapply(R0_func_jap, tmean, prec, dens)]
@@ -517,15 +530,32 @@ plot_month <- function(month){
   plot <- ggplot(df_Jan_p) +
     geom_sf(data = can_box) +
     geom_sf(aes(fill = R0_alb), colour = NA) +
-    scale_fill_viridis_c(option = "C",
-                       limits = c(0,6),
-                       name = TeX("$R_M$")) +
-    theme_bw()
+    coord_sf(datum = NA) +
+    scale_fill_distiller(palette = "Spectral",
+                         limits = c(min(df_Jan_p$R0_alb),max(df_Jan_p$R0_alb)),
+                         name = TeX("$R_M$")) +
+    ggtitle(as.character(month_num)) +
+    theme_bw() +
+    theme(plot.title = element_text(hjust = 0.5),
+          legend.position = c(0.1,0.6))
   
   return(list(plot,df_Jan))
 }
 
-# Produce a montly df for all year ------------------------------------------
+# Plot whole year monthly ----------------------------------------------------
+list_month = c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul",
+               "Aug", "Sep", "Oct", "Nov", "Dec")
+ind = 3
+plot_3 <- plot_month(list_month[ind])[[1]]
+plot_3
+ggarr <- ggarrange(plot_3,plot_4,plot_5,
+                   plot_6,plot_7,plot_8,
+                   plot_9,plot_10,plot_11,
+                   nrow=3,ncol = 3, common.legend = TRUE)
+
+ggarr
+
+# Produce a monthly df for all year ------------------------------------------
 lmon <- list("Feb", "Mar", "Apr", "May", "Jun", "Jul", 
              "Aug", "Sep", "Oct", "Nov", "Dec")
 
@@ -550,6 +580,9 @@ df_g <- df_y %>% group_by(NATCODE) %>%
             avg_aeg = mean(R0_aeg),
             avg_jap = mean(R0_jap)
             )
+
+Path <- paste0("~/INVASIBILITY_THRESHOLD/output/ERA5/temp/2020/clim_2040.Rds")
+saveRDS(df_g, Path)
 
 # Create plot months suitable -----------------------------------------
 esp_can <- esp_get_munic_siane(moveCAN = TRUE)
