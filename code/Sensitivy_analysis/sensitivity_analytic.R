@@ -142,5 +142,36 @@ df_R0df <- data.frame(vec, R0df_num,R0df_ana)
 df_R0df <- reshape2::melt(df_R0df, id.vars = "vec")
 plot_quad <- ggplot(df_R0df) +
   geom_point(aes(vec, value, color=variable, shape = variable)) +
-  ylim(c(-10,10)) + theme_bw()
+  ylim(c(-5,5)) + theme_bw()
 plot_quad
+
+# Test for one param --------------------------------------------------
+R0_dfunc_alb <- function(rain,hum,Te){
+  a <- a_f_alb(Te)
+  f <- TFD_f_alb(Te)
+  deltaa <- lf_f_alb(Te)
+  probla <- pEA_f_alb(Te)
+  h <- h_f(hum,rain)
+  deltE = 0.1
+  R0 <- f*deltaa*a*probla*(h/(h+deltE))
+  dffT <- TFD_df_alb(Te)
+  dfaT <- a_df_alb(Te)
+  dfdeltaAT <- lf_df_alb(Te)
+  dfplaT <- pEA_df_alb(Te)
+  dffR0 <- (1/3)*((R0)^(-2/3))*((deltaa*a*h*probla)/(h+deltE))*dffT
+  dfaR0 <- (1/3)*((R0)^(-2/3))*((deltaa*f*h*probla)/(h+deltE))*dfaT
+  dfdeltAR0 <- (1/3)*((R0)^(-2/3))*((f*a*h*probla)/(h+deltE))*dfdeltaAT
+  dfpLAR0 <- (1/3)*((R0)^(-2/3))*((deltaa*a*h*f)/(h+deltE))*dfplaT
+  # dfR0 <- dffR0 + dfaR0 + dfdeltAR0 + dfpLAR0
+  dfR0 <- dfdeltAR0 
+  # dfR0 <-ifelse(is.na(dfR0),0,dfR0)
+  return(dfR0)
+}
+
+vec = seq(5,35,0.001)
+R0df_ana <- sapply(vec, function(x){R0_dfunc_alb(rain_cte,hum_cte,x)} )
+df_R0 <- data.frame(vec,R0df_ana)
+ggplot(df_R0) +
+  geom_point(aes(vec,R0df_ana), size = 0.4) +
+  theme_bw() + ylim(c(-5,5))
+

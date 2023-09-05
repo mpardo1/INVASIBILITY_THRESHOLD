@@ -86,13 +86,13 @@ dE_f_alb <- function(temp){Briere_func(0.00006881,8.869,35.09,temp)} # Adult lif
 R0_func_alb <- function(Te, rain, hum){
   a <- a_f_alb(Te)
   f <- (1/2)*TFD_f_alb(Te)
-  deltaa <- lf_f_alb(Te)
+  deltaa <- 1/lf_f_alb(Te)
   dE <- dE_f_alb(Te)
   probla <- pLA_f_alb(Te)
   h <- h_f(hum,rain)
   deltaE = 0.1
   #R0 <- ((0.3365391*f*a*deltaa)*probla*(h*dE/(h*dE+deltaE)))^(1/3)
-  R0 <- ((f*a*deltaa)*probla*(h*dE/(h*dE+deltaE)))^(1/3)
+  R0 <- ((f*a*(1/deltaa))*probla*(h*dE/(h*dE+deltaE)))^(1/3)
   return(R0)
 }
 
@@ -595,455 +595,276 @@ ggplot(df_plot) +
   xlim(c(8,40)) + theme_bw() + ylab("Relative R0") +
   xlab("Temperature(Cº)")
 
-# SENSITIVITY ANALYSIS each variable ----------------------------------
-library(RColorBrewer)
-name_pal = "Paired"
-display.brewer.pal(11, name_pal)
-pal <- brewer.pal(11, name_pal)
-
-col_a = pal[2]
-col_f = pal[4]
-col_lf = pal[5]
-col_deltaL = pal[6]
-col_dL = pal[7]
-col_dE = pal[8]
-col_pLA = pal[9]
-col_R = "#FF7F00"
-
-##### Albopictus #####
-# Derivative of the fecundity, f:
-df <- function(Te, rain, hum){
-  a <- a_f_alb(Te)
-  f <- (1/2)*TFD_f_alb(Te)
-  deltaa <- lf_f_alb(Te)
-  dE <- dE_f_alb(Te)
-  probla <- pLA_f_alb(Te)
-  h <- h_f(hum,rain)
-  deltaE = 0.1
-  c = 0.0488
-  tmin = 8.02
-  tmax = 35.65
-  dR0 <- (1/3)*(((f*a)*deltaa)*probla*((h*dE)/(h*dE+deltaE)))^(-2/3)
-  dB <- (2*Te*c-c*tmin)*(tmax-Te)^(1/2)-
-    (1/2)*(c*Te^2-c*tmin*Te)*(tmax-Te)^(-1/2)
-  df <- dR0*((a*deltaa)*probla*(h*dE/(h*dE+deltaE)))*dB
-  df <- ifelse(is.na(df),0,df)
-  return(df)
+# dRM/dX*dX/dT; X each param -------------------------------------------
+# Main functions 
+Briere_df <- function(cte, tmin, tmax, temp){
+  outp <- cte*(2*temp - tmin)*(tmax - temp)^(1/2) - ((1/2)*cte*(temp^2-tmin*temp)*(tmax-temp)^(-(1/2)))
+  
+  return(outp)
 }
 
-# Derivative of the biting rate, a:
-da <- function(Te, rain, hum){
-  a <- a_f_alb(Te)
-  f <- (1/2)*TFD_f_alb(Te)
-  deltaa <- lf_f_alb(Te)
-  dE <- dE_f_alb(Te)
-  probla <- pLA_f_alb(Te)
-  h <- h_f(hum,rain)
-  deltaE = 0.1
-  c = 0.000193
-  tmin = 10.25
-  tmax = 38.32
-  dR0 <- (1/3)*((f*a*deltaa)*probla*((h*dE)/(h*dE+deltaE)))^(-2/3)
-  dB <-  (2*Te*c-c*tmin)*(tmax-Te)^(1/2)+
-    (1/2)*(c*Te^2-c*tmin*Te)*(tmax-Te)^(-1/2)
-  da <- dR0*((f*deltaa)*probla*((h*dE)/(h*dE+deltaE)))*dB
-  da <- ifelse(is.na(da),0,da)
-  return(da)
+Quad_df <- function(cte, tmin, tmax, temp){
+  outp <- -cte*(2*temp - (tmax + tmin))
+  
+  return(outp)
 }
 
-# Derivative of the adult mortality rate, deltaA:
-ddeltaA <- function(Te, rain, hum){
-  a <- a_f_alb(Te)
-  f <- (1/2)*TFD_f_alb(Te)
-  deltaa <- lf_f_alb(Te)
-  dE <- dE_f_alb(Te)
-  probla <- pLA_f_alb(Te)
-  h <- h_f(hum,rain)
-  deltaE = 0.1
-  c = 1.43
-  tmin = 13.41
-  tmax = 31.51
-  dR0 <- (1/3)*((f*a*deltaa)*probla*((h*dE)/(h*dE+deltaE)))^(-2/3)
-  dQ <-  -2*Te*tmin+c*tmin+c*tmax
-  ddeltaA <- dR0*((f*a)*probla*((h*dE)/(h*dE+deltaE)))*dQ
-  # ddeltaA <- ifelse(is.na(ddeltaA),0,ddeltaA)
-  return(ddeltaA)
+
+Lin_df <- function(cte, tmin, tmax, temp){
+  outp <- cte
+  
+  return(outp)
 }
 
-# Derivative pLA:
-dpLA <- function(Te, rain, hum){
+QuadN_df <- function(cte, tmin, tmax, temp){
+  outp <- 2*cte*temp + tmin
+  
+  return(outp)
+}
+# For albopictus ----------------------------------------------
+a_f_alb <- function(temp){Briere_func(0.000193,10.25,38.32,temp)} # Biting rate
+TFD_f_alb <- function(temp){Briere_func(0.0488,8.02,35.65,temp)} # Fecundity
+pEA_f_alb <- function(temp){Quad_func(0.002663,6.668,38.92,temp)} # Survival probability Egg-Adult
+lf_f_alb <- function(temp){Quad_func(1.43,13.41,31.51,temp)} # Adult life span
+dE_f_alb <- function(temp){Briere_func(0.00006881,8.869,35.09,temp)} # Adult life span
+a_df_alb <- function(temp){Briere_df(0.000193,10.25,38.32,temp)} # Biting rate
+TFD_df_alb <- function(temp){Briere_df(0.0488,8.02,35.65,temp)} # Fecundity
+pEA_df_alb <- function(temp){Quad_df(0.002663,6.668,38.92,temp)} # Survival probability Egg-Adult
+lf_df_alb <- function(temp){Quad_df(1.43,13.41,31.51,temp)} # Adult life span
+dE_df_alb <- function(temp){Briere_df(0.00006881,8.869,35.09,temp)} # Mosquito Development Rate
+
+R0_dfunc_alb <- function(rain,hum,Te,var){
   a <- a_f_alb(Te)
-  f <- (1/2)*TFD_f_alb(Te)
+  f <- TFD_f_alb(Te)
   deltaa <- lf_f_alb(Te)
+  probla <- pEA_f_alb(Te)
   dE <- dE_f_alb(Te)
-  probla <- pLA_f_alb(Te)
   h <- h_f(hum,rain)
-  deltaE = 0.1
-  c = 0.002663
-  tmin = 6.668
-  tmax = 38.92
-  dR0 <- (1/3)*((f*a*deltaa)*probla*((h*dE)/(h*dE+deltaE)))^(-2/3)
-  dQ <-  -2*Te*c+c*tmin+c*tmax
-  dpLA <- dR0*((f*a*deltaa)*((h*dE)/(h*dE+deltaE)))*dQ
-  dpLA <- ifelse(is.na(dpLA),0,dpLA)
-  return(dpLA)
+  deltE = 0.1
+  R0 <- f*deltaa*a*probla*(h/(h+deltE))
+  dffT <- TFD_df_alb(Te)
+  dfaT <- a_df_alb(Te)
+  dfdeltaAT <- lf_df_alb(Te)
+  dfplaT <- pEA_df_alb(Te)
+  dfdET <- dE_df_alb(Te)
+  dffR0 <- (1/3)*((R0)^(-2/3))*((deltaa*a*h*dE*probla)/(h*dE+deltE))*dffT
+  dfaR0 <- (1/3)*((R0)^(-2/3))*((deltaa*f*h*probla)/(h*dE+deltE))*dfaT
+  dfdeltAR0 <- (1/3)*((R0)^(-2/3))*((f*a*h*probla)/(h*dE+deltE))*dfdeltaAT
+  dfpLAR0 <- (1/3)*((R0)^(-2/3))*((deltaa*a*h*f)/(h*dE+deltE))*dfplaT
+  dfdER0 <- (1/3)*((R0)^(-2/3))*((deltaa*a*f*
+                                    probla)*(h*(h*dE+deltE)- (h*dE*h)/(h*dE+deltE)^2))*dfdET
+  dfR0 <- dffR0 + dfaR0 + dfdeltAR0 + dfpLAR0 + dfdER0
+  dfR0 <- ifelse(var == "RM",dfR0,
+                 ifelse(var == "a",dfaR0,
+                        ifelse(var == "f",dffR0,
+                               ifelse(var == "deltaA",dfdeltAR0,
+                                      ifelse(var == "pLA",dfpLAR0,dfdER0)))))
+  if(var == "deltaA"){
+    
+  }else{
+    dfR0 <-ifelse(is.na(dfR0),0,dfR0)
+  }
+  
+  return(dfR0)
 }
 
-# Derivative dE:
-ddE <- function(Te, rain, hum){
-  a <- a_f_alb(Te)
-  f <- (1/2)*TFD_f_alb(Te)
-  deltaa <- lf_f_alb(Te)
-  dE <- dE_f_alb(Te)
-  probla <- pLA_f_alb(Te)
-  h <- h_f(hum,rain)
-  deltaE = 0.1
-  c = 0.00006881
-  tmin = 8.869
-  tmax = 35.09
-  dR0 <- (1/3)*((f*a*deltaa)*probla*((h*dE)/(h*dE+deltaE)))^(-2/3)
-  dB <-  (2*Te*c-c*tmin)*(tmax-Te)^(1/2)+
-    (1/2)*(c*Te^2-c*tmin*Te)*(tmax-Te)^(-1/2)
-  ddE <- dR0*((f*a*deltaa)*probla*((h*(h*dE+deltaE)-dE*h^2)/(h*dE+deltaE)^2))*dB
-  ddE <- ifelse(is.na(ddE),0,ddE)
-  return(ddE)
+vec = seq(5,35,0.001)
+var_list = c("RM","a","f","deltaA","pLA", "dE")
+df_dT <- data.frame()
+for(i in c(1:length(var_list))){
+  R0df_ana <- sapply(vec, function(x){R0_dfunc_alb(rain_cte,hum_cte,
+                                                   x,var_list[i])} )
+  df_RM <- data.frame(vec= vec, out =R0df_ana)
+  df_RM$var <- var_list[i]
+  df_dT <- rbind(df_dT,df_RM)
 }
 
-# Derivative of the fecundity
-vec <- seq(0,40,0.001)
-rain_cte <- 8
-hum_cte <- 0
-out_f <- sapply(vec,df,rain=rain_cte, hum=hum_cte)
-df_out_f <- data.frame(vec, out =out_f)
-df_out_f$var <- "f"
-out_a <- sapply(vec,da,rain=rain_cte, hum=hum_cte)
-df_out_a <- data.frame(vec, out =out_a)
-df_out_a$var <- "a"
-out_pLA <- sapply(vec,dpLA,rain=rain_cte, hum=hum_cte)
-df_out_pLA <- data.frame(vec, out =out_pLA)
-df_out_pLA$var <- "pLA"
-out_dE <- sapply(vec,ddE,rain=rain_cte, hum=hum_cte)
-df_out_dE <- data.frame(vec, out =out_dE)
-df_out_dE$var <- "dE"
-out_ddeltaA <- sapply(vec,ddeltaA,rain=rain_cte, hum=hum_cte)
-df_out_ddeltaA <- data.frame(vec, out =out_ddeltaA)
-df_out_ddeltaA$var <- "ddeltaA"
-
-# Change the name of the df with the derivative of RM respect to T
-colnames(devf_t_alb) <- c("vec", "out")
-devf_t_alb$var <- "RM"
-devf_t_alb <- devf_t_alb[, c("vec", "out", "var")]
-
-# Artificially create data frames in order to have a legend with all the variables
-# And then when I do the ggarrange I have one legend with all variables
-df_out_deltaL <- data.frame(vec = 0,
-                        out = 0,
-                        var = "deltaL")
-df_out_dL <- data.frame(vec = 0,
+# Add artificially to get color in the legend ---------------------
+df_out_deltaL <- data.frame(vec = 5,
                             out = 0,
-                            var = "dL")
-df_out_lf_t <- data.frame(vec = 0,
+                            var = "deltaL")
+df_out_dL <- data.frame(vec = 5,
                         out = 0,
-                        var = "lf")
-df_out_pLA_t <- data.frame(vec = 0,
-                          out = 0,
-                          var = "pLA")
+                        var = "dL")
 
-# Join all the data frames -----------------------------------
-df_out <- rbind(df_out_a,df_out_pLA,df_out_f,
-                df_out_dE,df_out_lf_t,
-                df_out_deltaL,df_out_dL, devf_t_alb)
+df_dT <- rbind(df_dT,df_out_dL,df_out_deltaL)
 
-# Test -------------------------------------------------------
-df_out_t <- rbind(df_out_a,df_out_pLA,
-                df_out_dE,df_out_deltaA,
-                df_out_deltaL,df_out_dL)
-ggplot(df_out_t) +
-  geom_line(aes(vec,out, color = var), size = 0.8) 
+# Plot all curves together -----------------------------------------
+library(RColorBrewer)
+name_pal = "Dark2"
+display.brewer.pal(8, name_pal)
+pal <- brewer.pal(8, name_pal)
 
-# Check plot param -------------------------------------------
-vec = seq(0,40,0.1)
-out_ddeltaA <- sapply(vec,lf_f_alb)
-df_out_ddeltaA <- data.frame(vec = vec, out = out_ddeltaA)
-df_out_ddeltaA$var <- "ddeltaA"
+col_a = pal[1]
+col_f = pal[2]
+col_lf = pal[3]
+col_deltaL = pal[4]
+col_dL = pal[5]
+col_dE = pal[6]
+col_pLA = pal[7]
+col_deltaA = pal[8]
+col_R = "#000000"
 
-ggplot(df_out_ddeltaA) +
-  geom_line(aes(vec,out))
-
-# Plot derivative Albo ----------------------------------------
-library("latex2exp")
-plot_dAlb <- ggplot(df_out) +
-   geom_line(aes(vec,out, color = var), size = 0.8) + 
-  xlab("Temperature") + ylab("derivative") +  ylim(c(-0.4,0.64)) +
+# Plot
+df_alb <- ggplot(df_dT) +
+  geom_line(aes(vec,out, color =var), size = 1) +
+  ylim(c(-10,10)) + theme_bw() +
+  xlab("Temperature") + ylab(TeX("Derivative, $dR_M/dT$")) +
   scale_color_manual(name = "",
-                     values = c(col_a,col_dE,
-                                col_lf,col_deltaL,
-                                col_dL,col_f, col_lf,col_pLA,col_R),
-                     labels = c("a",TeX("$ d_E$"),TeX(" $ \\delta_L$"),
-                                TeX(" $ d_L$"),"f", "lf",
+                     values = c(col_a,col_dE,col_deltaA,
+                                col_deltaL,col_dL,col_f,col_pLA,col_R),
+                     labels = c("a",TeX("$ d_E$"),TeX(" $ \\delta_A$"),
+                                TeX(" $ \\delta_L$"),TeX(" $ d_L$"),"f", 
                                 TeX( " $ p_{LA}$"), TeX( " $ R_M$") )) + 
-  theme(legend.text.align = 0,
-        text = element_text(size = letsize)) +
-  theme_bw() +
-  labs(color=NULL)
-plot_dAlb
+  theme(legend.key.size = unit(1, 'cm'),
+        legend.key.width = unit(1, 'cm'))  
 
-# The plot for deltaA it is separated since it has a much bigger range
-df_out <- rbind(df_out_ddeltaA)
-plot_ddeltaA <- ggplot(df_out) +
-  geom_line(aes(vec,out, color = var),  size = 0.8) + 
-  scale_color_manual(values = c(col_lf,col_pLA)) +
-  xlab("Temperature") + ylab("derivative") +
-  theme_bw() +
-  labs(color=NULL)
-plot_ddeltaA
+# Aegypti ----------------------------------------------------------
+a_f_aeg <- function(temp){Briere_func(0.000202,13.35,40.08,temp)} # Biting rate
+pEA_f_aeg <- function(temp){Quad_func(0.004186,9.373,40.26,temp)} # Survival probability Egg-Adult
+lf_f_aeg <- function(temp){Quad_func(0.148,9.16,37.73,temp)} # Adult life span
+dE_f_aeg <- function(temp){Briere_func(0.0003775 ,14.88,37.42,temp)} # Adult life span
+a_df_aeg <- function(temp){Briere_df(0.000202,13.35,40.08,temp)} # Biting rate
+pEA_df_aeg <- function(temp){Quad_df(0.004186,9.373,40.26,temp)} # Survival probability Egg-Adult
+lf_df_aeg <- function(temp){Quad_df(0.148,9.16,37.73,temp)} # Adult life span
+dE_df_aeg <- function(temp){Briere_df(0.0003775 ,14.88,37.42,temp)} # Mosquito Development Rate
 
-##### Aegipty #####
-# Fecundity is constant for aegypti
-# Derivative of the biting rate, a:
-da <- function(Te, rain, hum){
+R0_dfunc_aeg <- function(rain,hum,Te,var){
   a <- a_f_aeg(Te)
-  f <-  40#(1/2)*TFD_f_aeg(Te)
+  f <- 40
   deltaa <- lf_f_aeg(Te)
+  probla <- pEA_f_aeg(Te)
   dE <- dE_f_aeg(Te)
-  probla <- pLA_f_aeg(Te)
   h <- h_f(hum,rain)
-  deltaE = 0.1
-  c = 0.000202
-  tmin = 13.35
-  tmax = 40.08
-  dR0 <- (1/3)*((f*a*deltaa)*probla*((h*dE)/(h*dE+deltaE)))^(-2/3)
-  dB <-  (2*Te*c-c*tmin)*(tmax-Te)^(1/2)+
-    (1/2)*(c*Te^2-c*tmin*Te)*(tmax-Te)^(-1/2)
-  da <- dR0*((f*deltaa)*probla*((h*dE)/(h*dE+deltaE)))*dB
-  da <- ifelse(is.na(da),0,da)
-  return(da)
+  deltE = 0.1
+  R0 <- f*deltaa*a*probla*(h/(h+deltE))
+  dfaT <- a_df_aeg(Te)
+  dfdeltaAT <- lf_df_aeg(Te)
+  dfplaT <- pEA_df_aeg(Te)
+  dfdET <- dE_df_aeg(Te)
+  dfaR0 <- (1/3)*((R0)^(-2/3))*((deltaa*f*h*probla)/(h*dE+deltE))*dfaT
+  dfdeltAR0 <- (1/3)*((R0)^(-2/3))*((f*a*h*probla)/(h*dE+deltE))*dfdeltaAT
+  dfpLAR0 <- (1/3)*((R0)^(-2/3))*((deltaa*a*h*f)/(h*dE+deltE))*dfplaT
+  dfdER0 <- (1/3)*((R0)^(-2/3))*((deltaa*a*f*
+                                    probla)*(h*(h*dE+deltE)- (h*dE*h)/(h*dE+deltE)^2))*dfdET
+  dfR0 <- dfaR0 + dfdeltAR0 + dfpLAR0 + dfdER0
+  dfR0 <- ifelse(var == "RM",dfR0,
+                 ifelse(var == "a",dfaR0,
+                               ifelse(var == "deltaA",dfdeltAR0,
+                                      ifelse(var == "pLA",dfpLAR0,dfdER0))))
+  if(var == "deltaA"|var == "a"|var == "RM"|var == "dE"){
+    
+  }else{
+    dfR0 <-ifelse(is.na(dfR0),0,dfR0)
+  }
+  
+  return(dfR0)
 }
 
-# Derivative pLA:
-dpLA <- function(Te, rain, hum){
-  a <- a_f_alb(Te)
-  f <-  40#(1/2)*TFD_f_aeg(Te)
-  deltaa <- lf_f_aeg(Te)
-  dE <- dE_f_aeg(Te)
-  probla <- pLA_f_aeg(Te)
-  h <- h_f(hum,rain)
-  deltaE = 0.1
-  c = 0.004186
-  tmin = 9.373
-  tmax = 40.26
-  dR0 <- (1/3)*((f*a*deltaa)*probla*((h*dE)/(h*dE+deltaE)))^(-2/3)
-  dQ <-  -2*Te*tmin+c*tmin+c*tmax
-  dpLA <- dR0*((f*a*deltaa)*((h*dE)/(h*dE+deltaE)))*dQ
-  dpLA <- ifelse(is.na(dpLA),0,dpLA)
-  return(dpLA)
+vec = seq(5,40,0.0001)
+var_list = c("RM","a","deltaA","pLA", "dE")
+df_dT <- data.frame()
+for(i in c(1:length(var_list))){
+  R0df_ana <- sapply(vec, function(x){R0_dfunc_aeg(rain_cte,hum_cte,
+                                                   x,var_list[i])} )
+  df_RM <- data.frame(vec= vec, out =R0df_ana)
+  df_RM$var <- var_list[i]
+  df_dT <- rbind(df_dT,df_RM)
 }
 
-# Derivative dE:
-ddE <- function(Te, rain, hum){
-  a <- a_f_aeg(Te)
-  f <-  40#(1/2)*TFD_f_aeg(Te)
-  deltaa <- lf_f_aeg(Te)
-  dE <- dE_f_aeg(Te)
-  probla <- pLA_f_aeg(Te)
-  h <- h_f(hum,rain)
-  deltaE = 0.1
-  c = 0.0003775
-  tmin = 14.88
-  tmax = 37.42
-  dR0 <- (1/3)*((f*a*deltaa)*probla*((h*dE)/(h*dE+deltaE)))^(-2/3)
-  dB <-  (2*Te*c-c*tmin)*(Te-tmax)^(1/2)+
-    (1/2)*(c*Te^2-c*tmin*Te)*(Te-tmax)^(-1/2)
-  ddE <- dR0*((f*a*deltaa)*probla*((h*(h*dE+deltaE)-
-                                      dE*h^2)/(h*dE+deltaE)^2))*dB
-  return(ddE)
-}
+# Plot all curves together -----------------------------------------
+ggplot(df_dT[df_dT$var == "dE",]) +
+  geom_line(aes(vec,out, color =var), size =1) 
+df_aeg <- ggplot(df_dT) +
+  geom_line(aes(vec,out, color =var), size =0.8) +
+  ylim(c(-6,6)) + theme_bw() +
+  xlab("Temperature") + ylab(TeX("Derivative, $dR_M/dT$")) +
+  scale_color_manual(name = "",
+                     values = c(col_a,col_dE,col_deltaA,col_pLA,col_R),
+                     labels = c("a",TeX("$ d_E$"),TeX(" $ \\delta_A$"),
+                                TeX( " $ p_{LA}$"), TeX( " $ R_M$") )) + 
+  theme(legend.key.size = unit(1, 'cm'),
+        legend.key.width = unit(1, 'cm'))  
 
-ddeltaA <- function(Te, rain, hum){
-  a <- a_f_aeg(Te)
-  f <- 40#(1/2)*TFD_f_aeg(Te)
-  deltaa <- lf_f_aeg(Te)
-  dE <- dE_f_aeg(Te)
-  probla <- pLA_f_aeg(Te)
-  h <- h_f(hum,rain)
-  deltaE = 0.1
-  c = 0.148
-  tmin = 9.16
-  tmax = 37.73
-  dR0 <- (1/3)*((f*a*deltaa)*probla*((h*dE)/(h*dE+deltaE)))^(-2/3)
-  dQ <-  -2*Te*tmin+c*tmin+c*tmax
-  ddeltaA <- dR0*((f*a)*probla*((h*dE)/(h*dE+deltaE)))*dQ
-  ddeltaA <- ifelse(is.na(ddeltaA),0,ddeltaA)
-  return(ddeltaA)
-}
+# Japonicus ----------------------------------------------------------
+dE_f_jap <- function(temp){Briere_func(0.0002859,6.360,35.53 ,temp)} # Mosquito Development Rate
+dL_f_jap <- function(temp){Briere_func(7.000e-05,9.705e+00,3.410e+01,temp)} # Survival probability Egg-Adult
+lf_f_jap <- function(temp){Lin_func(-2.5045,82.6525,temp)} # Adult life span
+deltaL_f_jap <- function(temp){QuadN_func(0.0021476,-0.0806067 ,1.0332455,temp)} # Adult life span
+dE_df_jap <- function(temp){Briere_df(0.0002859,6.360,35.53,temp)} # Biting rate
+dL_df_jap <- function(temp){Briere_df(7.000e-05,9.705e+00,3.410e+01,temp)} # Survival probability Egg-Adult
+lf_df_jap <- function(temp){Lin_df(-2.5045,82.6525,temp)} # Adult life span
+deltaL_df_jap <- function(temp){QuadN_df(0.0021476,-0.0806067 ,1.0332455,temp)} # Mosquito Development Rate
 
-# Derivative of the fecundity
-vec <- seq(0,40,0.001)
-rain_cte <- 8
-hum_cte <- 0
-out_a <- sapply(vec,da,rain=rain_cte, hum=hum_cte)
-df_out_a <- data.frame(vec, out =out_a)
-df_out_a$var <- "a"
-out_pLA <- sapply(vec,dpLA,rain=rain_cte, hum=hum_cte)
-df_out_pLA <- data.frame(vec, out =out_pLA)
-df_out_pLA$var <- "pLA"
-out_dE <- sapply(vec,ddE,rain=rain_cte, hum=hum_cte)
-df_out_dE <- data.frame(vec, out =out_dE)
-df_out_dE$var <- "dE"
-out_ddeltaA <- sapply(vec,ddeltaA,rain=rain_cte, hum=hum_cte)
-df_out_ddeltaA <- data.frame(vec, out =out_ddeltaA)
-df_out_ddeltaA$var <- "ddeltaA"
-
-# Change the name of the df with the derivative of RM respect to T
-colnames(devf_t_aeg) <- c("vec", "out")
-devf_t_aeg$var <- "RM"
-devf_t_aeg <- devf_t_aeg[, c("vec", "out", "var")]
-## Join all data frames
-df_out <- rbind(df_out_a,df_out_pLA,
-                df_out_dE,df_out_ddeltaA, devf_t_aeg )
-
-plot_dAeg <- ggplot(df_out) +
-  geom_line(aes(vec,out, color = var), size = 0.8) + 
-  xlab("Temperature") + ylab("derivative") +
-  ylim(c(-2,4.7)) +
-  scale_color_manual(values = c(col_a,col_deltaA,
-                                col_dE,col_pLA, col_R)) +
-  theme(legend.text.align = 0,
-        text = element_text(size = letsize)) +
-  theme_bw()  +
-  labs(color=NULL)
-plot_dAeg
-
-##### Japonicus #####
-#####----------------Japonicus-----------------####
-# dE_f_jap <- function(temp){Briere_func(0.0002859,6.360,35.53 ,temp)} # Mosquito Development Rate
-# dL_f_jap <- function(temp){Briere_func(7.000e-05,9.705e+00,3.410e+01,temp)} # Survival probability Egg-Adult
-# lf_f_jap <- function(temp){Lin_func(-2.5045,82.6525,temp)} # Adult life span
-# deltaL_f_jap <- function(temp){QuadN_func(0.0021476,-0.0806067 ,1.0332455,temp)} # Adult life span
-
-# Derivative of Larvae development rate, dL:
-ddL <- function(Te, rain, hum){
+R0_dfunc_jap <- function(rain,hum,Te,var){
   a <- 0.35
   f <- 40 #183/2
-  lf <- lf_f_jap(Te)
+  deltaa <- lf_f_jap(Te)
   deltaL <- deltaL_f_jap(Te)
-  deltaE = 0.1
+  deltE = 0.1
   dE <- dE_f_jap(Te)
   dL <- dL_f_jap(Te)
   h <- h_f(hum,rain)
-  c = 0.00007
-  tmin = 9.7
-  tmax = 34.10
-  dR0 <- (1/3)*((f*a*lf)*(dL/(dL+deltaL))*(h*dE/(h*dE+deltaE)))^(-2/3)
-  dB <-  (2*Te*c-c*tmin)*(Te-tmax)^(1/2)+
-    (1/2)*(c*Te^2-c*tmin*Te)*(Te-tmax)^(-1/2)
-  dL <- dR0*((f*a*lf)*((dL+deltaL)-dL/(dL+deltaL)^2)*((h*dE)/(h*dE+deltaE)))*dB
-  return(dL)
+  R0 <- ((f*a*deltaa)*(dL/(dL+deltaL))*((h*dE)/(h*dE+deltE)))
+  dfdeltaAT <- lf_df_jap(Te)
+  dfdeltaLT <- deltaL_df_jap(Te)
+  dfdET <- dE_df_jap(Te)
+  dfdLT <- dL_df_jap(Te)
+  
+  dfdeltaAR0 <- (1/3)*((R0)^(-2/3))*((f*a)*(dL/(dL+deltaL))*((h*dE)/(h*dE+deltE)))*dfdeltaAT
+  dfdLR0 <- (1/3)*((R0)^(-2/3))*((f*a*deltaa)*(((dL+deltaL)-dL)/(dL+deltaL)^2)*((h*dE)/(h*dE+deltE)))*dfdLT
+  dfdeltaLR0 <- (1/3)*((R0)^(-2/3))*((f*a*deltaa)*(-dL/(dL+deltaL)^2)*((h*dE)/(h*dE+deltE)))*dfdeltaLT
+  dfdER0 <- (1/3)*((R0)^(-2/3))*(deltaa*a*f*
+                                    (dL/(dL+deltaL))*(h*(h*dE+deltE)- (h*dE*h)/(h*dE+deltE)^2))*dfdET
+  dfR0 <- dfdeltaAR0 + dfdeltaLR0 + dfdLR0 + dfdER0
+  dfR0 <- ifelse(var == "RM",dfR0,
+                 ifelse(var == "deltaA",dfdeltaAR0,
+                        ifelse(var == "deltaL",dfdeltaLR0,
+                               ifelse(var == "dL",dfdLR0,dfdER0))))
+  if(var == "RM" | var == "dL"){
+    
+  }else{
+    dfR0 <-ifelse(is.na(dfR0),0,dfR0)
+  }
+  return(dfR0)
 }
 
-# Derivative lf:
-dlf <- function(Te, rain, hum){
-  a <- 0.35
-  f <- 40 #183/2
-  lf <- lf_f_jap(Te)
-  deltaL <- deltaL_f_jap(Te)
-  deltaE = 0.1
-  dE <- dE_f_jap(Te)
-  dL <- dL_f_jap(Te)
-  h <- h_f(hum,rain)
-  c = -2.5045
-  tmin = 82.6525
-  dR0 <- (1/3)*((f*a*lf)*(dL/(dL+deltaL))*(h*dE/(h*dE+deltaE)))^(-2/3)
-  dL <- c
-  dlf <- dR0*((f*a)*(dL/(dL+deltaL))*((h*dE)/(h*dE+deltaE)))*dL
-  return(dlf)
+vec = seq(5,40,0.01)
+var_list = c("RM","deltaA","dL", "dE","deltaL")
+df_dT <- data.frame()
+for(i in c(1:length(var_list))){
+  R0df_ana <- sapply(vec, function(x){R0_dfunc_jap(rain_cte,hum_cte,
+                                                   x,var_list[i])} )
+  df_RM <- data.frame(vec= vec, out =R0df_ana)
+  df_RM$var <- var_list[i]
+  df_dT <- rbind(df_dT,df_RM)
 }
 
-# Derivative dE:
-ddE <- function(Te, rain, hum){
-  a <- 0.35
-  f <- 40 #183/2
-  lf <- lf_f_jap(Te)
-  deltaL <- deltaL_f_jap(Te)
-  deltaE = 0.1
-  dE <- dE_f_jap(Te)
-  dL <- dL_f_jap(Te)
-  h <- h_f(hum,rain)
-  c = 0.0002859
-  tmin = 6.360
-  tmax = 35.53
-  dR0 <- (1/3)*((f*a*lf)*(dL/(dL+deltaL))*(h*dE/(h*dE+deltaE)))^(-2/3)
-  dB <-  (2*Te*c-c*tmin)*(Te-tmax)^(1/2)+
-    (1/2)*(c*Te^2-c*tmin*Te)*(Te-tmax)^(-1/2)
-  ddE <- dR0*((f*a*lf)*(dL/(dL+deltaL))*((h*(h*dE+deltaE)-dE*h^2)/(h*dE+deltaE)^2))*dB
-  ddE <- ifelse(is.na(ddE),0,ddE)
-  return(ddE)
-}
+# Plot all curves together -----------------------------------------
+df_jap <- ggplot(df_dT) +
+  geom_line(aes(vec,out, color =var), size = 1) +
+  ylim(c(-1,1)) + theme_bw() +
+  xlab("Temperature") + ylab(TeX("Derivative, $dR_M/dT$")) +
+  scale_color_manual(name = "",
+                     values = c(col_dE,col_deltaA,col_deltaL,col_dL,col_R)) + 
+  theme(legend.key.size = unit(1, 'cm'),
+        legend.key.width = unit(1, 'cm'))  
 
-ddeltaL <- function(Te, rain, hum){
-  a <- 0.35
-  f <- 40 #183/2
-  lf <- lf_f_jap(Te)
-  deltaL <- deltaL_f_jap(Te)
-  deltaE = 0.1
-  dE <- dE_f_jap(Te)
-  dL <- dL_f_jap(Te)
-  h <- h_f(hum,rain)
-  c = 0.0021476
-  tmin = -0.0806067
-  tmax = 1.0332455
-  dR0 <- (1/3)*((f*a*lf)*(dL/(dL+deltaL))*(h*dE/(h*dE+deltaE)))^(-2/3)
-  dQN <- 2*c*Te + tmin
-  ddeltaL <- dR0*((f*a*lf)*(-dL/(dL+deltaL)^2)*((h*dE)/(h*dE+deltaE)))*dQN
-  ddeltaL <- ifelse(is.na(ddeltaL),0,ddeltaL)
-  return(ddeltaL)
-}
-
-# Derivative of the fecundity
-vec <- seq(0,40,0.001)
-rain_cte <- 8
-hum_cte <- 0
-out_dL <- sapply(vec,ddL,rain=rain_cte, hum=hum_cte)
-df_out_dL <- data.frame(vec, out =out_dL)
-df_out_dL$var <- "dL"
-out_lf <- sapply(vec,dlf,rain=rain_cte, hum=hum_cte)
-df_out_lf <- data.frame(vec, out =out_lf)
-df_out_lf$var <- "lf"
-out_dE <- sapply(vec,ddE,rain=rain_cte, hum=hum_cte)
-df_out_dE <- data.frame(vec, out =out_dE)
-df_out_dE$var <- "dE"
-out_ddeltaL <- sapply(vec,ddeltaL,rain=rain_cte, hum=hum_cte)
-df_out_ddeltaL <- data.frame(vec, out =out_ddeltaL)
-df_out_ddeltaL$var <- "ddeltaL"
-
-# Change the name of the df with the derivative of RM respect to T
-colnames(devf_t_jap) <- c("vec", "out")
-devf_t_jap$var <- "RM"
-devf_t_jap <- devf_t_jap[,c("vec", "out", "var")]
-
-# Join all the df with all the derivatives
-df_out <- rbind(df_out_dL,df_out_lf,
-                df_out_dE,df_out_ddeltaL, devf_t_jap )
-
-plot_dJap <- ggplot(df_out) +
-  geom_line(aes(vec,out, color = var), size = 0.8) + 
-  xlab("Temperature") + ylab("derivative") +
-  scale_color_manual(values = c(col_deltaL,col_dE,col_dL,col_lf, col_R)) +
-  ylim(c(-1,1)) +
-  theme(legend.text.align = 0,
-        text = element_text(size = letsize)) +
-  theme_bw() +
-  labs(color=NULL)
-
-plot_dJap
-
-ggarrange(plot_dAlb + ylab("dx/dT") + xlab("") + 
-            ggtitle(expression(italic("Ae. Albopitus"))),
-          plot_ddeltaA + ylab("") + xlab("") + 
-            ggtitle(expression(italic("Ae. Albopitus"))),
-          plot_dAeg  + ylab("dx/dT") + 
-            ggtitle(expression(italic("Ae. Aegypti"))),
-          plot_dJap + ylab("") + 
-            ggtitle(expression(italic("Ae. Japonicus"))),
-          common.legend = TRUE)
+# Join all plots ---------------------------------------------------
+legend_only <- get_legend(df_alb +
+                            theme(legend.position = "top"))
+ggarrange(df_alb + ylab("dx/dT") + xlab("") + 
+            ggtitle(expression(italic("Ae. Albopitus")))+
+            theme(legend.position = "none",
+                  plot.title = element_text(hjust = 0.5)),
+          df_aeg + ylab("") + xlab("") + 
+            ggtitle(expression(italic("Ae. Aegypti")))+
+            theme(legend.position = "none",
+                  plot.title = element_text(hjust = 0.5)),
+          df_jap  + ylab("dx/dT") + 
+            ggtitle(expression(italic("Ae. Japonicus")))+
+            theme(legend.position = "none",
+                  plot.title = element_text(hjust = 0.5)),
+          legend_only,
+          ncol=2, nrow = 2)
 

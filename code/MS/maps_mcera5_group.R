@@ -176,7 +176,7 @@ R0_func_jap <- function(Te, rain,hum){
 year = 2004
 Path <- paste0("/home/marta/INVASIBILITY_THRESHOLD/output/mcera5/process_hourly_daily_ERA5_daily_mcera_",
                year,".Rds")
-year = 2004
+year = 2020
 Path <- paste0("~/INVASIBILITY_THRESHOLD/output/ERA5/temp/2020/clim_",year,".Rds")
 # saveRDS(dt_weather,Path)
 df_group <- setDT(readRDS(Path))
@@ -246,38 +246,37 @@ df_group[, R0_dai_aeg := mapply(R0_func_aeg, tmean, prec, dens)]
 df_group[, R0_dai_jap := mapply(R0_func_jap, tmean, prec, dens)]
 
 ## ----------PLOT TEMP----------#
-# df_prov <- esp_can[,c("cpro","ine.prov.name")]
-# df_prov$geometry <- NULL
-# df_prov <- unique(df_prov)
-# provincia = "Valencia/València"
-# df_GN <- df_group[which(df_group$NATCODE %in%
-#                           esp_can$NATCODE[which(esp_can$ine.prov.name == provincia)]),]
-# df_GN <- df_GN[,.(tmean = mean(tmean),
-#                   prec = mean(prec),
-#                   dens = as.numeric(sum(pop)/sum(area))), by = list(date)]
-# 
-# df_GN[, R0_dai_alb := mapply(R0_func_alb, tmean, prec, dens)]
-# df_GN[, R0_dai_aeg := mapply(R0_func_aeg, tmean, prec, dens)]
-# df_GN[, R0_dai_jap := mapply(R0_func_jap, tmean, prec, dens)]
-# 
-# library("latex2exp")
-# ggplot(df_GN) + 
-#   geom_line(aes(date, R0_dai_alb)) + 
-#   ylab(TeX("$R_M$")) + 
-#   scale_x_date(date_breaks = "2 month", date_labels =  "%b %Y") +
-#   ggtitle(provincia) +
-#   theme_bw()
-# 
-## It is the rainfall why there are so many peaks and downs
-# coeff <- 1
-# 
-# ggplot(df_BCN, aes(x=date)) +
-#   geom_line( aes(y=R0_dai_alb), color = "darkblue") + 
-#   geom_line( aes(y=prec), color = "yellow") + # Divide by 10 to get the same range than the temperature
-#   scale_y_continuous(
-#     name = "R0",
-#     sec.axis = sec_axis(~.*coeff, name="Temperature")
-#   ) + theme_bw()
+df_prov <- esp_can[,c("cpro","ine.prov.name")]
+df_prov$geometry <- NULL
+df_prov <- unique(df_prov)
+provincia = "Valencia/València"
+df_GN <- df_group[which(df_group$NATCODE %in%
+                          esp_can$NATCODE[which(esp_can$ine.prov.name == provincia)]),]
+df_GN <- df_GN[,.(tmean = mean(tmean),
+                  prec = mean(prec),
+                  dens = as.numeric(sum(pop)/sum(area))), by = list(date)]
+
+df_GN[, R0_dai_alb := mapply(R0_func_alb, tmean, prec, dens)]
+df_GN[, R0_dai_aeg := mapply(R0_func_aeg, tmean, prec, dens)]
+df_GN[, R0_dai_jap := mapply(R0_func_jap, tmean, prec, dens)]
+
+library("latex2exp")
+ggplot(df_group[which(df_group$name == "Tordera"),]) +
+  geom_line(aes(date, R0_dai_alb)) +
+  ylab(TeX("$R_M$")) +
+  scale_x_date(date_breaks = "2 month", date_labels =  "%b %Y") +
+  ggtitle(provincia) +
+  theme_bw()
+
+# It is the rainfall why there are so many peaks and downs
+coeff <- 1
+ggplot(df_BCN, aes(x=date)) +
+  geom_line( aes(y=R0_dai_alb), color = "darkblue") +
+  geom_line( aes(y=prec), color = "yellow") + # Divide by 10 to get the same range than the temperature
+  scale_y_continuous(
+    name = "R0",
+    sec.axis = sec_axis(~.*coeff, name="Temperature")
+  ) + theme_bw()
 
 #### ----------- Monthly agg----------------###
 df_group_mon <- df_group[, .(tmean = mean(tmean),
