@@ -149,17 +149,30 @@ vars <- c('prec', 'tmax', 'tmin')
 # path = 'tmpr_245'  path = 'tmpr_370'  path = 'tmpr_585'
 # (optimistic: SSP245; middle of the road: SSP370; and pessimistic: SSP585)
 
+# prec_w <- geodata::cmip6_world(model = 'ACCESS-CM2',
+#                              ssp = '370', time = '2041-2060',
+#                              var = 'prec', path = 'tmpr_370', res = 2.5)
+# 
+# tmax_w <- geodata::cmip6_world(model = 'ACCESS-CM2',
+#                             ssp = '370', time = '2041-2060',
+#                             var = 'tmax', path = 'tmpr_370', res = 2.5)
+# 
+# tmin_w <- geodata::cmip6_world(model = 'ACCESS-CM2',
+#                             ssp = '370', time = '2041-2060',
+#                             var = 'tmin', path = 'tmpr_370', res = 2.5)
+
+
 prec_w <- geodata::cmip6_world(model = 'ACCESS-CM2',
-                             ssp = '585', time = '2041-2060',
-                             var = 'prec', path = 'tmpr_585', res = 2.5)
+                               ssp = '370', time = '2061-2080',
+                               var = 'prec', path = 'tmpr_2080', res = 2.5)
 
 tmax_w <- geodata::cmip6_world(model = 'ACCESS-CM2',
-                            ssp = '585', time = '2041-2060',
-                            var = 'tmax', path = 'tmpr_585', res = 2.5)
+                               ssp = '370', time = '2061-2080',
+                               var = 'tmax', path = 'tmpr_2080', res = 2.5)
 
 tmin_w <- geodata::cmip6_world(model = 'ACCESS-CM2',
-                            ssp = '585', time = '2041-2060',
-                            var = 'tmin', path = 'tmpr_585', res = 2.5)
+                               ssp = '370', time = '2061-2080',
+                               var = 'tmin', path = 'tmpr_2080', res = 2.5)
 
 # Change coordinate system to WGS84 ---------------------------------------
 coord_sys <- crs("+proj=longlat +datum=WGS84")
@@ -545,9 +558,9 @@ plot_month <- function(month){
 # Plot whole year monthly ----------------------------------------------------
 list_month = c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul",
                "Aug", "Sep", "Oct", "Nov", "Dec")
-ind = 3
-plot_3 <- plot_month(list_month[ind])[[1]]
-plot_3
+ind = 11
+plot_11 <- plot_month(list_month[ind])[[1]]
+plot_11
 ggarr <- ggarrange(plot_3,plot_4,plot_5,
                    plot_6,plot_7,plot_8,
                    plot_9,plot_10,plot_11,
@@ -567,6 +580,9 @@ for(i in c(1:length(lmon))){
   df_y <- rbind(df_y,df_aux)
 }
 
+Path <- paste0("~/INVASIBILITY_THRESHOLD/output/ERA5/temp/2020/monthly_clim_2060.Rds")
+saveRDS(df_y, Path)
+
 # Create df for num months suitable -----------------------------------------
 df_y$bool_alb <- ifelse(df_y$R0_alb <1,0,1)
 df_y$bool_aeg <- ifelse(df_y$R0_aeg <1,0,1)
@@ -581,7 +597,7 @@ df_g <- df_y %>% group_by(NATCODE) %>%
             avg_jap = mean(R0_jap)
             )
 
-Path <- paste0("~/INVASIBILITY_THRESHOLD/output/ERA5/temp/2020/clim_2040.Rds")
+Path <- paste0("~/INVASIBILITY_THRESHOLD/output/ERA5/temp/2020/clim_2060.Rds")
 saveRDS(df_g, Path)
 
 # Create plot months suitable -----------------------------------------
@@ -603,7 +619,7 @@ letsize = 16
 # Albopictus
 alb <- ggplot(df_g) + 
   geom_sf(aes(fill = as.factor(alb)), colour = NA) +
-  geom_sf(data = can_box) +
+  geom_sf(data = can_box) + coord_sf(datum = NA) +
   scale_fill_manual(values = pal, limits = c(1:12),
                     name = TeX("$R_M>1$ \n months")) +
   theme_bw()
@@ -611,7 +627,7 @@ alb <- ggplot(df_g) +
 # Aegipty
 aeg <- ggplot(df_g) + 
   geom_sf(aes(fill = as.factor(aeg)), colour = NA) +
-  geom_sf(data = can_box) +
+  geom_sf(data = can_box) + coord_sf(datum = NA) +
   scale_fill_manual(values = pal, limits = c(1:12),
                     name = TeX("$R_M>1$ \n months")) +
   theme_bw()
@@ -619,7 +635,7 @@ aeg <- ggplot(df_g) +
 # Japonicus
 jap <- ggplot(df_g) + 
   geom_sf(aes(fill = as.factor(jap)), colour = NA) +
-  geom_sf(data = can_box) +
+  geom_sf(data = can_box) + coord_sf(datum = NA) +
   scale_fill_manual(values = pal, limits = c(1:12),
                     name = TeX("$R_M>1$ \n months")) +
   theme_bw()

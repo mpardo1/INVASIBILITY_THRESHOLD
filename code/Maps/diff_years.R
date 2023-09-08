@@ -32,6 +32,13 @@ df_2040 <- setDT(readRDS(Path))
 df_2040 <- df_2040[,c("NATCODE", "alb", "aeg", "jap")]
 colnames(df_2040) <-c ("NATCODE", "Alb_2040", "Aeg_2040", "Jap_2040")
 
+year = 2060
+Path <- paste0("~/INVASIBILITY_THRESHOLD/output/ERA5/temp/2020/clim_",
+               year,".Rds")
+df_2060 <- setDT(readRDS(Path))
+df_2060 <- df_2060[,c("NATCODE", "alb", "aeg", "jap")]
+colnames(df_2060) <-c ("NATCODE", "Alb_2060", "Aeg_2060", "Jap_2060")
+
 # Map Spain municipalities ----------------------------------------------------
 esp_can <- esp_get_munic_siane(moveCAN = TRUE)
 can_box <- esp_get_can_box()
@@ -79,22 +86,28 @@ plot_summonths <- function(df){
 
 # Albopictus ---------------------------------------------------------
 # 2004
-df_2004$R0 <- df_2004$Jap_2004
+df_2004$R0 <- df_2004$Alb_2004
 plot_2004 <- plot_summonths(df_2004)
 plot_2004
 df_2004$R0 <- NULL
 
 # 2020
-df_2020$R0 <- df_2020$Jap_2020
+df_2020$R0 <- df_2020$Alb_2020
 plot_2020 <- plot_summonths(df_2020)
 plot_2020
 df_2020$R0 <- NULL
 
 # 2040
-df_2040$R0 <- df_2040$Jap_2040
+df_2040$R0 <- df_2040$Alb_2040
 plot_2040 <- plot_summonths(df_2040)
 plot_2040
 df_2040$R0 <- NULL
+
+# 2060
+df_2060$R0 <- df_2060$Alb_2060
+plot_2060 <- plot_summonths(df_2060)
+plot_2060
+df_2060$R0 <- NULL
 
 # Join all the plots -------------------------------------------------
 library(ggpubr)
@@ -105,6 +118,17 @@ ggarrange(plot_2004 +
           plot_2040 +
             ggtitle("C                         2040"),
           ncol = 3,
+          common.legend = TRUE)
+
+ggarrange(plot_2004 +
+            ggtitle("A                        2004"),
+          plot_2020 +
+            ggtitle("B                         2020"),
+          plot_2040 +
+            ggtitle("C                         2040"),
+          plot_2060 +
+            ggtitle("D                         2060"),
+          ncol = 2,nrow = 2,
           common.legend = TRUE)
 
 # 3 species ---------------------------------------------------------
