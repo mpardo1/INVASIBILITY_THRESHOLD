@@ -283,20 +283,28 @@ for(i in c(1:length(list_cit))){
   df_aux <- data.frame(temp_ae <- vec,
                        fem <- sapply(vec, mod))
   df_aux$cit <- list_cit[[i]]
+  colnames(df_aux) <- c("vec", "out", "cit")
   df_out_fem <- rbind(df_aux, df_out_fem)
   colnames(df_out_fem) <- c("vec", "out", "cit")
 }
 
 # Plot with dots and fit exp ---------------------------------------------
+name_pal = "Set1"
+display.brewer.pal(length(list_cit), name_pal)
+pal <- rev(brewer.pal(length(list_cit), name_pal))
+sizelet = 14
 plot3 <- ggplot(data = trap_data_filt) +
           geom_point(aes(x = R0_alb_norm, 
-                         y = female_norm, color = city)) +
+                         y = female_norm, color = city), size = 0.8, alpha = 0.6) +
           geom_line(data = df_out_fem,
                     aes(vec , out, color = cit),
                     lwd = 0.8) +
+          scale_color_manual(values = pal) +
           xlab(TeX("Relative $R_M$")) +
           ylab("Normalized number of females") +
-          theme_bw()
+          theme_bw() + 
+          theme(text = element_text(size = sizelet))
+plot3
 
 # Add a zero female at the beggining of each year in order to show
 # a nice plot other wise the last year number of females join the first record 

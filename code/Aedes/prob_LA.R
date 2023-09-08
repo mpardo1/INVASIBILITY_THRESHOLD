@@ -61,6 +61,7 @@ df_out_aeg_min[which(df_out_aeg_min$life_span_ae < 0),2] <- 0
 df_out_aeg_min$group <- "min"
 
 plot(df_out_aeg_min$temp_ae,df_out_aeg_min$life_span_ae)
+
 ## Mean - SD
 mod_max <- function(te){
   t0 <- as.numeric(Fitting_aeg$m$getPars()[2]) + 

@@ -4,7 +4,6 @@
 # equals to the ones done by hand (done in sensitivity_analytic.R)
 # Also, there is a plot for each variable in the R0 to see its shape 
 # for the three species.
-
 rm(list=ls())
 library(tidyverse)
 library(ggplot2)
@@ -251,7 +250,7 @@ df_out <- data.frame(vec, aegypti = aegypti,
 df_out <- reshape2::melt( df_out, id.vars = "vec")
 
 library(RColorBrewer)
-name_pal = "Dark2"
+name_pal = "Set1"
 display.brewer.pal(3, name_pal)
 pal <- brewer.pal(3, name_pal)
 letsize = 16
@@ -259,10 +258,14 @@ library("latex2exp")
 ggplot(df_out) + 
   geom_line(aes(vec,value, color=variable), size = 1) +
   geom_hline(yintercept = 1, linetype = "dashed", color = "red") +
-  ylab(TeX("$R_M$")) + scale_color_manual(name = "", values =pal) +
+  ylab(TeX("$R_M$")) + 
+  scale_color_manual(name = "", values =pal,
+                     labels = c(expression(italic("Ae. aegypti")),
+                                expression(italic("Ae. albopictus")),
+                                expression(italic("Ae. japonicus")))) +
   xlab("Temperature") +
   scale_x_continuous(breaks = seq(5,41,4)) +
-  theme_bw() + theme(legend.position = c(0.18,0.8),
+  theme_bw() + theme(legend.position = c(0.18,0.75),
                      text = element_text(size = letsize),
                      legend.text.align = 0)
 
@@ -641,25 +644,25 @@ R0_dfunc_alb <- function(rain,hum,Te,var){
   dE <- dE_f_alb(Te)
   h <- h_f(hum,rain)
   deltE = 0.1
-  R0 <- f*deltaa*a*probla*(h/(h+deltE))
+  R0 <- f*deltaa*a*probla*((h*dE)/(h*dE+deltE))
   dffT <- TFD_df_alb(Te)
   dfaT <- a_df_alb(Te)
   dfdeltaAT <- lf_df_alb(Te)
   dfplaT <- pEA_df_alb(Te)
   dfdET <- dE_df_alb(Te)
   dffR0 <- (1/3)*((R0)^(-2/3))*((deltaa*a*h*dE*probla)/(h*dE+deltE))*dffT
-  dfaR0 <- (1/3)*((R0)^(-2/3))*((deltaa*f*h*probla)/(h*dE+deltE))*dfaT
-  dfdeltAR0 <- (1/3)*((R0)^(-2/3))*((f*a*h*probla)/(h*dE+deltE))*dfdeltaAT
-  dfpLAR0 <- (1/3)*((R0)^(-2/3))*((deltaa*a*h*f)/(h*dE+deltE))*dfplaT
+  dfaR0 <- (1/3)*((R0)^(-2/3))*((deltaa*f*h*dE*probla)/(h*dE+deltE))*dfaT
+  dfdeltAR0 <- (1/3)*((R0)^(-2/3))*((f*a*h*dE*probla)/(h*dE+deltE))*dfdeltaAT
+  dfpLAR0 <- (1/3)*((R0)^(-2/3))*((deltaa*a*h*dE*f)/(h*dE+deltE))*dfplaT
   dfdER0 <- (1/3)*((R0)^(-2/3))*((deltaa*a*f*
-                                    probla)*(h*(h*dE+deltE)- (h*dE*h)/(h*dE+deltE)^2))*dfdET
+                                    probla)*((h*(h*dE+deltE)- (h*dE*h))/(h*dE+deltE)^2))*dfdET
   dfR0 <- dffR0 + dfaR0 + dfdeltAR0 + dfpLAR0 + dfdER0
   dfR0 <- ifelse(var == "RM",dfR0,
                  ifelse(var == "a",dfaR0,
                         ifelse(var == "f",dffR0,
                                ifelse(var == "deltaA",dfdeltAR0,
                                       ifelse(var == "pLA",dfpLAR0,dfdER0)))))
-  if(var == "deltaA"){
+  if(var == "deltaA" | var == "RM"){
     
   }else{
     dfR0 <-ifelse(is.na(dfR0),0,dfR0)
@@ -713,7 +716,7 @@ df_alb <- ggplot(df_dT) +
   scale_color_manual(name = "",
                      values = c(col_a,col_dE,col_deltaA,
                                 col_deltaL,col_dL,col_f,col_pLA,col_R),
-                     labels = c("a",TeX("$ d_E$"),TeX(" $ \\delta_A$"),
+                     labels = c("a",TeX("$ d_E$"),TeX(" $ lf$"),
                                 TeX(" $ \\delta_L$"),TeX(" $ d_L$"),"f", 
                                 TeX( " $ p_{LA}$"), TeX( " $ R_M$") )) + 
   theme(legend.key.size = unit(1, 'cm'),
@@ -737,16 +740,16 @@ R0_dfunc_aeg <- function(rain,hum,Te,var){
   dE <- dE_f_aeg(Te)
   h <- h_f(hum,rain)
   deltE = 0.1
-  R0 <- f*deltaa*a*probla*(h/(h+deltE))
+  R0 <- f*deltaa*a*probla*((h*dE)/(h*dE+deltE))
   dfaT <- a_df_aeg(Te)
   dfdeltaAT <- lf_df_aeg(Te)
   dfplaT <- pEA_df_aeg(Te)
   dfdET <- dE_df_aeg(Te)
-  dfaR0 <- (1/3)*((R0)^(-2/3))*((deltaa*f*h*probla)/(h*dE+deltE))*dfaT
-  dfdeltAR0 <- (1/3)*((R0)^(-2/3))*((f*a*h*probla)/(h*dE+deltE))*dfdeltaAT
-  dfpLAR0 <- (1/3)*((R0)^(-2/3))*((deltaa*a*h*f)/(h*dE+deltE))*dfplaT
+  dfaR0 <- (1/3)*((R0)^(-2/3))*((deltaa*f*h*dE*probla)/(h*dE+deltE))*dfaT
+  dfdeltAR0 <- (1/3)*((R0)^(-2/3))*((f*a*h*dE*probla)/(h*dE+deltE))*dfdeltaAT
+  dfpLAR0 <- (1/3)*((R0)^(-2/3))*((deltaa*a*h*dE*f)/(h*dE+deltE))*dfplaT
   dfdER0 <- (1/3)*((R0)^(-2/3))*((deltaa*a*f*
-                                    probla)*(h*(h*dE+deltE)- (h*dE*h)/(h*dE+deltE)^2))*dfdET
+                                    probla)*((h*(h*dE+deltE)- (h*dE*h))/(h*dE+deltE)^2))*dfdET
   dfR0 <- dfaR0 + dfdeltAR0 + dfpLAR0 + dfdER0
   dfR0 <- ifelse(var == "RM",dfR0,
                  ifelse(var == "a",dfaR0,
@@ -815,7 +818,7 @@ R0_dfunc_jap <- function(rain,hum,Te,var){
   dfdLR0 <- (1/3)*((R0)^(-2/3))*((f*a*deltaa)*(((dL+deltaL)-dL)/(dL+deltaL)^2)*((h*dE)/(h*dE+deltE)))*dfdLT
   dfdeltaLR0 <- (1/3)*((R0)^(-2/3))*((f*a*deltaa)*(-dL/(dL+deltaL)^2)*((h*dE)/(h*dE+deltE)))*dfdeltaLT
   dfdER0 <- (1/3)*((R0)^(-2/3))*(deltaa*a*f*
-                                    (dL/(dL+deltaL))*(h*(h*dE+deltE)- (h*dE*h)/(h*dE+deltE)^2))*dfdET
+                                    (dL/(dL+deltaL))*((h*(h*dE+deltE)- (h*dE*h))/(h*dE+deltE)^2))*dfdET
   dfR0 <- dfdeltaAR0 + dfdeltaLR0 + dfdLR0 + dfdER0
   dfR0 <- ifelse(var == "RM",dfR0,
                  ifelse(var == "deltaA",dfdeltaAR0,
@@ -851,20 +854,28 @@ df_jap <- ggplot(df_dT) +
         legend.key.width = unit(1, 'cm'))  
 
 # Join all plots ---------------------------------------------------
+sizelet = 13
 legend_only <- get_legend(df_alb +
-                            theme(legend.position = "top"))
-ggarrange(df_alb + ylab("dx/dT") + xlab("") + 
-            ggtitle(expression(italic("Ae. Albopitus")))+
+                            theme(legend.position = "top",
+                                  legend.text = element_text(size = sizelet),
+                                  text = element_text(size = sizelet)))
+ggarrange(df_alb + ylab("dx/dT") + xlab("") +
+            ylim(c(-0.8,1)) +
+            ggtitle(expression(paste("A         ",italic("Ae. Albopitus"))))+
             theme(legend.position = "none",
-                  plot.title = element_text(hjust = 0.5)),
+                  text = element_text(size = sizelet)),
           df_aeg + ylab("") + xlab("") + 
-            ggtitle(expression(italic("Ae. Aegypti")))+
+            ylim(c(-1.5,1)) +
+            ggtitle(expression(paste("B           ",
+                                     italic("Ae. Aegypti")))) +
             theme(legend.position = "none",
-                  plot.title = element_text(hjust = 0.5)),
+                  text = element_text(size = sizelet)),
           df_jap  + ylab("dx/dT") + 
-            ggtitle(expression(italic("Ae. Japonicus")))+
+            ggtitle(expression(paste("C        ",
+                                     italic("Ae. Japonicus"))))+
+            ylim(c(-1,1)) +
             theme(legend.position = "none",
-                  plot.title = element_text(hjust = 0.5)),
+                  text = element_text(size = sizelet)),
           legend_only,
           ncol=2, nrow = 2)
 

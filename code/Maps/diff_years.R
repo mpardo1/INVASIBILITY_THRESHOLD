@@ -69,9 +69,12 @@ plot_summonths <- function(df){
                       name = "Nº months\n suitable",
                       limits = factor(seq(0,12,1))) +
     theme_bw()  +
-    theme(legend.position = "bottom",
+    theme(legend.position = "top",
           legend.box = "horizontal",
-          legend.direction = "horizontal")
+          legend.direction = "horizontal",
+          legend.text = element_text(14)) +
+    guides(fill = guide_legend(nrow = 1),
+           label.position = "top")
 }
 
 # Albopictus ---------------------------------------------------------
@@ -95,11 +98,47 @@ df_2040$R0 <- NULL
 
 # Join all the plots -------------------------------------------------
 library(ggpubr)
-ggarrange(plot_2004 + ggtitle("2004"),
-          plot_2020 + ggtitle("2020"),
-          plot_2040 + ggtitle("2040"),
+ggarrange(plot_2004 +
+            ggtitle("A                        2004"),
+          plot_2020 +
+            ggtitle("B                         2020"),
+          plot_2040 +
+            ggtitle("C                         2040"),
           ncol = 3,
           common.legend = TRUE)
+
+# 3 species ---------------------------------------------------------
+# Albopictus
+df_2020$R0 <- df_2020$Alb_2020
+plot_2004 <- plot_summonths(df_2020)
+plot_2004
+df_2004$R0 <- NULL
+
+# Aegypti
+df_2020$R0 <- df_2020$Aeg_2020
+plot_2020 <- plot_summonths(df_2020)
+plot_2020
+df_2020$R0 <- NULL
+
+# Japonicus
+df_2020$R0 <- df_2020$Jap_2020
+plot_2040 <- plot_summonths(df_2020)
+plot_2040
+df_2040$R0 <- NULL
+
+# Join all the plots -------------------------------------------------
+library(ggpubr)
+ggarrange(plot_2004 +
+            ggtitle(expression(paste("A               ", italic("Ae. albopictus")))),
+          plot_2020 +
+            ggtitle(expression(paste("B               ", italic("Ae. aegypti")))),
+          plot_2040 +
+            ggtitle(expression(paste("C               ", italic("Ae. japonicus")))),
+          ncol = 3,
+          common.legend = TRUE)
+
+ggsave("~/Documentos/PHD/2023/INVASIBILITY/Plots/MS/Maps/Aeg_2004_2020_2040.pdf",
+       width = 8, height = 4)
 
 # Compute diff years -------------------------------------------------
 df_join <- df_2004 %>% 

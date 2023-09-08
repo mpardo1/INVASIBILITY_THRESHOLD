@@ -19,8 +19,8 @@ plot_deltaA
 
 ## Linear Fit
 Fitting_deltaA <- nls(lifespan ~ cont*Temp + cont1,
-                   data = Japonicus,
-                   start = list(cont = 0.001, cont1 = 0.0))
+                      data = Japonicus,
+                      start = list(cont = 0.001, cont1 = 0.0))
 summary(Fitting_deltaA)
 
 mod <- function(te){
@@ -30,8 +30,8 @@ mod <- function(te){
 }
 # Quadratic Fit
 Fitting_deltaA_quad <- nls(lifespan ~ cont*Temp^2 + cont1*Temp +cont2,
-                      data = Japonicus,
-                      start = list(cont = 0.001, cont1 = 0.0, cont2 = 0.0))
+                           data = Japonicus,
+                           start = list(cont = 0.001, cont1 = 0.0, cont2 = 0.0))
 
 summary(Fitting_deltaA_quad)
 
@@ -87,7 +87,7 @@ mod_min <- function(te){
 
 vec <- seq(0,45,0.001)
 df_out_deltaA_min <- data.frame(temp_ae = vec,
-                            deltaA_jap <- sapply(vec, mod_min))
+                                deltaA_jap <- sapply(vec, mod_min))
 colnames(df_out_deltaA_min) <- c("temp_ae","deltaA_jap")
 # df_out_deltaA_min[which(df_out_deltaA_min$deltaA_jap < 0),2] <- 0
 df_out_deltaA_min$group <- "min"
@@ -175,15 +175,15 @@ summary(Fitting_dE)
 
 # Compute the fit for the Quadratic function:
 Fitting_dE_quad <- nls(First_instar_mean ~ cont*(Temp-cont1)*(Temp - cont2) ,
-                  data = developL,
-                  start = list(cont = 0.00035, cont1 = 9.5, cont2 = 36))
+                       data = developL,
+                       start = list(cont = 0.00035, cont1 = 9.5, cont2 = 36))
 
 summary(Fitting_dE_quad)
 
 # Compute the fit for the Linear function:
 Fitting_dE_lin <- nls(First_instar_mean ~ cont*Temp + cont1 ,
-                  data = developL,
-                  start = list(cont = 0.00035, cont1 = 0))
+                      data = developL,
+                      start = list(cont = 0.00035, cont1 = 0))
 
 summary(Fitting_dE_lin)
 
@@ -223,7 +223,7 @@ mod_min <- function(te){
 
 vec <- seq(0,45,0.001)
 df_out_dE_min  <- data.frame(temp_ae = vec,
-                         dE_jap <- sapply(vec, mod_min))
+                             dE_jap <- sapply(vec, mod_min))
 colnames(df_out_dE_min) <- c("temp_ae","dE_jap")
 df_out_dE_min[which(df_out_dE_min$dE_jap < 0),2] <- 0
 df_out_dE_min$group <- "min"
@@ -296,7 +296,7 @@ Japonicus <- rbind(Japonicus, c(34,0))
 plot_dL <- ggplot(Japonicus) + 
   geom_point(aes(Temp,FemaledL)) + theme_bw()
 plot_dL
-           
+
 # Briere function fit    
 Fitting_dL <- nls(FemaledL ~ cont*Temp*(Temp-cont1)*(cont2-Temp)^(1/2) ,
                   data = Japonicus, algorithm = "port",
@@ -307,8 +307,8 @@ summary(Fitting_dL)
 
 # Linear function fit
 Fitting_dL_lin <- nls(FemaledL ~ cont*Temp + cont1,
-                  data = Japonicus,
-                  start = list(cont = 0.00035, cont1 = 0))
+                      data = Japonicus,
+                      start = list(cont = 0.00035, cont1 = 0))
 summary(Fitting_dL_lin)
 
 # Compute the AIC value
@@ -349,7 +349,7 @@ mod_min <- function(te){
 
 vec <- seq(0,45,0.001)
 df_out_dL_min  <- data.frame(temp_ae = vec,
-                         dL_jap <- sapply(vec, mod_min))
+                             dL_jap <- sapply(vec, mod_min))
 
 colnames(df_out_dL_min) <- c("temp_ae","dL_jap")
 df_out_dL_min[which(df_out_dL_min$dL_jap < 0),2] <- 0
@@ -426,8 +426,8 @@ summary(Fitting_deltaL)
 
 # Linear function fit
 Fitting_deltaL_lin <- nls(mean_mort_perc ~ cont*Temp + cont1,
-                      data = Lmortality,
-                      start = list(cont = 0, cont1 = 0))
+                          data = Lmortality,
+                          start = list(cont = 0, cont1 = 0))
 
 summary(Fitting_deltaL_lin)
 
@@ -470,8 +470,8 @@ mod_min <- function(te){
 
 vec <- seq(0,45,0.001)
 df_out_deltaL_min <- data.frame(temp_ae = vec,
-                            deltaL_jap <- sapply(vec,
-                                                 mod_min))
+                                deltaL_jap <- sapply(vec,
+                                                     mod_min))
 
 colnames(df_out_deltaL_min) <- c("temp_ae","deltaL_jap")
 df_out_deltaL_min$group <- "min"
@@ -499,8 +499,8 @@ df_out_deltaL$group <- "mean"
 
 # Plot all three curves together
 df_out_deltaL <- rbind(df_out_deltaL_min,
-                   df_out_deltaL_max,
-                   df_out_deltaL)
+                       df_out_deltaL_max,
+                       df_out_deltaL)
 
 plotdeltaL <- ggplot(df_out_deltaL) +
   geom_line(aes(temp_ae,deltaL_jap,
@@ -974,27 +974,27 @@ ggarrange( plotdE  +
              theme(text = element_text(size = sizelet)) +
              xlab("") +
              ylab(TeX("Egg development rate, $d_E$")) + 
-           ggtitle(expression(italic("Ae. japonicus"))) +
+             ggtitle(expression(italic("Ae. japonicus"))) +
              theme(text = element_text(size = sizelet)),
            plotdL +
              theme(text = element_text(size = sizelet)) +
              ylab(TeX("Larva development rate, $d_L$")) +
              xlab("") +
-           ggtitle(expression(italic("Ae. japonicus"))) +
-           theme(text = element_text(size = sizelet)),
+             ggtitle(expression(italic("Ae. japonicus"))) +
+             theme(text = element_text(size = sizelet)),
            plotalb  +
              theme(text = element_text(size = sizelet)) +
              ylab(TeX("Prob. from Larva to Adult, $p_{LA}$")) +
              xlab("") + ylim(c(0,1.3)) +
              ggtitle(expression(italic("Ae. albopictus"))) +
              ylab(TeX("Prob. from Larva to Adult, $p_{LA}$"))+ 
-           theme(text = element_text(size = sizelet)),
+             theme(text = element_text(size = sizelet)),
            plotaeg  + 
              theme(text = element_text(size = sizelet)) +
              ylab(TeX("Prob. from Larva to Adult, $p_{LA}$")) +
              xlab("") + ylim(c(0,1.3))  +
              ggtitle(expression(italic("Ae. aegypti"))) +
-           theme(text = element_text(size = sizelet)),
+             theme(text = element_text(size = sizelet)),
            plotdeltaL + ylim(c(0,1.3)) +
              theme(text = element_text(size = sizelet)),
            plotdeltaA  +
