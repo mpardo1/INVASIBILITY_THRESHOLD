@@ -1,5 +1,6 @@
 ### Code to do a validation between female traps counts and R0
 rm(list=ls())
+gc()
 library(mcera5)
 library(mapSpain)
 library(sf)
@@ -9,7 +10,8 @@ library(parallel)
 library(data.table)
 library("viridis")
 library("gganimate")
-
+library(RColorBrewer)
+library("latex2exp")
 # -------------------------Functions R0-------------------------#
 # Main functions 
 Briere_func <- function(cte, tmin, tmax, temp){
@@ -191,6 +193,8 @@ plot_counts
 ## year = 2022, we will use this year to validate the data
 year = 2020
 Path <- paste0("~/INVASIBILITY_THRESHOLD/output/R0/datasets/R0_",year,".Rds")
+# check with no h (no rainfall and human density) validation
+Path <- paste0("INVASIBILITY_THRESHOLD/output/R0/datasets/R0_NO_H2020.Rds")
 df_group_tot <- readRDS(Path)
 head(df_group_tot)
 
@@ -202,6 +206,7 @@ unique(gi_min_model_pred$trap_name)
 # Presence absence data Albopictus Spain:
 Path = "~/INVASIBILITY_THRESHOLD/data/PA/Albopictus_Spain_Pa.csv"
 df_pa <- read.csv(Path)
+# add cadiz
 df_pa[which(df_pa$NATCODE == "34011111012"), "PA"] <- 1
 
 # Map Spain --------------------------------------------------------------------
@@ -523,6 +528,7 @@ plot_min_max <- ggplot(df_sum_CAT) +
         legend.box = "horizontal",
         text = element_text(size = 14)) 
 
+library(ggpubr)
 ggarr <- ggarrange(NULL,PA_alb+ ggtitle("A"),plot_counts+ ggtitle("B"),
                    nrow = 1, widths = c(0.15,1,1))
 

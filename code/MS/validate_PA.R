@@ -12,13 +12,13 @@ library("viridis")
 library("gganimate")
 
 # Load Data --------------------------------------------------------------------
-## year = 2022, we will use this year to validate the data
+# year = 2022, we will use this year to validate the data
 year = 2020
 Path <- paste0("~/INVASIBILITY_THRESHOLD/output/R0/datasets/R0_",year,".Rds")
 df_group_tot <- readRDS(Path)
 head(df_group_tot)
 
-## Data Catu BG traps
+# Data Catu BG traps
 Path <- "~/INVASIBILITY_THRESHOLD/data/Datos_Catu/gi_min_model_pred.RData"
 load(Path)
 unique(gi_min_model_pred$trap_name)
