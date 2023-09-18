@@ -656,11 +656,12 @@ Fitting <- nls(proportion_surv ~ (-cont*(temp-Tmin)*(temp - Tmax)),
 
 summary(Fitting)
 
-# Fitting <- nls(proportion_surv ~ cont*temp+cont1,
-#                data = df_albo,
-#                start = list(cont = 0.001, cont1 = 0))
-# 
-# summary(Fitting)
+Fitting_Lin <- nls(proportion_surv ~ cont*temp+cont1,
+               data = df_albo,
+               start = list(cont = 0.001, cont1 = 0))
+
+summary(Fitting_Lin)
+AIC(Fitting_Lin,Fitting)
 
 mod <- function(te){
   t0 <- as.numeric(Fitting$m$getPars()[2])
