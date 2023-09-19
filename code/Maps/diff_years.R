@@ -167,11 +167,15 @@ ggsave("~/Documentos/PHD/2023/INVASIBILITY/Plots/MS/Maps/Aeg_2004_2020_2040.pdf"
 # Compute diff years -------------------------------------------------
 df_join <- df_2004 %>% 
   left_join(df_2020) %>% 
-  left_join(df_2040)
+  left_join(df_2040) %>% 
+  left_join(df_2060)
 
 df_join$diff_0420 <- df_join$Alb_2020 - df_join$Alb_2004
 df_join$diff_2040 <- df_join$Alb_2040 - df_join$Alb_2020
 df_join$diff_0440 <- df_join$Alb_2040 - df_join$Alb_2004
+df_join$diff_8040 <- df_join$Alb_2060 - df_join$Alb_2040
+df_join$diff_2080 <- df_join$Alb_2060 - df_join$Alb_2020
+df_join$diff_0480 <- df_join$Alb_2060 - df_join$Alb_2004
 
 # Plot map diff ------------------------------------------------------
 df_join <- esp_can %>% left_join(df_join)
@@ -214,8 +218,37 @@ ggarrange(plot_1,plot_2, ncol = 2, common.legend = TRUE)
 plot_3 <- ggplot(df_join) +
   geom_sf(aes(fill = as.factor(diff_0440)), colour = NA) +
   geom_sf(data = can_box) + coord_sf(datum = NA) +
-  scale_fill_manual(values = pal1,
+  scale_fill_manual(values = pal,
                        name = "Difference \n in months",
                        limits = c(-7:5)) +
   ggtitle("Difference 2040 and 2004") +
   theme_bw() 
+
+plot_4 <- ggplot(df_join) +
+  geom_sf(aes(fill = as.factor(diff_8040)), colour = NA) +
+  geom_sf(data = can_box) + coord_sf(datum = NA) +
+  scale_fill_manual(values = pal,
+                    name = "Difference \n in months",
+                    limits = c(-7:5)) +
+  ggtitle("Difference 2080 and 2040") +
+  theme_bw() 
+
+plot_5 <- ggplot(df_join) +
+  geom_sf(aes(fill = as.factor(diff_2080)), colour = NA) +
+  geom_sf(data = can_box) + coord_sf(datum = NA) +
+  scale_fill_manual(values = pal,
+                    name = "Difference \n in months",
+                    limits = c(-7:5)) +
+  ggtitle("Difference 2080 and 2020") +
+  theme_bw() 
+
+plot_5 <- ggplot(df_join) +
+  geom_sf(aes(fill = as.factor(diff_0480)), colour = NA) +
+  geom_sf(data = can_box) + coord_sf(datum = NA) +
+  scale_fill_manual(values = pal,
+                    name = "Difference \n in months",
+                    limits = c(-7:5)) +
+  ggtitle("Difference 2080 and 2004") +
+  theme_bw() 
+
+ggarrange(plot_4,plot_5, ncol = 2, common.legend = TRUE)

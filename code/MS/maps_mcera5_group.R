@@ -90,25 +90,6 @@ R0_func_alb <- function(Te, rain, hum){
   return(R0)
 }
 
-# vec = seq(0,40,0.1)
-# out <- unlist(lapply(vec,a_f_alb))
-# max(out)
-# vec = seq(0,40,0.1)
-# out <- unlist(lapply(vec,TFD_f_alb))
-# max(out)
-# vec = seq(0,40,0.1)
-# out <- unlist(lapply(vec,lf_f_alb))
-# max(out)
-# vec = seq(0,40,0.1)
-# out <- unlist(lapply(vec,dE_f_alb))
-# max(out)
-# vec = seq(0,40,0.1)
-# out <- unlist(lapply(vec,pLA_f_alb))
-# max(out)
-# vec = seq(0,10,0.1)
-# out <- unlist(lapply(vec,h_f, hum=0))
-# max(out)
-
 ####------------------------------Aegypti------------------------####
 a_f_aeg <- function(temp){Briere_func(0.000202,13.35,40.08,temp)} # Biting rate
 EFD_f_aeg <- function(temp){Briere_func(0.00856,14.58,34.61,temp)} # Fecundity
@@ -155,20 +136,6 @@ R0_func_jap <- function(Te, rain,hum){
   return(R0)
 }
 
-# ## Dependence in human density
-# Te = 16
-# rain = 0.1
-# vec = seq(0,2000,1)
-# out <- lapply(vec, R0_func_aeg, rain = rain, Te = Te)
-# plot(vec, out)
-# 
-# ## Dependence in rain
-# Te = 16
-# hum = 1
-# vec = seq(0,10,0.11)
-# out <- lapply(vec, R0_func_aeg, hum = hum, Te = Te)
-# plot(vec, out)
-
 #----------------------------------------------------------------------#
 ## Read the data for the R0 computed daily:
 # year = 2022
@@ -214,6 +181,7 @@ test_pop <- esp_can[which(is.na(esp_can$POB22)),
 test_pop$geometry <- NULL
 nrow(test_pop)
 esp_can[which(is.na(esp_can$POB22)),"POB22"] <- 0
+# Transform squared meters (output st_area) to squared km
 esp_can$area <- as.numeric(st_area(esp_can))/1000000
 esp_can$dens <- esp_can$POB22/esp_can$area
 esp_can <- setDT(esp_can[,c("NATCODE","name", "dens")])
