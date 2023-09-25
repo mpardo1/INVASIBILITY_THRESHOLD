@@ -147,7 +147,6 @@ year = 2020
 Path <- paste0("~/INVASIBILITY_THRESHOLD/output/ERA5/temp/2020/clim_",year,".Rds")
 # saveRDS(dt_weather,Path)
 df_group <- setDT(readRDS(Path))
-
 df_group$id <- 1
 test <- df_group[,.(n = sum(id)), by = list(NATCODE)]
 min(test$n)
@@ -161,6 +160,12 @@ esp_can$NATCODE <- as.numeric(paste0("34",esp_can$codauto,
                                      esp_can$cpro,
                                      esp_can$LAU_CODE))
 df_group$month <- lubridate::month(df_group$date)
+
+# check rainfall ----------------------------------------------------
+df_group_y  <- df_group[,.(prec = sum(prec1)), by = list(NATCODE)]
+df_group_y  <- esp_can %>% left_join(df_group_y )
+ggplot(df_group_y) +  geom_sf(aes(fill = prec), color = NA) + 
+  scale_fill_viridis_c()
 
 # Population 2022:
 Path <- "/home/marta/INVASIBILITY_THRESHOLD/data/pop/pobmun20.csv"
@@ -196,7 +201,7 @@ can_box <- esp_get_can_box()
 esp_can$NATCODE <- as.numeric(paste0("34",esp_can$codauto,
                                      esp_can$cpro,
                                      esp_can$LAU_CODE))
-df_day <- df_group[which(df_group$date == as.Date("2020-07-05")),]
+df_day <- df_group[which(df_group$date == as.Date("2004-07-05")),]
 df_day <- esp_can %>% left_join(df_day)
 ggplot(df_day) + 
   geom_sf(aes(fill = prec1 ), color = NA) +
@@ -283,6 +288,11 @@ df_group_mon$bool_R0_jap_max <- ifelse(df_group_mon$R0_mon_jap_max < 1,0,1)
 df_group_mon$bool_R0_alb_dai <- ifelse(df_group_mon$R0_dai_alb < 1,0,1)
 df_group_mon$bool_R0_aeg_dai <- ifelse(df_group_mon$R0_dai_aeg < 1,0,1)
 df_group_mon$bool_R0_jap_dai <- ifelse(df_group_mon$R0_dai_jap < 1,0,1)
+
+# Save DF -------------------------------------------------------------
+Path <- paste0("~/INVASIBILITY_THRESHOLD/output/ERA5/temp/R0_clim_monthly",
+               year,".Rds")
+saveRDS(df_group_mon, Path)
 
 ## Test:
 ggplot(df_group_mon) + geom_point(aes(tmean, bool_R0_jap))

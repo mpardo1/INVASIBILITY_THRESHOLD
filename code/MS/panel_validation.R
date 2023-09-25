@@ -1,6 +1,5 @@
 ### Code to do a validation between female traps counts and R0
 rm(list=ls())
-gc()
 library(mcera5)
 library(mapSpain)
 library(sf)
@@ -12,7 +11,7 @@ library("viridis")
 library("gganimate")
 library(RColorBrewer)
 library("latex2exp")
-# -------------------------Functions R0-------------------------#
+# Functions R0------------------------------------------------
 # Main functions 
 Briere_func <- function(cte, tmin, tmax, temp){
   outp <- temp*cte*(temp - tmin)*(tmax - temp)^(1/2)
@@ -114,6 +113,8 @@ trap_data[which(trap_data$city == "La Bisbal de l'Empordà"), "population"] <- 1
 trap_data[, R0_alb := mapply(R0_func_alb, mean_temperature, prec7, population)]
 trap_data$female_norm <- trap_data$females/max(trap_data$females)
 trap_data$pred_norm <- trap_data$pred/max(trap_data$pred)
+trap_data$female_norm <- trap_data$females
+trap_data$pred_norm <- trap_data$pred
 
 # Compare model sampling effort versus count females ----------------
 ggplot(trap_data) +
@@ -140,7 +141,6 @@ trap_citi_max <- trap_data_filt %>%
 trap_data_filt <- trap_data_filt %>% left_join(trap_citi_max)
 trap_data_filt$female_norm <- trap_data_filt$female/trap_data_filt$female_max
 trap_data_filt$R0_alb_norm <- trap_data_filt$R0_alb/trap_data_filt$R0_alb_max
-
 
 ggplot(trap_data_filt) +
   geom_point(aes(R0_alb_norm,female_norm, color = city))

@@ -179,9 +179,9 @@ plot_hum <- ggplot(df_hum) +
   theme_bw() + theme(text = element_text(size = letsize))
 
 # join all the plots ------------------------------------------------------
-ggarrange(plot_temp,
-          plot_rain + rremove("ylab"),
-          plot_hum + rremove("ylab"),
+ggarrange(plot_temp + ggtitle("A"),
+          plot_rain + rremove("ylab")+ ggtitle("B"),
+          plot_hum + rremove("ylab")+ ggtitle("C"),
           ncol = 3,
           widths = c(1,0.7,0.7))
 
