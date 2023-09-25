@@ -125,9 +125,9 @@ ggarrange(plot_2004 +
           plot_2020 +
             ggtitle("B                         2020"),
           plot_2040 +
-            ggtitle("C                         2040"),
+            ggtitle("C                     2041-2060"),
           plot_2060 +
-            ggtitle("D                         2060"),
+            ggtitle("D                     2061-2080"),
           ncol = 2,nrow = 2,
           common.legend = TRUE)
 
