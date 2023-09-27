@@ -1,3 +1,4 @@
+# aggregate the raster hourly data to monthly data for Europe.
 rm(list = ls())
 library(terra)
 library(parallel)
@@ -7,8 +8,9 @@ library(tidyverse)
 path <- "~/INVASIBILITY_THRESHOLD/data/ERA5/Europe/cerra_2020_TEMP.grib"
 temp_eu <- rast(path)
 
-# Extract the timestamps from the raster
+# Extract the timestamps from the raster 
 timestamps <- time(temp_eu)
+# compute the number of layer per month
 df_time <- data.frame(timestamps)
 df_time$month <- lubridate::month(df_time$timestamps)
 df_time <- df_time %>% group_by(month) %>% summarize(n=n())
