@@ -23,7 +23,13 @@ monthly_mean_rasters <- list()
 unique_months <- unique(months)
 agg_func <- function(month) {
   print(paste0("month:", month))
-  subset_raster <- subset(temp_eu,1:df_time$n[month])
+  if(month == 1){
+    subset_raster <- subset(temp_eu,1:df_time$n[month])
+  }else{
+    subset_raster <- subset(temp_eu,
+                            (df_time$n[month-1]+1):(df_time$n[month]+df_time$n[month-1]))
+  }
+  
   monthly_mean_raster <- aggregate(subset_raster, fun = mean)
   monthly_mean_rasters[[month]] <- monthly_mean_raster
   return(monthly_mean_raster)
