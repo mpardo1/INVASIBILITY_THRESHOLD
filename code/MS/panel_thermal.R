@@ -128,7 +128,7 @@ plotdeltaA <- ggplot(df_out_deltaA) +
   scale_alpha_manual(values = c(0.5,1,0.5)) +
   xlim(c(5,35)) + ylim(c(0,80)) +
   guides( color =FALSE, alpha = FALSE) +
-  ylab("Adult mortality rate") + xlab("Temperature (Cº)") +
+  ylab("Adult life span") + xlab("Temperature (Cº)") +
   theme_bw() 
 
 plotdeltaA 
