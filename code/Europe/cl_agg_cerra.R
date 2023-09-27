@@ -45,6 +45,11 @@ monthly_mean_rasters <- mclapply(1:12, mc.cores = cores,
 
 saveRDS(monthly_mean_rasters,
         "~/INVASIBILITY_THRESHOLD/data/ERA5/Europe/monthly_aggregated_raster.Rds")
+
+raster_stack <- terra::stack(raster_list)
+# Save the raster stack to a new file
+terra::writeRaster(raster_stack, "~/INVASIBILITY_THRESHOLD/data/ERA5/Europe/monthly_aggregated_raster.tif", overwrite = TRUE)
+
 # Create a single raster stack from the monthly mean rasters
 monthly_mean_rast <- rast(monthly_mean_rasters)
 # 
