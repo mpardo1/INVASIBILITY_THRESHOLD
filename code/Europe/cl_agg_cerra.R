@@ -22,8 +22,35 @@ months <- lubridate::month(timestamps)
 monthly_mean_rasters <- list()
 
 # Loop through each unique month and calculate the monthly mean
-unique_months <- unique(months)
-agg_func <- function(month) {
+# unique_months <- unique(months)
+# agg_func <- function(month) {
+#   print(paste0("month:", month))
+#   if(month == 1){
+#     subset_raster <- subset(temp_eu,1:df_time$n[month])
+#   }else{
+#     subset_raster <- subset(temp_eu,
+#                             (df_time$n[month-1]+1):(df_time$n[month]+df_time$n[month-1]))
+#   }
+# 
+#   monthly_mean_raster <- aggregate(subset_raster, fun = mean)
+#   monthly_mean_rasters[[month]] <- monthly_mean_raster
+#   return(monthly_mean_raster)
+# }
+# 
+# 
+# # parallelize
+# cores = 12
+# monthly_mean_rasters <- mclapply(1:12, mc.cores = cores,
+#                          mc.preschedule = F,agg_func)
+# 
+# # Create a single raster stack from the monthly mean rasters
+# monthly_mean_rast <- rast(monthly_mean_rasters)
+# writeRaster(monthly_mean_rast,
+#             filename = "~/INVASIBILITY_THRESHOLD/data/ERA5/Europe/monthly_aggregated_raster.tif",
+#             overwrite = TRUE)
+# # 
+# try with a loop ---------------------------------------
+for(month in c(1:12)){
   print(paste0("month:", month))
   if(month == 1){
     subset_raster <- subset(temp_eu,1:df_time$n[month])
@@ -34,35 +61,9 @@ agg_func <- function(month) {
 
   monthly_mean_raster <- aggregate(subset_raster, fun = mean)
   monthly_mean_rasters[[month]] <- monthly_mean_raster
-  return(monthly_mean_raster)
 }
 
-
-# parallelize
-cores = 12
-monthly_mean_rasters <- mclapply(1:12, mc.cores = cores,
-                         mc.preschedule = F,agg_func)
-
-# Create a single raster stack from the monthly mean rasters
-monthly_mean_rast <- rast(monthly_mean_rasters)
-writeRaster(monthly_mean_rast,
-            filename = "~/INVASIBILITY_THRESHOLD/data/ERA5/Europe/monthly_aggregated_raster.tif",
-            overwrite = TRUE)
-# 
-# # try with a loop ---------------------------------------
-# for(month in c(1:12)){
-#   print(paste0("month:", month))
-#   if(month == 1){
-#     subset_raster <- subset(temp_eu,1:df_time$n[month])
-#   }else{
-#     subset_raster <- subset(temp_eu,
-#                             (df_time$n[month-1]+1):(df_time$n[month]+df_time$n[month-1]))
-#   }
-#   
-#   monthly_mean_raster <- aggregate(subset_raster, fun = mean)
-#   monthly_mean_rasters[[month]] <- monthly_mean_raster
-# }
-# 
-# monthly_mean_rasters <- terra::rast(monthly_mean_rasters)
-# # Save the raster stack to a new file
-# terra::writeRaster(monthly_mean_rasters, "~/INVASIBILITY_THRESHOLD/data/ERA5/Europe/2monthly_aggregated_raster.tif", overwrite = TRUE)
+monthly_mean_rasters <- rast(monthly_mean_rasters)
+# Save the raster stack to a new file
+terra::writeRaster(monthly_mean_rasters,
+                   "~/INVASIBILITY_THRESHOLD/data/ERA5/Europe/2monthly_aggregated_raster.tif", overwrite = TRUE)
