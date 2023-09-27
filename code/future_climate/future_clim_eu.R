@@ -99,7 +99,7 @@ clim_df[, R0_aeg := mapply(R0_func_aeg, tmean, prec, pop)]
 clim_df[, R0_jap := mapply(R0_func_jap, tmean, prec, pop)]
 
 saveRDS(clim_df,
-        paste0("~/INVASIBILITY_THRESHOLD/output/eu_alb_2080_mo_",dataset,".Rds"))
+        paste0("~/INVASIBILITY_THRESHOLD/output/eu_alb_2080_mo_",dataset,"_",ssp,".Rds"))
 # clim_df <- readRDS("~/INVASIBILITY_THRESHOLD/output/eu_alb_2080_mo.Rds")
 # plots seasonal ----------------------------------------------
 grid_points$id <- c(1:nrow(grid_points))
