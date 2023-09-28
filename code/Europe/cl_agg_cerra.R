@@ -3,10 +3,11 @@ rm(list = ls())
 library(terra)
 library(parallel)
 library(tidyverse)
-
+library(tictoc)
 # load the data 
 path <- "~/INVASIBILITY_THRESHOLD/data/ERA5/Europe/cerra_2020_TEMP.grib"
 temp_eu <- rast(path)
+temp_eu_mon <- tapp(temp_eu,"months",mean)
 
 # Extract the timestamps from the raster 
 timestamps <- time(temp_eu)
@@ -50,20 +51,24 @@ monthly_mean_rasters <- list()
 #             overwrite = TRUE)
 # # 
 # try with a loop ---------------------------------------
-for(month in c(1:12)){
-  print(paste0("month:", month))
-  if(month == 1){
-    subset_raster <- subset(temp_eu,1:df_time$n[month])
-  }else{
-    subset_raster <- subset(temp_eu,
-                            (df_time$n[month-1]+1):(df_time$n[month]+df_time$n[month-1]))
-  }
+# for(month in c(1:12)){
+#   tic()
+#   print(paste0("month:", month))
+#   if(month == 1){
+#     subset_raster <- subset(temp_eu,1:df_time$n[month])
+#   }else{
+#     subset_raster <- subset(temp_eu,
+#                             (df_time$n[month-1]+1):(df_time$n[month]+df_time$n[month-1]))
+#   }
+# 
+#   monthly_mean_raster <- aggregate(subset_raster,fact = 3, fun = mean)
+#   monthly_mean_raster <- tapp(subset_raster,"months",mean)
+#   
+#   toc()
+#   monthly_mean_rasters[[month]] <- monthly_mean_raster
+# }
 
-  monthly_mean_raster <- aggregate(subset_raster, fun = mean)
-  monthly_mean_rasters[[month]] <- monthly_mean_raster
-}
-
-monthly_mean_rasters <- rast(monthly_mean_rasters)
+# monthly_mean_rasters <- rast(monthly_mean_rasters)
 # Save the raster stack to a new file
-terra::writeRaster(monthly_mean_rasters,
-                   "~/INVASIBILITY_THRESHOLD/data/ERA5/Europe/2monthly_aggregated_raster.tif", overwrite = TRUE)
+terra::writeRaster(temp_eu_mon,
+                   "~/INVASIBILITY_THRESHOLD/data/ERA5/Europe/3monthly_aggregated_raster.tif", overwrite = TRUE)

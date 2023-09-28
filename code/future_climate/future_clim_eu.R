@@ -99,14 +99,15 @@ clim_df[, R0_alb := mapply(R0_func_alb, tmean, prec, pop)]
 clim_df[, R0_aeg := mapply(R0_func_aeg, tmean, prec, pop)]
 clim_df[, R0_jap := mapply(R0_func_jap, tmean, prec, pop)]
 
-saveRDS(clim_df,
-        paste0("~/INVASIBILITY_THRESHOLD/output/eu_alb_",time,"_mo_",dataset,"_",ssp,".Rds"))
-clim_df <- readRDS(paste0("~/INVASIBILITY_THRESHOLD/output/eu_alb_2080_mo_",dataset,"_",ssp,".Rds"))
 
 # plots seasonal ----------------------------------------------
 grid_points$id <- c(1:nrow(grid_points))
 clim_df <- clim_df %>% left_join(grid_points)
-ggplot(clim_df[which(clim_df$month == 6),],
+saveRDS(clim_df,
+        paste0("~/INVASIBILITY_THRESHOLD/output/eu_alb_",time,"_mo_",dataset,"_",ssp,".Rds"))
+# clim_df <- readRDS(paste0("~/INVASIBILITY_THRESHOLD/output/eu_alb_",time,"_mo_",dataset,"_",ssp,".Rds"))
+
+ggplot(clim_df[which(clim_df$month == 11),],
        aes(x = lon, y = lat, fill = R0_alb)) +
   geom_tile() +
   scale_fill_distiller(na.value = "white",
