@@ -23,7 +23,7 @@ SHP_0 <- get_eurostat_geospatial(resolution = 10,
 dataset = 'ACCESS-CM2'
 path_dir <-'tmpr_145'
 ssp = '245'
-time = '2041-2060'
+time = '2021-2040'
 prec_w <- geodata::cmip6_world(model = dataset,
                                ssp = ssp, time = time,
                                var = 'prec', path = path_dir, res = 2.5)

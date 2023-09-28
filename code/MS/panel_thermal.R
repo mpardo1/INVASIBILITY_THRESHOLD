@@ -970,6 +970,7 @@ plotdE_aeg <- ggplot(df_out_aeg) +
 plotdE_aeg
 
 # Join thermal responses all species --------------------
+library(latex2exp)
 sizelet = 12
 ggarrange( plotdE  +
              theme(text = element_text(size = sizelet)) +
@@ -997,8 +998,10 @@ ggarrange( plotdE  +
              ggtitle(expression(italic("Ae. aegypti"))) +
              theme(text = element_text(size = sizelet)),
            plotdeltaL + ylim(c(0,1.3)) +
+             ylab(TeX("Larva mortality rate, $\delta_L$"))+
              theme(text = element_text(size = sizelet)),
            plotdeltaA  +
+             ylab(TeX("Adult mortality rate, $\delta_A$"))+
              theme(text = element_text(size = sizelet)),
            plotdE + ylim(c(0,0.55)) +
              ylab(TeX("Egg development rate, $d_E$")) +
