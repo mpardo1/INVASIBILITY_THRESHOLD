@@ -149,20 +149,26 @@ alb <- ggplot(clim_df) +
   scale_fill_manual(values = pal,
                     name = "Nº months\n suitable",
                     limits = factor(seq(0,12,1)),
-                    na.value = "white")+
+                    na.value = "white") +
   ylim(c(25,75)) + xlim(c(-30,40)) +
   ggtitle("Aedes albopictus 2041-2060") +
   xlab("") + ylab("") +
-  theme_bw() +
+  theme_minimal() +
   theme(plot.title = element_text(hjust = 0.5,
                                   face = "italic"),
-        axis.text.x = element_blank(),
-        axis.text.y = element_blank(),
-        axis.ticks = element_blank(),
-        legend.position = "top",
-        legend.box = "horizontal",
-        legend.direction = "horizontal",
-        legend.text = element_text(14))+
+    panel.background = element_rect(fill = "transparent", colour = NA),
+    plot.background = element_rect(fill = "transparent", colour = NA),
+    panel.grid = element_blank(),
+    panel.border = element_blank(),
+    plot.margin = unit(c(0, 0, 0, 0), "null"),
+    panel.margin = unit(c(0, 0, 0, 0), "null"),
+    axis.ticks = element_blank(),
+    axis.text = element_blank(),
+    axis.title = element_blank(),
+    axis.line = element_blank(),
+    axis.ticks.length = unit(0, "null"),
+    axis.ticks.margin = unit(0, "null"),
+    legend.text = element_text(14) ) +
   guides(fill = guide_legend(nrow = 1),
          label.position = "top")
 
@@ -176,18 +182,25 @@ aeg <- ggplot(clim_df, aes(x = lon, y = lat,
   xlab("") + ylab("") +
   ylim(c(25,75)) + xlim(c(-30,40)) +
   ggtitle("Aedes aegypti 2041-2060") +
-  theme_bw() +
+  theme_minimal() +
   theme(plot.title = element_text(hjust = 0.5,
                                   face = "italic"),
-        axis.text.x = element_blank(),
-        axis.text.y = element_blank(),
+        panel.background = element_rect(fill = "transparent", colour = NA),
+        plot.background = element_rect(fill = "transparent", colour = NA),
+        panel.grid = element_blank(),
+        panel.border = element_blank(),
+        plot.margin = unit(c(0, 0, 0, 0), "null"),
+        panel.margin = unit(c(0, 0, 0, 0), "null"),
         axis.ticks = element_blank(),
-        legend.position = "top",
-        legend.box = "horizontal",
-        legend.direction = "horizontal",
-        legend.text = element_text(14)) +
+        axis.text = element_blank(),
+        axis.title = element_blank(),
+        axis.line = element_blank(),
+        axis.ticks.length = unit(0, "null"),
+        axis.ticks.margin = unit(0, "null"),
+        legend.text = element_text(14) ) +
   guides(fill = guide_legend(nrow = 1),
          label.position = "top")
+
 
 jap <- ggplot(clim_df, aes(x = lon, y = lat,
                     fill = as.factor(sum_jap))) +
@@ -199,18 +212,25 @@ jap <- ggplot(clim_df, aes(x = lon, y = lat,
                     na.value = "white")+
   ylim(c(25,75)) + xlim(c(-30,40)) +
   ggtitle("Aedes japonicus 2041-2060") +
-  theme_bw() +
+  theme_minimal() +
   theme(plot.title = element_text(hjust = 0.5,
                                   face = "italic"),
-        axis.text.x = element_blank(),
-        axis.text.y = element_blank(),
+        panel.background = element_rect(fill = "transparent", colour = NA),
+        plot.background = element_rect(fill = "transparent", colour = NA),
+        panel.grid = element_blank(),
+        panel.border = element_blank(),
+        plot.margin = unit(c(0, 0, 0, 0), "null"),
+        panel.margin = unit(c(0, 0, 0, 0), "null"),
         axis.ticks = element_blank(),
-        legend.position = "top",
-        legend.box = "horizontal",
-        legend.direction = "horizontal",
-        legend.text = element_text(14)) +
+        axis.text = element_blank(),
+        axis.title = element_blank(),
+        axis.line = element_blank(),
+        axis.ticks.length = unit(0, "null"),
+        axis.ticks.margin = unit(0, "null"),
+        legend.text = element_text(14) ) +
   guides(fill = guide_legend(nrow = 1),
          label.position = "top")
 
 library(ggpubr)
-ggarrange(alb, aeg, jap,ncol = 3, common.legend = TRUE)
+ggarrange(alb, aeg, jap,
+          ncol = 3, common.legend = TRUE)

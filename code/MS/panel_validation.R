@@ -11,87 +11,8 @@ library("viridis")
 library("gganimate")
 library(RColorBrewer)
 library("latex2exp")
-# Functions R0------------------------------------------------
-# Main functions 
-Briere_func <- function(cte, tmin, tmax, temp){
-  outp <- temp*cte*(temp - tmin)*(tmax - temp)^(1/2)
-  if(outp < 0 | is.na(outp)){
-    outp <- 0
-  }
-  return(outp)
-}
 
-Quad_func <- function(cte, tmin, tmax, temp){
-  outp <- -cte*(temp - tmin)*(temp - tmax)
-  if(outp < 0 | is.na(outp)){
-    outp <- 0
-  }
-  return(outp)
-}
-
-Lin_func <- function(cte, cte1, temp){
-  outp <- temp*cte + cte1
-  if(outp < 0 | is.na(outp)){
-    outp <- 0.00001
-  }
-  return(outp)
-}
-
-
-Quad <- function(cte, cte1,cte2, temp){
-  outp <- cte*temp^2 + cte1*temp + cte2
-  if(outp < 0 | is.na(outp)){
-    outp <- 0
-  }
-  return(outp)
-}
-
-QuadN_func <- function(cte, c1, c2, temp){
-  outp <- cte*temp^2 + c1*temp + c2
-  if(outp < 0 | is.na(outp)){
-    outp <- 0
-  }
-  return(outp)
-}
-### Incorporating rain and human density:
-h_f <- function(hum, rain){
-  # Constants: 
-  erat = 0.5
-  e0 = 1.5
-  evar = 0.05
-  eopt = 8
-  efac = 0.01
-  edens = 0.01
-  
-  
-  hatch <- (1-erat)*(((1+e0)*exp(-evar*(rain-eopt)^2))/(exp(-evar*(rain - eopt)^2) + e0)) +
-    erat*(edens/(edens + exp(-efac*hum)))
-  return(hatch)
-}
-
-#### -------------------------- Albopictus ------------------------- ####
-## Thermal responses Aedes Albopictus from Mordecai 2017:
-a_f_alb <- function(temp){Briere_func(0.000193,10.25,38.32,temp)} # Biting rate
-TFD_f_alb <- function(temp){Briere_func(0.0488,8.02,35.65,temp)} # Fecundity
-pLA_f_alb <- function(temp){Quad_func(0.002663,6.668,38.92,temp)} # Survival probability Egg-Adult
-MDR_f_alb <- function(temp){Briere_func(0.0000638,8.6,39.66,temp)} # Mosquito Development Rate
-lf_f_alb <- function(temp){Quad_func(1.43,13.41,31.51,temp)} # Adult life span
-dE_f_alb <- function(temp){Briere_func(0.00006881,8.869,35.09,temp)} # Adult life span
-
-# R0 function by temperature:
-R0_func_alb <- function(Te, rain, hum){
-  a <- a_f_alb(Te)
-  f <- (1/2)*TFD_f_alb(Te)
-  deltaa <- lf_f_alb(Te)
-  dE <- dE_f_alb(Te)
-  probla <- pLA_f_alb(Te)
-  h <- h_f(hum,rain)
-  deltaE = 0.1
-  #R0 <- ((0.3365391*f*a*deltaa)*probla*(h*dE/(h*dE+deltaE)))^(1/3)
-  R0 <- ((f*a*deltaa)*probla*(h*dE/(h*dE+deltaE)))^(1/3)
-  return(R0)
-}
-
+source("~/INVASIBILITY_THRESHOLD/code/funcR0.R")
 ## Data Catu ------------------------------------------------------
 Path <- "~/INVASIBILITY_THRESHOLD/data/Datos_Catu/gi_min_model_pred.RData"
 load(Path)
@@ -145,12 +66,13 @@ trap_data_filt$R0_alb_norm <- trap_data_filt$R0_alb/trap_data_filt$R0_alb_max
 ggplot(trap_data_filt) +
   geom_point(aes(R0_alb_norm,female_norm, color = city))
 
-# Fit each dots by city -------------------------------------------------------
+# Fit exp city with nls -------------------------------------------------------
 df_out_fem <- data.frame()
 for(i in c(1:length(list_cit))){
-  Fitting_fem <- nls(female_norm ~ exp(cont1*R0_alb_norm)*cont,
-                     data = trap_data_filt[which(trap_data_filt$city == list_cit[[i]]),],
-                     start = list(cont = 0.001, cont1 = 0))
+  df_aux1 <- trap_data_filt[which(trap_data_filt$city == list_cit[[i]]),]
+  Fitting_fem <- nls(female ~ exp(cont1*R0_alb)*cont,
+                     data = df_aux1,
+                     start = list(cont = 0.22, cont1 = 0.12))
   
   summary(Fitting_fem)
   
@@ -160,7 +82,7 @@ for(i in c(1:length(list_cit))){
     t0*exp(tm*te)
   }
   
-  vec <- seq(0,1,0.01)
+  vec <- seq(0,max(df_aux1$R0_alb)+1,0.01)
   df_aux <- data.frame(temp_ae <- vec,
                        fem <- sapply(vec, mod))
   df_aux$cit <- list_cit[[i]]
@@ -169,32 +91,137 @@ for(i in c(1:length(list_cit))){
   colnames(df_out_fem) <- c("vec", "out", "cit")
 }
 
+
+name_pal = "Set1"
+display.brewer.pal(length(list_cit), name_pal)
+pal <- rev(brewer.pal(length(list_cit), name_pal))
+sizelet = 14
+plot_counts <- ggplot(data = trap_data_filt) +
+  geom_point(aes(x = R0_alb, 
+                 y = female, color = city), size = 0.8, alpha = 0.6) +
+  geom_line(data = df_out_fem,
+            aes(vec , out, color = cit),
+            lwd = 0.8) +
+  scale_color_manual(values = pal,
+                     labels = c(TeX("Blanes"),
+                                TeX("Lloret de Mar"),
+                                TeX("Palafolls"),
+                                TeX("Tordera")), name = "") +
+  xlab(TeX("$R_M$")) +
+  ylab("Number of females") +
+  xlim(c(0,max(trap_data_filt$R0_alb)+0.3)) +
+  ylim(c(0,max(trap_data_filt$female))) +
+  theme_bw() + 
+  theme(text = element_text(size = sizelet),
+        legend.position = c(0.2,0.65))
+plot_counts
+
+# exponential function with lm---------------------------------------------------
+df_out_fem <- data.frame()
+for(i in c(1:length(list_cit))){
+  df_aux1 <- trap_data_filt[which(trap_data_filt$city == list_cit[[i]]),]
+  model <- lm(log(female)~ R0_alb, data =df_aux1)
+  vec <- seq(0,max(df_aux1$R0_alb),0.01)
+  df_out <- data.frame(vec = vec, 
+                       # out =  exp(coef(model)[1])*(exp(df_aux1$R0_alb*coef(model)[2])))
+                       out =  coef(model)[1] + vec*coef(model)[2])
+  df_out$cit <- list_cit[[i]]
+  df_out$rsq <- summary(model)$adj.r.squared
+  colnames(df_out) <- c("vec", "out", "cit","rsq")
+  df_out_fem <- rbind(df_out, df_out_fem)
+  colnames(df_out_fem) <- c("vec", "out", "cit","rsq")
+  ggplot(df_out)+
+    geom_line(aes(vec,out)) +
+    geom_point(data = df_aux1 ,
+              aes(R0_alb,female)) +
+    ylim(c(0,max(df_aux1$female)))
+}
+
 # Plot with dots and fit exp ---------------------------------------------
 name_pal = "Set1"
 display.brewer.pal(length(list_cit), name_pal)
 pal <- rev(brewer.pal(length(list_cit), name_pal))
 sizelet = 14
 plot_counts <- ggplot(data = trap_data_filt) +
-  geom_point(aes(x = R0_alb_norm, 
-                 y = female_norm, color = city), size = 0.8, alpha = 0.6) +
+  geom_point(aes(x = R0_alb, 
+                 y = log(female), color = city), size = 0.8, alpha = 0.6) +
   geom_line(data = df_out_fem,
             aes(vec , out, color = cit),
             lwd = 0.8) +
-  scale_color_manual(values = pal) +
-  xlab(TeX("Relative $R_M$")) +
-  ylab("Normalized number of females") +
+  scale_color_manual(values = pal,
+                     labels = c(TeX("Blanes, $R^2$: 0.38 "),
+                                TeX("Lloret de Mar, $R^2$: 0.58"),
+                                TeX("Palafolls, $R^2$: 0.32"),
+                                TeX("Tordera, $R^2$: 0.32")),
+                     name = "") +
+  xlab(TeX("$R_M$")) +
+  ylab("Number of females (ln)") +
+  # xlim(c(0,max(trap_data_filt$R0_alb)+0.1)) +
+  # ylim(c(0,max(trap_data_filt$female))) +
   theme_bw() + 
   theme(text = element_text(size = sizelet),
-        legend.position = c(0.2,0.65))
+        legend.position = c(0.25,0.8))
 plot_counts
 
+# map spain 2020 Rm albopictus:
+year = 2020
+Path <- paste0("~/INVASIBILITY_THRESHOLD/output/ERA5/temp/2020/R0_clim_",
+               year,".Rds")
+df_2020 <- setDT(readRDS(Path))
+df_2020 <- df_2020[,c("NATCODE", "R0_sum_alb", "R0_sum_aeg", "R0_sum_jap")]
+colnames(df_2020) <-c ("NATCODE", "Alb_2020", "Aeg_2020", "Jap_2020")
+
+library(ggpubr)
+library(RColorBrewer)
+name_pal = "RdYlBu"
+display.brewer.pal(11, name_pal)
+pal <- rev(brewer.pal(11, name_pal))
+pal[11]
+pal[12] = "#74011C"
+pal[13] = "#4B0011"
+letsize = 16
+plot_summonths <- function(df){
+  library(mapSpain)
+  esp_can <- esp_get_munic_siane(moveCAN = TRUE)
+  can_box <- esp_get_can_box()
+  esp_can$NATCODE <- as.numeric(paste0("34",esp_can$codauto,
+                                       esp_can$cpro,
+                                       esp_can$LAU_CODE))
+  df <- esp_can %>% left_join(df)
+  num_colors <- 13
+  # Create a palette function using colorRampPalette
+  my_palette <- colorRampPalette(c("#faf0ca","#f95738", "#732c2c"))
+  
+  colors <- c("#43A2CA", "#7BCCC4", "#BAE4BC", "#F0F9E8",
+              "#FFF7EC","#FEE8C8","#FDD49E","#FDBB84",
+              "#FC8D59","#EF6548","#D7301F", "#B30000",
+              "#7F0000") 
+  ggplot(df) +
+    geom_sf(aes(fill = as.factor(R0)),
+            colour = NA) +
+    geom_sf(data = can_box) +
+    coord_sf(datum = NA) +
+    scale_fill_manual(values = pal,
+                      name = "Nº months\n suitable",
+                      limits = factor(seq(0,12,1))) +
+    theme_minimal()  +
+    theme(legend.position = "right",
+          legend.text = element_text(14)) 
+}
+
+# Albopictus ---------------------------------------------------------
+# 2004
+df_2020$R0 <- df_2020$Alb_2020
+plot_2020 <- plot_summonths(df_2020)
+plot_2020
+df_2020$R0 <- NULL
 
 # Load Data --------------------------------------------------------------------
 ## year = 2022, we will use this year to validate the data
 year = 2020
 Path <- paste0("~/INVASIBILITY_THRESHOLD/output/R0/datasets/R0_",year,".Rds")
 # check with no h (no rainfall and human density) validation
-Path <- paste0("INVASIBILITY_THRESHOLD/output/R0/datasets/R0_NO_H2020.Rds")
+# Path <- paste0("INVASIBILITY_THRESHOLD/output/R0/datasets/R0_H2020.Rds")
 df_group_tot <- readRDS(Path)
 head(df_group_tot)
 
@@ -208,6 +235,9 @@ Path = "~/INVASIBILITY_THRESHOLD/data/PA/Albopictus_Spain_Pa.csv"
 df_pa <- read.csv(Path)
 # add cadiz
 df_pa[which(df_pa$NATCODE == "34011111012"), "PA"] <- 1
+df_pa[which(df_pa$name == "Moaña"), "PA"] <- 1
+df_pa[which(df_pa$name == "Vigo"), "PA"] <- 1
+df_pa[which(df_pa$name == "Redondela"), "PA"] <- 1
 
 # Map Spain --------------------------------------------------------------------
 esp_can <- esp_get_munic_siane(moveCAN = TRUE)
@@ -222,9 +252,10 @@ df_pa <- esp_can %>% left_join(df_pa)
 PA_alb <- ggplot(df_pa) +
   geom_sf(aes(fill = as.factor(PA)), color = NA) +
   geom_sf(data = can_box) + coord_sf(datum = NA) +
+  theme_minimal() +
   scale_fill_manual(values = c("#D9EAF8","#377EB8"), name = "PA") +
-  theme(plot.margin = margin(0.2, 0.2, 0.2, 0.2, "cm")) +
-  theme_void()
+  theme(plot.margin = margin(0.2, 0.2, 0.2, 0.2, "cm"),
+        legend.position = c(0.1,0.8)) 
 PA_alb
 
 ### Comparison between presence absence and number of months R0>1
@@ -242,19 +273,6 @@ NATCODE_CAT <- esp_can[which(esp_can$ine.ccaa.name == "Cataluña"),"NATCODE"]
 NATCODE_CAT$geometry <- NULL
 df_pa_CAT <- df_pa[which(as.numeric(df_pa$NATCODE) %in% 
                            as.numeric(NATCODE_CAT$NATCODE)),]
-
-### Sum months suitable:
-hist(df_pa_CAT[which(df_pa_CAT$PA == 1), "R0_sum_alb_min"])
-ggplot(df_pa_CAT[which(df_pa_CAT$PA == 1),]) +
-  geom_histogram(aes(R0_sum_alb), binwidth = 0.2,
-                 fill =  "#E1CE7A") + xlab("Number months suitable") +
-  theme_bw()
-
-## Average R0 annual:
-ggplot(df_pa_CAT[which(df_pa_CAT$PA == 1),]) +
-  geom_histogram(aes(R0_sum_alb), binwidth = 0.2,
-                 fill =  "#E1CE7A") + xlab("Number months suitable") +
-  theme_bw()
 
 # Prop presence df ------------------------------------------
 df_num_months <- function(df_pa_CAT){
@@ -430,14 +448,17 @@ plot_ccaa <- ggplot(df_sum_CAT) +
   xlab("Nº months suitable") + 
   ylab("Proportion of municipalities with presence") +
   ylim(c(0,1)) + 
-  scale_color_manual(name = "", values = pal) +
-  scale_size_continuous(name = "Number municipalities",
+  scale_color_manual(name = "", values = pal,
+                     labels = c("Andalucía","Aragón","Cataluña" ,  
+                                "C. Valenciana", 
+                                "P. Vasco")) +
+  scale_size_continuous(name = "Nº municipalities",
                         breaks = c(5,100,200),
                         labels =c("<5","[5,100]",
-                                  ">200")) +
+                                  ">100")) +
   scale_x_continuous(breaks = seq(1,12,1)) +
   theme_bw() +
-  theme(legend.position = c(0.15,0.55),
+  theme(legend.position = c(0.2,0.55),
         text = element_text(size = 14)) 
 plot_ccaa
 
@@ -463,6 +484,7 @@ plot_tot <- ggplot(df_group) +
   theme_bw() +
   theme(text = element_text(size = 14),
         legend.position = c(0.2,0.6)) 
+plot_tot
 
 # Plot all ccaa ----------------------------------------
 df_aux <- df_num_months(df_pa)
@@ -489,6 +511,7 @@ plot_esp <- ggplot(df_group) +
   theme_bw() +
   theme(text = element_text(size = 14),
         legend.position = c(0.2,0.6)) 
+plot_esp
 
 # Join min, max, mean toguether ---------------------------------------
 NATCODE_CAT$geometry <- NULL
@@ -529,14 +552,26 @@ plot_min_max <- ggplot(df_sum_CAT) +
         text = element_text(size = 14)) 
 
 library(ggpubr)
-ggarr <- ggarrange(NULL,PA_alb+ ggtitle("A"),plot_counts+ ggtitle("B"),
-                   nrow = 1, widths = c(0.15,1,1))
+leg <- get_legend(plot_2020)
+as_ggplot(leg)
+ggarr <- ggarrange( PA_alb+ ggtitle("A"),
+                    plot_2020 + ggtitle("B") +
+                      theme(legend.position = "none"),
+                    leg,
+                    ncol = 3,
+                   nrow = 1, widths = c(1,1,0.2))
 
+ggarr1 <- ggarrange(plot_ccaa+ ggtitle("C"),
+                   plot_counts + ggtitle("D"),
+                   widths = c(1.2,1),
+                   ncol = 2, nrow = 1)
+ggarrange(ggarr, ggarr1, ncol = 1)
 ggarrange(ggarr ,
-          plot_ccaa+ ggtitle("C"), 
-          ncol = 1, nrow = 2)
+          plot_ccaa+ ggtitle("C"),
+          plot_counts + ggtitle("D"),
+          ncol = 1, nrow = 3, heights = c(1,1,1))
 
-ggarrange(ggarr,
+poggarrange(ggarr,
           plot_ccaa + ylab("Proportion presence")+ ggtitle("C"),
           plot_min_max + ylab("Proportion presence")+ ggtitle("D"),
           ncol = 1, nrow = 3)

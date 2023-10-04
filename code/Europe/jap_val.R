@@ -10,3 +10,10 @@ pa_jap <- pa_jap[which(pa_jap$leave == 1),]
 
 ggplot(pa_jap) +
   geom_sf(aes(fill = japonicus)) 
+
+# load data for RM Japonicus Europe 2020
+clim_pop <- readRDS(paste0("~/INVASIBILITY_THRESHOLD/data/ERA5/Europe/EU_R0_",2020,".Rds"))
+
+# transform crs raster
+coord_ref <- st_crs(clim_pop)
+pa <- st_transform(pa_jap, coord_ref)

@@ -12,19 +12,12 @@ pop_eu <- rast(path)
 plot(pop_eu[[1]])
 
 # climate data europe ----------------------------------------
-path_w <- "~/INVASIBILITY_THRESHOLD/data/ERA5/Europe/monthlytemp_2022.grib"
-temp_eu <- rast(path_w)
-plot(temp_eu[[11]])
+temp_eu <- rast("~/INVASIBILITY_THRESHOLD/data/ERA5/Europe/3monthly_aggregated_raster.tif")
+plot(temp_eu[[8]])
 
 path_w <- "~/INVASIBILITY_THRESHOLD/data/ERA5/Europe/monthlyrain_2022.grib"
 rain_eu <- rast(path_w)
-plot(rain_eu[[10]])
-
-path <- "~/INVASIBILITY_THRESHOLD/data/ERA5/Europe/cerra_2020_TEMP.grib"
-temp_eu <- rast(path)
-esp0 <- geodata::gadm(country = 'ESP', level = 0,
-                      path = 'tmpr')
-temp_eu_m <- tapp(temp_eu, "months", fun=mean)
+plot(rain_eu[[1]])
 
 # shapefile europe eurostats ---------------------------------
 SHP_0 <- get_eurostat_geospatial(resolution = 10, 
@@ -43,10 +36,11 @@ SHP_0 <- get_eurostat_geospatial(resolution = 10,
 #   scale_fill_viridis_d()
 
 # change coordinate system to crop ---------------------------
-pop_eu <- terra::project(pop_eu,temp_eu, method = "average")
-pop_eu <- terra::resamble(pop_eu,temp_eu)
+pop_eu <- terra::project(pop_eu,temp_eu, method = "near")
+rain_eu <- terra::project(rain_eu,temp_eu, method = "near")
 plot(pop_eu[[1]])
 plot(temp_eu[[1]])
+plot(rain_eu[[8]])
 
 # Create a grid of longitude and latitude values
 lon <- seq(from = xmin(temp_eu), to = xmax(temp_eu),
@@ -58,16 +52,16 @@ grid_points <- expand.grid(lon = lon, lat = lat)
 # extract values as df --------------------------------------
 temp <- terra::extract(temp_eu,
                           grid_points, xy =TRUE)
-colnames(temp)[2:13] <- lubridate:: month(time(temp_eu))
+colnames(temp)[2:13] <- c(1:12)
 temp <- reshape::melt(temp[,c(1:13)],id.vars = "ID")
 colnames(temp) <- c("id", "month", "tmean")
-temp$tmean <- temp$tmean - 273.15
 rain <- terra::extract(rain_eu,
                        grid_points, xy =TRUE)
-colnames(rain)[2:13] <- lubridate:: month(time(rain_eu))
+colnames(rain)[2:13] <- c(1:12)
 rain <- reshape::melt(rain[,c(1:13)],id.vars = "ID")
 colnames(rain) <- c("id", "month", "prec")
-# transform rain into mm 
+
+# transform rain into mm per squared km
 rain$prec <- (rain$prec*1000)/3.47
 pop <- terra::extract(pop_eu,
                        grid_points, xy =TRUE)[,c(1:2)]
@@ -94,6 +88,15 @@ clim_pop <- clim_pop[,.(sum_alb = sum(bool_alb),
 grid_points$id <- c(1:nrow(grid_points))
 clim_pop <- clim_pop %>% left_join(grid_points)
 
+# save the df
+saveRDS(clim_pop,
+        paste0("~/INVASIBILITY_THRESHOLD/data/ERA5/Europe/eu_R0_",2020,".Rds"))
+clim_pop <- readRDS(paste0("~/INVASIBILITY_THRESHOLD/data/ERA5/Europe/EU_R0_",2020,".Rds"))
+
+clim_pop_r <- rast(clim_pop, crs= crs(rain_eu), extent = ext(rain_eu))
+terra::writeRaster(temp_eu_mon,
+                   "~/INVASIBILITY_THRESHOLD/data/ERA5/Europe/3monthly_aggregated_raster.tif",
+                   overwrite = TRUE)
 # plot ------------------------------------------------
 library(RColorBrewer)
 name_pal = "RdYlBu"
@@ -103,37 +106,70 @@ pal[11]
 pal[12] = "#74011C"
 pal[13] = "#4B0011"
 letsize = 16
-ggplot(clim_pop, aes(x = lon, y = lat, fill = as.factor(sum_alb))) +
+clim_pop_sf <- st_as_sf(clim_pop,coords = c("lon", "lat"))
+alb <- ggplot(clim_pop,
+       aes(x = lon, y = lat,
+           fill = as.factor(sum_alb))) +
   geom_tile() +
   scale_fill_manual(values = pal,
                     name = "Nº months\n suitable",
                     limits = factor(seq(0,12,1)),
-                    na.value = "white")+
-  ylim(c(25,75)) + xlim(c(-30,40)) +
-  ggtitle("Aedes albopictus 2022") +
-  theme_bw() +
-  theme(plot.title = element_text(hjust = 0.5,
-                                  face = "italic")) 
+                    na.value = "white") +
+  theme(legend.position = "none",
+        panel.background = element_rect(fill = "transparent", colour = NA),
+        plot.background = element_rect(fill = "transparent", colour = NA),
+        panel.grid = element_blank(),
+        plot.margin = unit(c(0, 0, 0, 0), "null"),
+        panel.margin = unit(c(0, 0, 0, 0), "null"),
+        axis.ticks = element_blank(),
+        axis.text = element_blank(),
+        axis.title = element_blank(),
+        axis.line = element_blank(),
+        axis.ticks.length = unit(0, "null"),
+        axis.ticks.margin = unit(0, "null")) 
 
-ggplot(clim_pop, aes(x = lon, y = lat, fill = as.factor(sum_aeg))) +
+
+aeg <- ggplot(clim_pop, aes(x = lon, y = lat, fill = as.factor(sum_aeg))) +
   geom_tile() +
   scale_fill_manual(values = pal,
                     name = "Nº months\n suitable",
                     limits = factor(seq(0,12,1)),
-                    na.value = "white")+
-  ylim(c(25,75)) + xlim(c(-30,40)) +
-  ggtitle("Aedes aegypti 2022") +
-  theme_bw() +
-  theme(plot.title = element_text(hjust = 0.5,
-                                  face = "italic")) 
-ggplot(clim_pop, aes(x = lon, y = lat, fill = as.factor(sum_jap))) +
+                    na.value = "white")+  theme_minimal() +
+  theme(legend.position = "none",
+        panel.background = element_rect(fill = "transparent", colour = NA),
+        plot.background = element_rect(fill = "transparent", colour = NA),
+        panel.grid = element_blank(),
+        plot.margin = unit(c(0, 0, 0, 0), "null"),
+        panel.margin = unit(c(0, 0, 0, 0), "null"),
+        axis.ticks = element_blank(),
+        axis.text = element_blank(),
+        axis.title = element_blank(),
+        axis.line = element_blank(),
+        axis.ticks.length = unit(0, "null"),
+        axis.ticks.margin = unit(0, "null")) 
+
+jap <- ggplot(clim_pop, aes(x = lon, y = lat, fill = as.factor(sum_jap))) +
   geom_tile() +
   scale_fill_manual(values = pal,
                     name = "Nº months\n suitable",
                     limits = factor(seq(0,12,1)),
-                    na.value = "white")+
-  ylim(c(25,75)) + xlim(c(-30,40)) +
-  ggtitle("Aedes japonicus 2022") +
-  theme_bw() +
-  theme(plot.title = element_text(hjust = 0.5,
-                                  face = "italic")) 
+                    na.value = "white") +
+  theme_minimal() +
+  theme(legend.position = "none",
+        panel.background = element_rect(fill = "transparent", colour = NA),
+        plot.background = element_rect(fill = "transparent", colour = NA),
+        panel.grid = element_blank(),
+        plot.margin = unit(c(0, 0, 0, 0), "null"),
+        panel.margin = unit(c(0, 0, 0, 0), "null"),
+        axis.ticks = element_blank(),
+        axis.text = element_blank(),
+        axis.title = element_blank(),
+        axis.line = element_blank(),
+        axis.ticks.length = unit(0, "null"),
+        axis.ticks.margin = unit(0, "null")) 
+
+library(ggpubr)
+ggarrange(alb + rremove("xlab")+ rremove("ylab"),
+          aeg+ rremove("xlab")+ rremove("ylab"),
+          jap+ rremove("xlab")+ rremove("ylab"),
+          ncol = 3, common.legend = TRUE)

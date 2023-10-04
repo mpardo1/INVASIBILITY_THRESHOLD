@@ -39,6 +39,13 @@ df_2060 <- setDT(readRDS(Path))
 df_2060 <- df_2060[,c("NATCODE", "alb", "aeg", "jap")]
 colnames(df_2060) <-c ("NATCODE", "Alb_2060", "Aeg_2060", "Jap_2060")
 
+dataset = 'ACCESS-CM2'
+path_dir <-'tmpr_145'
+ssp = '245'
+time = '2021-2040'
+clim_df <- readRDS(paste0("~/INVASIBILITY_THRESHOLD/output/summon_eu_alb_",
+                          time,"_mo_",dataset,"_",ssp,".Rds"))
+
 # Map Spain municipalities ----------------------------------------------------
 esp_can <- esp_get_munic_siane(moveCAN = TRUE)
 can_box <- esp_get_can_box()
@@ -75,13 +82,9 @@ plot_summonths <- function(df){
     scale_fill_manual(values = pal,
                       name = "Nº months\n suitable",
                       limits = factor(seq(0,12,1))) +
-    theme_bw()  +
-    theme(legend.position = "top",
-          legend.box = "horizontal",
-          legend.direction = "horizontal",
-          legend.text = element_text(14)) +
-    guides(fill = guide_legend(nrow = 1),
-           label.position = "top")
+    theme_minimal()  +
+    theme(legend.position = "none",
+          legend.text = element_text(14)) 
 }
 
 # Albopictus ---------------------------------------------------------
@@ -120,16 +123,51 @@ ggarrange(plot_2004 +
           ncol = 3,
           common.legend = TRUE)
 
-ggarrange(plot_2004 +
-            ggtitle("A                        2004"),
+esp <- ggarrange(plot_2004 +
+            ggtitle("A            2004"),
           plot_2020 +
-            ggtitle("B                         2020"),
+            ggtitle("B            2020"),
           plot_2040 +
-            ggtitle("C                     2041-2060"),
+            ggtitle("C          2041-2060"),
           plot_2060 +
-            ggtitle("D                     2061-2080"),
+            ggtitle("D           2061-2080"),
           ncol = 2,nrow = 2,
-          common.legend = TRUE)
+          common.legend = TRUE,
+          legend = "left")
+
+# maps with europe -------------------------------------------------
+alb <- ggplot(clim_df) +
+  geom_tile(aes(x = lon, y = lat, 
+                fill = as.factor(sum_alb)),alpha = 1) +
+  scale_fill_manual(values = pal,
+                    name = "Nº months\n suitable",
+                    limits = factor(seq(0,12,1)),
+                    na.value = "white") +
+  ylim(c(25,75)) + xlim(c(-30,40)) +
+  xlab("") + ylab("") +
+  theme_minimal()  +
+  theme(legend.position = "none",
+        panel.background = element_rect(fill = "transparent", colour = NA),
+        plot.background = element_rect(fill = "transparent", colour = NA),
+        panel.grid = element_blank(),
+        plot.margin = unit(c(0, 0, 0, 0), "null"),
+        panel.margin = unit(c(0, 0, 0, 0), "null"),
+        axis.ticks = element_blank(),
+        axis.text = element_blank(),
+        axis.title = element_blank(),
+        axis.line = element_blank(),
+        axis.ticks.length = unit(0, "null"),
+        axis.ticks.margin = unit(0, "null")) +
+  guides(fill = guide_legend(nrow = 1),
+         label.position = "none")
+
+saveRDS(alb, "")
+leg_alb <- get_legend(alb)
+as_ggplot(leg_alb)
+
+ggarrange(esp, alb, ncol = 2,
+          heights = c(1.7,2),
+          legend = "none")
 
 # 3 species ---------------------------------------------------------
 # Albopictus
