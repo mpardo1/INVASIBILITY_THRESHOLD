@@ -18,6 +18,8 @@ Path <- "~/INVASIBILITY_THRESHOLD/data/Datos_Catu/gi_min_model_pred.RData"
 load(Path)
 unique(gi_min_model_pred$trap_name)
 
+city_count <- gi_min_model_pred %>% group_by(city) %>% 
+  summarise(n=n())
 # Process data from Catu with trap data ----------------------------
 trap_data <- setDT(gi_min_model_pred[,c("trap_name", "province",
                                         "city", "start_date","end_date",
@@ -46,7 +48,7 @@ ggplot(trap_data) +
 trap_data$R0_alb_norm <- trap_data$R0_alb/max(trap_data$R0_alb)
 
 # DF of specific cities ---------------------------------------------------
-list_cit <- list("Blanes", "Lloret de Mar", "Tordera", "Palafolls")
+list_cit <- list("Blanes","Tordera", "Riumors", "Darnius")
 trap_data_filt <- trap_data[which(trap_data$city %in% list_cit)] %>%
   group_by(city, start_date) %>% 
   summarise(female = sum(females),
@@ -141,6 +143,7 @@ for(i in c(1:length(list_cit))){
 name_pal = "Set1"
 display.brewer.pal(length(list_cit), name_pal)
 pal <- rev(brewer.pal(length(list_cit), name_pal))
+unique(df_out_fem[,c("cit", "rsq")])
 sizelet = 14
 plot_counts <- ggplot(data = trap_data_filt) +
   geom_point(aes(x = R0_alb, 
