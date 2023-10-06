@@ -43,7 +43,7 @@ inter <- function(pol_id){
     df_out <- df_out[which(is.na(df_out$sum_jap) == FALSE), ]
     return(df_out)
   }else{
-    df_out <- data.frame(points_inter = 0, geom_id = 0)
+    df_out <- data.frame(points_inter = 0, pnt_id = 0,  geom_id = 0)
     return(df_out)
   }
 }
@@ -61,7 +61,7 @@ inter <- function(pol_id){
 cores = 12
 intersect_p_g <- mclapply(1:nrow(pa_jap), mc.cores = cores,
                          mc.preschedule = F,inter)
-saveRDS(intersect_p_g, "~/INVASIBILITY_THRESHOLD/data/japonicus/pa/out_inter.Rds")
+saveRDS(intersect_p_g, "~/INVASIBILITY_THRESHOLD/data/japonicus/pa/out_inter_d.Rds")
 
 # inter_df <- readRDS("~/INVASIBILITY_THRESHOLD/data/japonicus/pa/out_inter.Rds")
 # inter_df <- data.frame(do.call(rbind,inter_df))
@@ -73,3 +73,6 @@ saveRDS(intersect_p_g, "~/INVASIBILITY_THRESHOLD/data/japonicus/pa/out_inter.Rds
 # ggplot(inter_df_pa) + 
 #   geom_sf(aes(fill = meanRM), color = NA) +
 #   scale_fill_distiller(palette = "Spectral")
+
+# inter_df <- readRDS("~/INVASIBILITY_THRESHOLD/data/japonicus/pa/out_inter.Rds")
+# inter_df <- data.frame(do.call(rbind,inter_df))
