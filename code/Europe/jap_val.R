@@ -57,7 +57,7 @@ inter <- function(pol_id){
 #           aes(color = intersection), color = "red")
 
 
-parallelize
+# parallelize
 cores = 12
 intersect_p_g <- mclapply(1:nrow(pa_jap), mc.cores = cores,
                          mc.preschedule = F,inter)
