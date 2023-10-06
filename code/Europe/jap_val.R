@@ -32,19 +32,19 @@ clim_pop_s <- st_transform(clim_pop_s, crs(pa_jap))
 pa_jap$ind <- seq(1, nrow(pa_jap),1)
 # extract intersection for each geometry-----------------------------------
 inter <- function(pol_id){
-  pnts <- clim_pop_s[,c("geometry", "id")] %>% mutate(
+  pnts <- clim_pop_s[,c("geometry", "sum_jap", "id")] %>% mutate(
     intersection = as.integer(st_intersects(geometry, pa_jap[pol_id,c("geometry")]))
   )
   
-  pnts <- pnts[which(is.na(pnts$intersection) == FALSE),c("id","intersection")]
+  pnts <- pnts[which(is.na(pnts$intersection) == FALSE),c("sum_jap","id")]
   if(nrow(pnts) > 0){
-    pnts$geometry <- NULL
-    pnts <- pnts %>% left_join(clim_pop_s[,c("id","sum_alb")])
-    pnts <- pnts[which(is.na(pnts$sum_alb)==FALSE),]
-    avg_alb <- mean(pnts$sum_alb)
-    return(c(pol_id,avg_alb))
+    df_out <- data.frame(sum_jap = pnts$sum_jap, pnt_id = pnts$id, geom_id = pol_id)
+    colnames(df_out) <- c("sum_jap", "pnt_id","geom_id")
+    df_out <- df_out[which(is.na(df_out$sum_jap) == FALSE), ]
+    return(df_out)
   }else{
-    return(c(pa_jap[pol_id,c("ind")],0))
+    df_out <- data.frame(points_inter = 0, geom_id = 0)
+    return(df_out)
   }
 }
 
@@ -57,7 +57,7 @@ inter <- function(pol_id){
 #           aes(color = intersection), color = "red")
 
 
-# parallelize
+parallelize
 cores = 12
 intersect_p_g <- mclapply(1:nrow(pa_jap), mc.cores = cores,
                          mc.preschedule = F,inter)
@@ -65,4 +65,11 @@ saveRDS(intersect_p_g, "~/INVASIBILITY_THRESHOLD/data/japonicus/pa/out_inter.Rds
 
 # inter_df <- readRDS("~/INVASIBILITY_THRESHOLD/data/japonicus/pa/out_inter.Rds")
 # inter_df <- data.frame(do.call(rbind,inter_df))
-# inter_df$ind_geo <- seq(1,nrow(inter_df),1)
+# colnames(inter_df) <- c("geo", "meanRM")
+# inter_df$meanRM <- as.numeric(inter_df$meanRM) 
+# inter_df$ind <- seq(1,nrow(inter_df),1)
+# inter_df_pa <- pa_jap %>% left_join(inter_df)
+# 
+# ggplot(inter_df_pa) + 
+#   geom_sf(aes(fill = meanRM), color = NA) +
+#   scale_fill_distiller(palette = "Spectral")
