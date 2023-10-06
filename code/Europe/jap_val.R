@@ -29,7 +29,7 @@ clim_pop_s <- st_as_sf(clim_pop,
 
 # transform to match coord system -----------------------------------------
 clim_pop_s <- st_transform(clim_pop_s, crs(pa_jap))
-
+pa_jap$ind <- seq(1, nrow(pa_jap),1)
 # extract intersection for each geometry-----------------------------------
 inter <- function(pol_id){
   pnts <- clim_pop_s[,c("geometry", "id")] %>% mutate(
@@ -42,9 +42,9 @@ inter <- function(pol_id){
     pnts <- pnts %>% left_join(clim_pop_s[,c("id","sum_alb")])
     pnts <- pnts[which(is.na(pnts$sum_alb)==FALSE),]
     avg_alb <- mean(pnts$sum_alb)
-    return(c(unique(pnts$intersection),avg_alb))
+    return(c(pol_id,avg_alb))
   }else{
-    return(c(pol_id,0))
+    return(c(pa_jap[pol_id,c("ind")],0))
   }
 }
 
@@ -57,8 +57,12 @@ inter <- function(pol_id){
 #           aes(color = intersection), color = "red")
 
 
-# # parallelize
+# parallelize
 cores = 12
 intersect_p_g <- mclapply(1:nrow(pa_jap), mc.cores = cores,
                          mc.preschedule = F,inter)
 saveRDS(intersect_p_g, "~/INVASIBILITY_THRESHOLD/data/japonicus/pa/out_inter.Rds")
+
+# inter_df <- readRDS("~/INVASIBILITY_THRESHOLD/data/japonicus/pa/out_inter.Rds")
+# inter_df <- data.frame(do.call(rbind,inter_df))
+# inter_df$ind_geo <- seq(1,nrow(inter_df),1)
