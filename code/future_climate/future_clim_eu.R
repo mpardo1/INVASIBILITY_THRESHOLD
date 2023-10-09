@@ -21,9 +21,9 @@ SHP_0 <- get_eurostat_geospatial(resolution = 10,
 # path = 'tmpr_245'  path = 'tmpr_370'  path = 'tmpr_585'
 # (optimistic: SSP245; middle of the road: SSP370; and pessimistic: SSP585)
 dataset = 'ACCESS-CM2'
-path_dir <-'tmpr_145'
+path_dir <-'tmpr_245_2080'
 ssp = '245'
-time = '2021-2040'
+time = '2061-2080'
 prec_w <- geodata::cmip6_world(model = dataset,
                                ssp = ssp, time = time,
                                var = 'prec', path = path_dir, res = 2.5)

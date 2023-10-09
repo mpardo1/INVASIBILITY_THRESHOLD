@@ -71,6 +71,13 @@ colnames(pop) <- c("id", "pop")
 clim <- temp %>% left_join(rain)
 clim_pop <- setDT(clim %>% left_join(pop))
 
+# create df europe climate monthly data -----------------------
+grid_points$id <- c(1:nrow(grid_points))
+clim_pop <- clim_pop %>% left_join(grid_points)
+# saveRDS(clim_pop,
+        # paste0("~/INVASIBILITY_THRESHOLD/data/ERA5/Europe/eu_clim_",2020,".Rds"))
+# clim_pop <- readRDS(paste0("~/INVASIBILITY_THRESHOLD/data/ERA5/Europe/eu_clim_",2020,".Rds"))
+
 # compute R0 --------------------------------------------------
 clim_pop[, R0_alb := mapply(R0_func_alb, tmean, prec, pop)]
 clim_pop[, R0_aeg := mapply(R0_func_aeg, tmean, prec, pop)]
