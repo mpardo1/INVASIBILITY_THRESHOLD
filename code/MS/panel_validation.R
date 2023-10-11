@@ -48,7 +48,7 @@ ggplot(trap_data) +
 trap_data$R0_alb_norm <- trap_data$R0_alb/max(trap_data$R0_alb)
 
 # DF of specific cities ---------------------------------------------------
-list_cit <- list("Blanes","Tordera", "Riumors", "Darnius")
+list_cit <- list("Blanes","Tordera", "Palafolls", "Lloret de Mar")
 trap_data_filt <- trap_data[which(trap_data$city %in% list_cit)] %>%
   group_by(city, start_date) %>% 
   summarise(female = sum(females),
@@ -251,12 +251,20 @@ esp_can$NATCODE <- as.numeric(paste0("34",
 can_box <- esp_get_can_box()
 
 # Plot PA Albopictus -----------------------------------------------------------
+prov_esp <- esp_get_prov_siane()
 df_pa <- esp_can %>% left_join(df_pa)
+gir_star <- as.data.frame(st_centroid(esp_can[which(esp_can$name == "Blanes"),"geometry"]))
+lonlat_gir <- gir_star %>%
+  mutate(long = unlist(map(gir_star$geometry,1)),
+         lat = unlist(map(gir_star$geometry,2)))
 PA_alb <- ggplot(df_pa) +
   geom_sf(aes(fill = as.factor(PA)), color = NA) +
   geom_sf(data = can_box) + coord_sf(datum = NA) +
   theme_minimal() +
-  scale_fill_manual(values = c("#D9EAF8","#377EB8"), name = "PA") +
+  scale_fill_manual(values = c("#D9EAF8","#377EB8"), name = " ") +
+  geom_point(data = lonlat_gir, aes(long,lat),
+             color = "red", shape = 8) +
+  rremove("xlab") + rremove("ylab") +
   theme(plot.margin = margin(0.2, 0.2, 0.2, 0.2, "cm"),
         legend.position = c(0.1,0.8)) 
 PA_alb
@@ -461,7 +469,7 @@ plot_ccaa <- ggplot(df_sum_CAT) +
                                   ">100")) +
   scale_x_continuous(breaks = seq(1,12,1)) +
   theme_bw() +
-  theme(legend.position = c(0.2,0.55),
+  theme(legend.position = c(0.17,0.55),
         text = element_text(size = 14)) 
 plot_ccaa
 
@@ -513,7 +521,7 @@ plot_esp <- ggplot(df_group) +
   scale_x_continuous(breaks = seq(1,12,1)) +
   theme_bw() +
   theme(text = element_text(size = 14),
-        legend.position = c(0.2,0.6)) 
+        legend.position = c(0.15,0.6)) 
 plot_esp
 
 # Join min, max, mean toguether ---------------------------------------
@@ -574,7 +582,7 @@ ggarrange(ggarr ,
           plot_counts + ggtitle("D"),
           ncol = 1, nrow = 3, heights = c(1,1,1))
 
-poggarrange(ggarr,
+ggarrange(ggarr,
           plot_ccaa + ylab("Proportion presence")+ ggtitle("C"),
           plot_min_max + ylab("Proportion presence")+ ggtitle("D"),
           ncol = 1, nrow = 3)

@@ -12,7 +12,8 @@ library("gganimate")
 # Load Data --------------------------------------------------------------------
 ## year = 2022, we will use this year to validate the data
 year = 2020
-Path <- paste0("~/INVASIBILITY_THRESHOLD/output/R0/datasets/R0_",year,".Rds")
+Path <- paste0("~/INVASIBILITY_THRESHOLD/output/ERA5/temp/2020/R0_clim_",
+               year,".Rds")
 df_group_tot <- readRDS(Path)
 head(df_group_tot)
 
@@ -37,16 +38,15 @@ esp_can$NATCODE <- as.numeric(paste0("34",
                                      esp_can$LAU_CODE))
 can_box <- esp_get_can_box()
 PA_jap_ESP <- esp_can %>% left_join(PA_jap)
-
-ggplot(PA_jap_ESP) + 
-  geom_sf(aes(fill = as.factor(Japonicus)), linewidth = 0.05)  +
-  scale_fill_manual(values = c("#ee4266",  "#0ead69","white") , 
-                    name = "") + 
-  theme_bw()
+PA_jap_ESP$Japonicus <- ifelse(is.na(PA_jap_ESP$Japonicus),0,PA_jap_ESP$Japonicus)
+pa_jap <- ggplot(PA_jap_ESP) + 
+  geom_sf(aes(fill = as.factor(Japonicus)), linewidth = 0.05, color = NA)  +
+  geom_sf(data = can_box) + coord_sf(datum = NA) +
+  theme_minimal() +
+  scale_fill_manual(values = c("#D9EAF8","#377EB8"), name = " ") 
 
 ### Comparison between presence absence and number of months R0>1
 PA_jap_ESP <- PA_jap_ESP[, c("NATCODE", "Japonicus", "ine.ccaa.name")]
-
 df_group_m <- df_group_tot[,c("NATCODE",
                               "R0_sum_jap",
                               "R0_sum_jap_min",
@@ -74,55 +74,6 @@ df_num_months <- function(df_pa_CAT){
   
 }
 
-# With minimum temperature
-df_num_months_min <- function(df_pa_CAT){
-  df_r_1 <- df_pa_CAT[which(df_pa_CAT$Japonicus == 1),] %>% 
-    group_by(R0_sum_jap_min) %>% summarize(num_1 = n())
-  df_r_0 <- df_pa_CAT[which(df_pa_CAT$Japonicus == 0),] %>% 
-    group_by(R0_sum_jap_min) %>% summarize(num_0 = n())
-  
-  df_r <- merge(df_r_1 ,df_r_0,
-                all.x = TRUE, all.y = TRUE)
-  df_r$prop_1 <- ifelse(is.na(df_r$num_0),1,
-                        ifelse(is.na(df_r$num_1),
-                               0,df_r$num_1/(df_r$num_1+df_r$num_0)))
-  df_r$num_1 <- ifelse(is.na(df_r$num_1),0,df_r$num_1)
-  df_r$num_0 <- ifelse(is.na(df_r$num_0),0,df_r$num_0)
-  df_r$sum_muni <- df_r$num_1 + df_r$num_0
-  return(df_r)
-}
-
-# With maximum temperature
-df_num_months_max <- function(df_pa_CAT){
-  df_r_1 <- df_pa_CAT[which(df_pa_CAT$Japonicus == 1),] %>% 
-    group_by(R0_sum_jap_max) %>% summarize(num_1 = n())
-  df_r_0 <- df_pa_CAT[which(df_pa_CAT$Japonicus == 0),] %>% 
-    group_by(R0_sum_jap_max) %>% summarize(num_0 = n())
-  
-  df_r <- merge(df_r_1 ,df_r_0,
-                all.x = TRUE, all.y = TRUE)
-  df_r$prop_1 <- ifelse(is.na(df_r$num_0),1,
-                        ifelse(is.na(df_r$num_1),
-                               0,df_r$num_1/(df_r$num_1+df_r$num_0)))
-  df_r$num_1 <- ifelse(is.na(df_r$num_1),0,df_r$num_1)
-  df_r$num_0 <- ifelse(is.na(df_r$num_0),0,df_r$num_0)
-  df_r$sum_muni <- df_r$num_1 + df_r$num_0
-  return(df_r)
-}
-
-# With average R0 per year
-df_avg_months <- function(df_pa_CAT){
-  df_r_1 <- df_pa_CAT[which(df_pa_CAT$Japonicus == 1),] %>% 
-    group_by(R0_rang_jap) %>% summarize(num_1 = n())
-  df_r_0 <- df_pa_CAT[which(df_pa_CAT$Japonicus == 0),] %>% 
-    group_by(R0_rang_jap) %>% summarize(num_0 = n())
-  
-  df_r <- df_r_1 %>% left_join(df_r_0)
-  df_r$prop_1 <- ifelse(is.na(df_r$num_0),1,
-                        df_r$num_1/(df_r$num_1+df_r$num_0))
-  return(df_r)
-}
-
 # Create plots for different regions -------------------------------------------
 # Function to create the plot sum months
 plot_sum_p <- function(ccaa){
@@ -143,42 +94,6 @@ plot_sum_p <- function(ccaa){
     theme_bw()
 }
 
-plot_sum_p_max <- function(ccaa){
-  NATCODE_CAT <- esp_can[which(esp_can$ine.ccaa.name == ccaa),"NATCODE"]
-  NATCODE_CAT$geometry <- NULL
-  df_pa_CAT <- PA_jap_ESP[which(as.numeric(PA_jap_ESP$NATCODE) %in% 
-                             as.numeric(NATCODE_CAT$NATCODE)),]
-  
-  df_sum_CAT <- df_num_months_max(df_pa_CAT)
-  df_sum_CAT$ccaa <- ccaa
-  
-  ggplot(df_sum_CAT) +
-    geom_point(aes(R0_sum_jap_max,prop_1)) +
-    xlab("Nº months\n suitable") + 
-    ylab("Proportion of municipalities with presence") +
-    ylim(c(0,1)) +
-    ggtitle(ccaa) +  
-    theme_bw()
-}
-
-plot_sum_p_min <- function(ccaa){
-  NATCODE_CAT <- esp_can[which(esp_can$ine.ccaa.name == ccaa),"NATCODE"]
-  NATCODE_CAT$geometry <- NULL
-  df_pa_CAT <- PA_jap_ESP[which(as.numeric(PA_jap_ESP$NATCODE) %in% 
-                             as.numeric(NATCODE_CAT$NATCODE)),]
-  
-  df_sum_CAT <- df_num_months_min(df_pa_CAT)
-  df_sum_CAT$ccaa <- ccaa
-  
-  ggplot(df_sum_CAT) +
-    geom_point(aes(R0_sum_jap_min,prop_1)) +
-    xlab("Nº months\n suitable") + 
-    ylab("Proportion of municipalities with presence") +
-    ylim(c(0,1)) +
-    ggtitle(ccaa) +  
-    theme_bw()
-}
-
 # Filter Data frames -------------------------------------------------------------
 esp_can_ccaa <- esp_can[,c("NATCODE", "ine.ccaa.name")]
 colors <- c("#43A2CA", "#7BCCC4", "#BAE4BC", "#F0F9E8",
@@ -190,7 +105,7 @@ colors <- c("#43A2CA", "#7BCCC4", "#BAE4BC", "#F0F9E8",
 ccaa = "Rioja, La" #"Asturias, Principado de" #"Cantabria"
 ggplot(PA_jap_ESP[which(PA_jap_ESP$ine.ccaa.name == ccaa),]) +
   geom_sf(aes(fill = as.factor(R0_sum_jap)), colour = NA) +
-  coord_sf(datum = NA) +
+  coord_sf(datum = NA) + 
   scale_fill_manual(values = colors,
                     name = "Nº months\n suitable",
                     limits = factor(seq(0,12,1))) +
@@ -235,11 +150,11 @@ for(i in c(1:length(list_ccaa))){
 }
 
 # Plot color related to ccaa ----------------------------------------
-ggplot(df_sum_CAT) +
+ccaa_jap <- ggplot(df_sum_CAT) +
   geom_line(aes(R0_sum_jap,prop_1, color =ccaa_n)) +
   geom_point(aes(R0_sum_jap,prop_1, color =ccaa_n,
                  size = sum_muni), alpha = 0.6) +
-  xlab("Nº months\n suitable") + 
+  xlab("Nº months suitable") + 
   ylab("Proportion of municipalities with presence") +
   ylim(c(0,1)) + 
   scale_color_discrete(name = "") +
@@ -259,11 +174,11 @@ df_group <- df_sum_CAT %>% group_by(R0_sum_jap) %>%
             num_0 = sum(num_0),
             prop_1 = sum(num_1)/(sum(num_0)+sum(num_1)),
             sum_muni = sum(sum_muni))
-ggplot(df_group) +
+jap_esp <- ggplot(df_group) +
   geom_line(aes(R0_sum_jap,prop_1)) +
   geom_point(aes(R0_sum_jap,prop_1,
                  size = sum_muni), alpha = 0.6) +
-  xlab("Nº months\n suitable") + 
+  xlab("Nº months suitable") + 
   ylab("Proportion of municipalities with presence") +
   ylim(c(0,1)) + 
   scale_size_continuous(name = "Number municipalities",
@@ -273,60 +188,47 @@ ggplot(df_group) +
   scale_x_continuous(breaks = seq(1,12,1)) +
   theme_bw() +
   theme(text = element_text(size = 14),
-        legend.position = c(0.2,0.6)) 
+        legend.position = c(0.3,0.6)) 
 
-# Plot num months min temp vs prop PA ------------------------------------------
-ccaa = "País Vasco"
-ccaa = "Cantabria"
-ccaa = "Asturias, Principado de"
-ccaa = "País Vasco"
+# european scale ----------------------------------------------------------
+clim_pop_df <- readRDS("~/INVASIBILITY_THRESHOLD/data/japonicus/pa/clim_pop_df.Rds")
+country_n <- unique(clim_pop_df[which(clim_pop_df$pa_jap == 1),"cntryName"])
+clim_pop_filt <- clim_pop_df[which(clim_pop_df$cntryName %in% country_n),]
+clim_pop_filt_g <- clim_pop_filt %>% group_by(jap) %>%
+  summarise(sum_1 = sum(pa_jap), n = n())
+clim_pop_filt_g$prop_pa <- clim_pop_filt_g$sum_1/clim_pop_filt_g$n
+prop_pres_jap <- ggplot(clim_pop_filt_g) + 
+  geom_point(aes(jap, prop_pa, size = n))+ 
+  geom_line(aes(jap, prop_pa)) + 
+  ylab("Proportion presence") +
+  xlab( "Nº months suitable") + 
+  scale_x_continuous(breaks = seq(0,12,1)) +
+  theme_bw() + scale_size_continuous(name = "Nº regions",
+                                     labels = c("[0,100)","[100,1000)",
+                                                "[1000,2000)","[2000,3000]",">3000"),
+                                     breaks = c(0,100,1000,2000,3000)) +
+  theme(legend.position = c(0.85,0.7),
+        text = element_text(size = 14))
 
-plot <- plot_sum_p_min(ccaa)
-Path <- paste0("~/Documentos/PHD/2023/INVASIBILITY/Plots/MS/JAP_PA_SUM_min_",
-               ccaa,".png")
-ggsave(Path, plot = plot)
 
-# Plot num months max temp vs prop PA ------------------------------------------
-ccaa = "País Vasco"
-ccaa = "Cantabria"
-ccaa = "Asturias, Principado de"
+# read presence absence data ------------------------------------------
+path <- "~/INVASIBILITY_THRESHOLD/data/japonicus/pa/status_2303.shp"
+pa_jap <- read_sf(path)
+pa_jap <- pa_jap[which(pa_jap$leave == 1),]
+pa_jap$pa_jap <- ifelse(pa_jap$japonicus != "absent" & 
+                          pa_jap$japonicus != "noData", 1,0)  
 
-plot <- plot_sum_p_max(ccaa)
-Path <- paste0("~/Documentos/PHD/2023/INVASIBILITY/Plots/MS/JAP_PA_SUM_max_",
-               ccaa,".png")
-ggsave(Path, plot = plot)
+list_eu <- unique(pa_jap$cntryName)[c(1:2,4,6,7:8,10:14,16,19:23,25:26,28:30,32:35,39:42,
+                           45:52,54:56,58:59,61,62,67,68,70,71)]
+pa_jap_eu <- pa_jap[which(pa_jap$cntryName %in% list_eu),]
+pa_jap_eu <- ggplot(pa_jap_eu) + 
+  geom_sf(aes(fill = as.factor(pa_jap)), color = NA) +
+  theme_minimal() + coord_sf(datum = NA) +
+  xlim(c(-20,40)) + ylim(c(25,70)) + 
+  scale_fill_manual(values = c("#D9EAF8","#377EB8"), name = " ") 
+pa_jap_eu
 
-# Plots with avg RM vs prop PA ------------------------------------------------
-### Range Annual average R0
-df_range <- function(df_pa_CAT){
-  df_pa_CAT$PA <- df_pa_CAT$Japonicus
-  df_pa_CAT$range <- ifelse(df_pa_CAT$R0_avg_jap  < 0.2, "<0.2",
-                            ifelse(df_pa_CAT$R0_avg_jap  >= 0.2 & df_pa_CAT$R0_avg_jap  < 0.4, "[0.2,0.4)",
-                                   ifelse(df_pa_CAT$R0_avg_jap  >= 0.4 & df_pa_CAT$R0_avg_jap  < 0.6, "[0.4,0.6)",
-                                          ifelse(df_pa_CAT$R0_avg_jap  >= 0.6 & df_pa_CAT$R0_avg_jap  < 0.8, "[0.6,0.8)",
-                                                 ifelse(df_pa_CAT$R0_avg_jap  >= 0.8 & df_pa_CAT$R0_avg_jap  < 1, "[0.8,1)",">1" )))))
-  df_r_1 <- df_pa_CAT[which(df_pa_CAT$PA == 1),] %>% 
-    group_by(range) %>% summarize(num_1 = n())
-  df_r_0 <- df_pa_CAT[which(df_pa_CAT$PA == 0),] %>% 
-    group_by(range) %>% summarize(num_0 = n())
-  
-  df_r <- df_r_1 %>% left_join(df_r_0)
-  df_r$prop_1 <- df_r$num_1/df_r$num_0
-  return(df_r)
-}
-
-# Histogram avg R0 Jap ---------------------------------------------------------
-hist(PA_jap_ESP[which(PA_jap_ESP$ine.ccaa.name == ccaa),"R0_avg_jap"])
-
-# Plot Diff CCAA ---------------------------------------------------------------
-ccaa = "País Vasco"
-ccaa = "Asturias, Principado de"
-ccaa = "Cantabria"
-df_ccaa <- df_range(PA_jap_ESP[which(PA_jap_ESP$ine.ccaa.name == ccaa),])
-plot <- ggplot(df_ccaa) + 
-  geom_point(aes(range, prop_1)) + theme_bw() + 
-  xlab("Range annual avg R_M") + ylab("Proportion municipalities positive Japonicus")
-Path <- paste0("~/Documentos/PHD/2023/INVASIBILITY/Plots/MS/JAP_PA_AVG_",
-               ccaa,".png")
-ggsave(Path, plot = plot)
-
+# create panel --------------------------------------------------------
+library(ggpubr)
+gg1 <- ggarrange(pa_jap_eu + ggtitle("A"),jap_esp + ggtitle("B"))
+ggarrange(gg1, ccaa_jap + ggtitle("C"), ncol = 1)

@@ -133,6 +133,24 @@ plotdeltaA <- ggplot(df_out_deltaA) +
 
 plotdeltaA 
 
+# add grey ribbon --------------------------------------------
+df_out_deltaA_w <- reshape(df_out_deltaA, idvar ="temp_ae" ,
+        timevar = "group", direction = "wide")
+
+plotdeltaA_w <- ggplot(df_out_deltaA_w, aes(x=temp_ae,y=deltaA_jap.min)) +
+  geom_line(aes(y=deltaA_jap.min), color = "grey", size = 0.7, alpha=0.5) +
+  geom_line(aes(y=deltaA_jap.max), color = "grey", size = 0.7, alpha=0.5) +
+  geom_line(aes(y=deltaA_jap.mean), color = "blue", size = 0.7) +
+  geom_ribbon(data = df_out_deltaA_w,aes(ymin=deltaA_jap.min,
+                  ymax=deltaA_jap.max), fill="grey", alpha=0.5) +
+  geom_point(data = Japonicus,aes(x = Temp,y = lifespan),
+             size = 0.9, color = "black") +
+  xlim(c(5,33)) +  ylim(c(-20,80)) + 
+  guides( color =FALSE, alpha = FALSE) +
+  ylab("Adult life span") + xlab("Temperature (Cº)") +
+  theme_bw() 
+plotdeltaA_w  
+
 ###----------------------------------------------
 # Path <- "~/INVASIBILITY_THRESHOLD/data/japonicus/japonicus_temp_developmenttime.csv"
 # developL <- read.csv(Path)
@@ -279,6 +297,25 @@ plotdE
 #   theme_bw()
 # 
 # plotdeltaA
+
+# add grey ribbon --------------------------------------------
+df_out_dE_w <- reshape(df_out_dE, idvar ="temp_ae" ,
+                           timevar = "group", direction = "wide")
+
+plotdEjap_w <- ggplot(df_out_dE_w, aes(x=temp_ae,y=dE_jap.min)) +
+  geom_line(aes(y=dE_jap.min), color = "grey", size = 0.7, alpha=0.5) +
+  geom_line(aes(y=dE_jap.max), color = "grey", size = 0.7, alpha=0.5) +
+  geom_line(aes(y=dE_jap.mean), color = "blue", size = 0.7) +
+  geom_ribbon(data = df_out_dE_w,aes(ymin=dE_jap.min,
+                                         ymax=dE_jap.max), fill="grey", alpha=0.5) +
+  geom_point(data = developL,aes(Temp,First_instar_mean),
+             size = 0.9, color = "black") +
+  xlim(c(5,36)) + ylim(c(0,0.7)) + 
+  guides( color =FALSE, alpha = FALSE) +
+  ylab("Develop rate from Egg to Larva") + xlab("Temperature (Cº)") +
+  theme_bw()
+plotdEjap_w  
+
 #--------------------------------------------------------
 # Paper Germany:
 Path <- "~/INVASIBILITY_THRESHOLD/data/japonicus/adult_larva_lifespan.csv"
@@ -395,6 +432,25 @@ plotdL <- ggplot(df_out_dL) +
   xlab("Temperature (Cº)") + ylab("Develop rate from Egg to Larva") + xlab("Temperature (Cº)") +
   theme_bw()
 plotdL
+
+# add grey ribbon --------------------------------------------
+df_out_dL_w <- reshape(df_out_dL, idvar ="temp_ae" ,
+                       timevar = "group", direction = "wide")
+
+plotdL_w <- ggplot(df_out_dL_w, aes(x=temp_ae,y=dL_jap.min)) +
+  geom_line(aes(y=dL_jap.min), color = "grey", size = 0.7, alpha=0.5) +
+  geom_line(aes(y=dL_jap.max), color = "grey", size = 0.7, alpha=0.5) +
+  geom_line(aes(y=dL_jap.mean), color = "blue", size = 0.7) +
+  geom_ribbon(data = df_out_dL_w,aes(ymin=dL_jap.min,
+                                     ymax=dL_jap.max), fill="grey", alpha=0.5) +
+  geom_point(data = Japonicus,aes(Temp,FemaledL),
+             size = 0.9, color = "black") +
+  xlim(c(0,45)) + 
+  ylab("Develop rate from Larva to Adult") +
+  guides(color = FALSE, alpha = FALSE) +
+  xlab("Temperature (Cº)") + ylab("Develop rate from Egg to Larva") + xlab("Temperature (Cº)") +
+  theme_bw()
+plotdL_w 
 
 ###----------------------------------------------
 ## Paper Germany:
@@ -517,6 +573,24 @@ plotdeltaL <- ggplot(df_out_deltaL) +
   theme_bw()
 plotdeltaL
 
+# add grey ribbon --------------------------------------------
+df_out_deltaL_w <- reshape(df_out_deltaL, idvar ="temp_ae" ,
+                       timevar = "group", direction = "wide")
+
+plotdeltaL_w <- ggplot(df_out_deltaL_w, aes(x=temp_ae,y=deltaL_jap.min)) +
+  geom_line(aes(y=deltaL_jap.min), color = "grey", size = 0.7, alpha=0.5) +
+  geom_line(aes(y=deltaL_jap.max), color = "grey", size = 0.7, alpha=0.5) +
+  geom_line(aes(y=deltaL_jap.mean), color = "blue", size = 0.7) +
+  geom_ribbon(data = df_out_deltaL_w,aes(ymin=deltaL_jap.min,
+                                     ymax=deltaL_jap.max), fill="grey", alpha=0.5) +
+  geom_point(data = Lmortality,aes(Temp,mean_mort_perc),
+             size = 0.9, color = "black") +
+  ylab("Larva mortality rate") + xlab("Temperature (Cº)") +
+  xlim(c(5,35)) + ylim(c(-0.6,2.3)) + 
+  guides(color = FALSE, alpha = FALSE) +
+  theme_bw()
+plotdeltaL_w 
+
 ###----------------------------------------------
 library(ggpubr)
 sizelet = 14
@@ -630,6 +704,25 @@ plotaeg <- ggplot(df_out_aeg) +
   theme_bw() 
 plotaeg
 
+# add ribbon -----------------------------------------------------
+df_out_aeg_w <- reshape(df_out_aeg, idvar ="temp_ae" ,
+                           timevar = "group", direction = "wide")
+
+plotaeg_w <- ggplot(df_out_aeg_w, aes(x=temp_ae,y=life_span_ae.min)) +
+  geom_line(aes(y=life_span_ae.min), color = "grey", size = 0.7, alpha=0.5) +
+  geom_line(aes(y=life_span_ae.max), color = "grey", size = 0.7, alpha=0.5) +
+  geom_line(aes(y=life_span_ae.mean), color = "blue", size = 0.7) +
+  geom_ribbon(data = df_out_aeg_w,aes(ymin=life_span_ae.min,
+                                         ymax=life_span_ae.max), fill="grey",
+              alpha=0.5) +
+  geom_point(data = df_aeg,aes(temp,proportion_surv),
+             size = 0.9, color = "black") +
+  xlim(c(5,42)) + ylim(c(0,1.3)) +
+  guides( color =FALSE, alpha = FALSE) +
+  ylab("Development rate from Larvae to Adult") + xlab("Temperature (Cº)") +
+  theme_bw() 
+plotaeg_w 
+
 # Data frame data taken from Delatte et al 2009. 
 # https://academic.oup.com/jme/article/46/1/33/902827?login=false
 df_albo <- data.frame(temp = c(5,10,15,20,25,30,35,40),
@@ -730,6 +823,25 @@ plotalb <- ggplot(df_alb) +
   ylab("Prob from Larva to Adult") + xlab("Temperature (Cº)") +
   theme_bw() 
 plotalb
+
+# add ribbon -----------------------------------------------------
+df_alb_w <- reshape(df_alb, idvar ="temp" ,
+                        timevar = "group", direction = "wide")
+
+plotalb_w <- ggplot(df_alb_w, aes(x=temp,y=life_span.min)) +
+  geom_line(aes(y=life_span.min), color = "grey", size = 0.7, alpha=0.5) +
+  geom_line(aes(y=life_span.max), color = "grey", size = 0.7, alpha=0.5) +
+  geom_line(aes(y=life_span.mean), color = "blue", size = 0.7) +
+  geom_ribbon(data = df_alb_w,aes(ymin=life_span.min,
+                                      ymax=life_span.max), fill="grey",
+              alpha=0.5) +
+  geom_point(data = df_albo,aes(temp,proportion_surv),
+             size = 0.9, color = "black") +
+  xlim(c(5,40)) +
+  guides( color =FALSE, alpha = FALSE) +
+  ylab("Prob from Larva to Adult") + xlab("Temperature (Cº)") +
+  theme_bw() 
+plotalb_w 
 
 # Join all the plots in one figure
 library(ggpubr)
@@ -853,6 +965,25 @@ plotdE <- ggplot(df_out) +
 
 plotdE 
 
+# add ribbon -----------------------------------------------------
+df_out_w <- reshape(df_out, idvar ="temp" ,
+                    timevar = "group", direction = "wide")
+df_out_w$devep_rate.min <- ifelse(is.na(df_out_w$devep_rate.min),0, df_out_w$devep_rate.min)
+plotdE_w <- ggplot(df_out_w, aes(x=temp,y=devep_rate.max)) +
+  geom_line(aes(y=devep_rate.min), color = "grey", size = 0.7, alpha=0.5) +
+  geom_line(aes(y=devep_rate.max), color = "grey", size = 0.7, alpha=0.5) +
+  geom_line(aes(y=devep_rate.mean), color = "blue", size = 0.7) +
+  geom_ribbon(data = df_out_w,aes(ymin=devep_rate.max,
+                                  ymax=devep_rate.min), fill="grey",
+              alpha=0.5) +
+  geom_point(data = df_dE, aes(temp,develop_rate),
+             size = 0.9, color = "black") +
+  xlim(c(5,40)) +  
+  guides( color =FALSE, alpha = FALSE) +
+  ylab("Egg development time") + xlab("Temperature (Cº)") +
+  theme_bw() 
+plotdE_w 
+
 ### --------------Development Egg Aegypti -----------------------#
 ## https://pubmed.ncbi.nlm.nih.gov/19274388/
 # df_dE_aeg <- data.frame(temp=c(16,22,25,28,31,35),
@@ -969,44 +1100,63 @@ plotdE_aeg <- ggplot(df_out_aeg) +
   theme_bw()
 plotdE_aeg
 
+# add ribbon -----------------------------------------------------
+df_out_aeg_w <- reshape(df_out_aeg, idvar ="temp" ,
+                    timevar = "group", direction = "wide")
+df_out_aeg_w$devep_rate.min <- ifelse(is.na(df_out_aeg_w$devep_rate.min),0, df_out_aeg_w$devep_rate.min)
+plotdE_aeg_w <- ggplot(df_out_aeg_w, aes(x=temp,y=devep_rate.max)) +
+  geom_line(aes(y=devep_rate.min), color = "grey", size = 0.7, alpha=0.5) +
+  geom_line(aes(y=devep_rate.max), color = "grey", size = 0.7, alpha=0.5) +
+  geom_line(aes(y=devep_rate.mean), color = "blue", size = 0.7) +
+  geom_ribbon(data = df_out_aeg_w,aes(ymin=devep_rate.max,
+                                  ymax=devep_rate.min), fill="grey",
+              alpha=0.5) +
+  geom_point(data =  df_dE_aeg, aes(temp,develop_rate),
+             size = 0.8, color = "black") +
+  xlim(c(5,40)) +
+  guides( color =FALSE, alpha = FALSE) +
+  ylab("Egg development time") + xlab("Temperature (Cº)") +
+  theme_bw()
+plotdE_aeg_w 
+
 # Join thermal responses all species --------------------
 library(latex2exp)
 sizelet = 12
-ggarrange( plotdE  +
+ggarrange( plotdEjap_w  +
              theme(text = element_text(size = sizelet)) +
              xlab("") +
              ylab(TeX("Egg development rate, $d_E$")) + 
              ggtitle(expression(italic("Ae. japonicus"))) +
              theme(text = element_text(size = sizelet)),
-           plotdL +
+           plotdL_w +
              theme(text = element_text(size = sizelet)) +
              ylab(TeX("Larva development rate, $d_L$")) +
              xlab("") +
              ggtitle(expression(italic("Ae. japonicus"))) +
              theme(text = element_text(size = sizelet)),
-           plotalb  +
+           plotalb_w  +
              theme(text = element_text(size = sizelet)) +
              ylab(TeX("Prob. from Larva to Adult, $p_{LA}$")) +
              xlab("") + ylim(c(0,1.3)) +
              ggtitle(expression(italic("Ae. albopictus"))) +
              ylab(TeX("Prob. from Larva to Adult, $p_{LA}$"))+ 
              theme(text = element_text(size = sizelet)),
-           plotaeg  + 
+           plotaeg_w  + 
              theme(text = element_text(size = sizelet)) +
              ylab(TeX("Prob. from Larva to Adult, $p_{LA}$")) +
              xlab("") + ylim(c(0,1.3))  +
              ggtitle(expression(italic("Ae. aegypti"))) +
              theme(text = element_text(size = sizelet)),
-           plotdeltaL + ylim(c(0,1.3)) +
-             ylab(TeX("Larva mortality rate, $\delta_L$"))+
+           plotdeltaL_w +
+             ylab(TeX("Larva mortality rate, $\\delta_L$"))+
              theme(text = element_text(size = sizelet)),
-           plotdeltaA  +
-             ylab(TeX("Adult mortality rate, $\delta_A$"))+
+           plotdeltaA_w  +
+             ylab(TeX("Adult life span, $lf$"))+
              theme(text = element_text(size = sizelet)),
-           plotdE + ylim(c(0,0.55)) +
+           plotdE_w + 
              ylab(TeX("Egg development rate, $d_E$")) +
              theme(text = element_text(size = sizelet)),
-           plotdE_aeg + ylim(c(0,0.55)) + ylab("") +
+           plotdE_aeg_w + ylim(c(0,0.55)) + ylab("") +
              ylab(TeX("Egg development rate, $d_E$")) +
              theme(text = element_text(size = sizelet)),
            ncol = 4, nrow = 2)
