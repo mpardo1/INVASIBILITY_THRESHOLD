@@ -12,7 +12,7 @@ Path <- "~/INVASIBILITY_THRESHOLD/data/japonicus/adult_larva_lifespan.csv"
 Japonicus <- read.csv(Path)
 
 head(Japonicus)
-Japonicus$lifespan <- Japonicus$Age_adult_death_mean.1 
+Japonicus$lifespan <- Japonicus$Age_adult_death_mean.1  
 plot_deltaA <- ggplot(Japonicus) + 
   geom_point(aes(Temp,lifespan)) + theme_bw()
 plot_deltaA
@@ -175,9 +175,10 @@ plotdeltaA_w
 # developL$First_instar_mean <- 1/developL$First_instar_mean
 
 ###### Random sample from a gaussian distribution, since if we take the mean
-# thre are only 4 points in the data, and the fit it is overfitting
+# there are only 4 points in the data, and the fit it is overfitting
 # We do it once since each iteration the curves are different. So we save the random sample.
-
+# tiene sentido como lo estoy congiendo por que si ves el texto asociado pone que
+# first instar es desde huevo a first instar, es decir cuanto tarda en hatch.
 developL <- readRDS( "~/INVASIBILITY_THRESHOLD/data/japonicus/developL.Rds")
 
 plot_dE <- ggplot(developL) + 
@@ -322,14 +323,18 @@ Path <- "~/INVASIBILITY_THRESHOLD/data/japonicus/adult_larva_lifespan.csv"
 Japonicus <- read.csv(Path)
 head(Japonicus)
 ## Aunque ponga male es female
-Japonicus$FemaledL <- 1/Japonicus$Age_emergence_male_mean.1
+# Coger esta variable tiene sentido por que en el experimento cuentan como dia cero
+# cuando la larva tiene como maximo 24h. Es decir este tiempo es de larva a adulto
+Japonicus$FemaledL <- 1/(Japonicus$Age_emergence_female_mean) 
+Japonicus <- Japonicus[,c("Temp","FemaledL")]
 # Thesis Jamesina
+# Japonicus <- data.frame(Temp <- numeric(), FemaledL <- numeric())
 Japonicus <- rbind(Japonicus, c(10,1/140.8))
 Japonicus <- rbind(Japonicus, c(16,1/84))
 Japonicus <- rbind(Japonicus, c(22,1/31.3))
 Japonicus <- rbind(Japonicus, c(28,1/17))
 Japonicus <- rbind(Japonicus, c(34,0))
-
+colnames(Japonicus) <-  c("Temp", "FemaledL")
 plot_dL <- ggplot(Japonicus) + 
   geom_point(aes(Temp,FemaledL)) + theme_bw()
 plot_dL
@@ -854,38 +859,46 @@ ggarrange(plotalb  + ggtitle("Aedes Albopictus") +
 
 #--------------------Egg Development Aedes Albopictus--------------------#
 # ## Info taken Table1: https://www.scielo.br/j/rsp/a/dvPQ8QMr7Y687hPJxsTxjDg/abstract/?lang=en
-# df_deltaE <- data.frame(temp = c(15,20,25,30),
-#                      develop_rate_mu = c(38.38,19.09,
-#                                       13.10,10.44),
-#                      develop_rate_sd = c(6.25,5.7,8.37,6.18)
-#                      )
-# 
-# n = 8
-# r1 <- rnorm(n, df_deltaE$develop_rate_mu[1],
-#             df_deltaE$develop_rate_sd[1] )
-# r2 <- rnorm(n, df_deltaE$develop_rate_mu[2],
-#             df_deltaE$develop_rate_sd[2] )
-# r3 <- rnorm(n, df_deltaE$develop_rate_mu[3],
-#             df_deltaE$develop_rate_sd[3] )
-# r4 <- rnorm(n, df_deltaE$develop_rate_mu[4],
-#             df_deltaE$develop_rate_sd[4] )
-# 
-# df_deltaE <- data.frame(temp = sort(rep(df_deltaE[,1],n)),
-#                         develop_rate = c(r1,r2,r3,r4))
-# 
-# df_deltaE$develop_rate <- 1/df_deltaE$develop_rate
-# saveRDS(df_dE, "~/INVASIBILITY_THRESHOLD/data/df_dE.Rds")
+df_dE <- data.frame(temp = c(5,15,20,25,30,35),
+                     develop_rate_mu = c(11,7.4,2.9,4.5,6.7,7.1),
+                     develop_rate_sd = c(1.3,1.8,0.4,0.7,0.7,0.8)
+                     )
 
-###### Random sample from a gaussian distribution, since if we take the mean
+n = 8
+r1 <- rnorm(n, df_dE$develop_rate_mu[1],
+            df_dE$develop_rate_sd[1] )
+r2 <- rnorm(n, df_dE$develop_rate_mu[2],
+            df_dE$develop_rate_sd[2] )
+r3 <- rnorm(n, df_dE$develop_rate_mu[3],
+            df_dE$develop_rate_sd[3] )
+r4 <- rnorm(n, df_dE$develop_rate_mu[4],
+            df_dE$develop_rate_sd[4] )
+r5 <- rnorm(n, df_dE$develop_rate_mu[5],
+            df_dE$develop_rate_sd[5] )
+r6 <- rnorm(n, df_dE$develop_rate_mu[6],
+            df_dE$develop_rate_sd[6] )
+
+df_dE <- data.frame(temp = sort(rep(df_dE[,1],n)),
+                        develop_rate = c(r1,r2,r3,r4,r5,r6))
+
+df_dE$develop_rate <- 1/df_dE$develop_rate
+saveRDS(df_dE, "~/INVASIBILITY_THRESHOLD/data/df_dE.Rds")
+
+###### Random sample from a Gaussian distribution, since if we take the mean
 # thre are only 4 points in the data, and the fit it is overfitting
 # We do it once since each iteration the curves are different. So we save the random sample.
 df_dE <- readRDS( "~/INVASIBILITY_THRESHOLD/data/df_dE.Rds")
-
+df_dE$develop_rate
 plot_dE <- ggplot(df_dE) + 
   geom_point(aes(temp,develop_rate)) + theme_bw()
 plot_dE
 
-Fitting_dE <- nls(develop_rate ~ c*temp*(temp-c1)*(c2-temp)^(1/2),
+# Fitting_dE <- nls(develop_rate ~ c*temp*(temp-c1)*(c2-temp)^(1/2),
+#                   data = df_dE,
+#                   start = list(c = 0.001, c1 = 5 , c2 = 30))
+
+
+Fitting_dE <- nls(develop_rate ~ c*(temp-c1)*(temp - c2),
                   data = df_dE,
                   start = list(c = 0.001, c1 = 5 , c2 = 30))
 
@@ -903,7 +916,8 @@ mod <- function(te){
   c <- as.numeric(Fitting_dE$m$getPars()[1])
   c1 <- as.numeric(Fitting_dE$m$getPars()[2])
   c2 <- as.numeric(Fitting_dE$m$getPars()[3])
-  c*te*(te-c1)*(c2-te)^(1/2)
+  # c*te*(te-c1)*(c2-te)^(1/2)
+  c*(te-c1)*(te-c2)
 }
 
 vec <- seq(5,40,0.01)
@@ -920,7 +934,8 @@ mod_min <- function(te){
     summary(Fitting_dE)$coefficients[2,2]
   c2 <- as.numeric(Fitting_dE$m$getPars()[3]) - 
     summary(Fitting_dE)$coefficients[3,2]
-  c*te*(te-c1)*(c2-te)^(1/2)
+  # c*te*(te-c1)*(c2-te)^(1/2)
+  c*(te-c1)*(te-c2)
 }
 
 df_out_min <- data.frame(temp = vec,
@@ -936,7 +951,8 @@ mod_max <- function(te){
     summary(Fitting_dE)$coefficients[2,2]
   c2 <- as.numeric(Fitting_dE$m$getPars()[3]) + 
     summary(Fitting_dE)$coefficients[3,2]
-  c*te*(te-c1)*(c2-te)^(1/2)
+  # c*te*(te-c1)*(c2-te)^(1/2)
+  c*(te-c1)*(te-c2)
 }
 
 df_out_max <- data.frame(temp = vec, 

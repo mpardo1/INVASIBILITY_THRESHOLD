@@ -33,6 +33,8 @@ can_box <- esp_get_can_box()
 esp_can$NATCODE <- as.numeric(paste0("34",esp_can$codauto,
                                      esp_can$cpro,
                                      esp_can$LAU_CODE))
+# esp_can$cpro <- as.numeric(esp_can$cpro)
+# write_sf(esp_can, "~/Dengue/data/esp_muni.shp")
 df_group$month <- lubridate::month(df_group$date)
 
 # check rainfall ----------------------------------------------------
