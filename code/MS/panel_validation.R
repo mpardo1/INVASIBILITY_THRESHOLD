@@ -152,10 +152,10 @@ plot_counts <- ggplot(data = trap_data_filt) +
             aes(vec , out, color = cit),
             lwd = 0.8) +
   scale_color_manual(values = pal,
-                     labels = c(TeX("Blanes, $R^2$: 0.38 "),
-                                TeX("Lloret de Mar, $R^2$: 0.58"),
+                     labels = c(TeX("Blanes, $R^2$: 0.37 "),
+                                TeX("Lloret de Mar, $R^2$: 0.59"),
                                 TeX("Palafolls, $R^2$: 0.32"),
-                                TeX("Tordera, $R^2$: 0.32")),
+                                TeX("Tordera, $R^2$: 0.31")),
                      name = "") +
   xlab(TeX("$R_M$")) +
   ylab("Number of females (ln)") +
@@ -242,6 +242,13 @@ df_pa[which(df_pa$name == "Moaña"), "PA"] <- 1
 df_pa[which(df_pa$name == "Vigo"), "PA"] <- 1
 df_pa[which(df_pa$name == "Redondela"), "PA"] <- 1
 
+# Read csv OCT PA
+Path = "~/INVASIBILITY_THRESHOLD/data/PA/ALBO_PA_2023_OCT.csv"
+df_pa <- read.csv(Path)
+df_pa$PA <- ifelse(df_pa$A_PRIM_DET_OFICIAL != 0 |
+                     df_pa$A_PRIM_DET_CITSCI != 0,1,0)
+write.csv(df_pa, "~/INVASIBILITY_THRESHOLD/data/PA/ALBO_PA_102023.csv")
+
 # Map Spain --------------------------------------------------------------------
 esp_can <- esp_get_munic_siane(moveCAN = TRUE)
 esp_can$NATCODE <- as.numeric(paste0("34",
@@ -257,11 +264,31 @@ gir_star <- as.data.frame(st_centroid(esp_can[which(esp_can$name == "Blanes"),"g
 lonlat_gir <- gir_star %>%
   mutate(long = unlist(map(gir_star$geometry,1)),
          lat = unlist(map(gir_star$geometry,2)))
-PA_alb <- ggplot(df_pa) +
-  geom_sf(aes(fill = as.factor(PA)), color = NA) +
+
+# map ccaa spain -----------------------------------------------------------
+ccaa <- esp_get_ccaa(ccaa = c(
+  "Catalunya",
+  "Comunidad Valenciana",
+  "Aragón",
+  "País Vasco","Andalucía"
+))
+
+# create palette -------------------------------------------------------------
+name_pal = "Set1"
+display.brewer.pal(6, name_pal)
+pal <- brewer.pal(6, name_pal)
+pal <- pal[c(1,3:6)]
+PA_alb <- ggplot() +
+  geom_sf(data =df_pa, aes(fill = as.factor(PA)), color = NA) +
+  geom_sf(data = ccaa,
+          aes(fill = codauto, color = codauto),
+          alpha = 0, lwd = 0.5) +
   geom_sf(data = can_box) + coord_sf(datum = NA) +
+  scale_color_manual(values = pal, name = " ",guide = "none") +
   theme_minimal() +
-  scale_fill_manual(values = c("#D9EAF8","#377EB8"), name = " ") +
+  scale_fill_manual(values = c("#D9EAF8","#377EB8","#377EB8","#377EB8",
+                               "#377EB8","#377EB8","#377EB8"),
+                    name = " ", limits = c("0","1")) +
   geom_point(data = lonlat_gir, aes(long,lat),
              color = "red", shape = 8) +
   rremove("xlab") + rremove("ylab") +
@@ -304,56 +331,6 @@ df_num_months <- function(df_pa_CAT){
   
 }
 
-# Prop presence df min temp ------------------------------------------
-df_num_months_min <- function(df_pa_CAT){
-  df_r_1 <- df_pa_CAT[which(df_pa_CAT$PA == 1),] %>% 
-    group_by(R0_sum_alb_min) %>% summarize(num_1 = n())
-  df_r_0 <- df_pa_CAT[which(df_pa_CAT$PA == 0),] %>% 
-    group_by(R0_sum_alb_min) %>% summarize(num_0 = n())
-  
-  df_r <- merge(df_r_1 ,df_r_0,
-                all.x = TRUE, all.y = TRUE)
-  df_r$prop_1 <- ifelse(is.na(df_r$num_0),1,
-                        ifelse(is.na(df_r$num_1),
-                               0,df_r$num_1/(df_r$num_1+df_r$num_0)))
-  df_r$num_1 <- ifelse(is.na(df_r$num_1),0,df_r$num_1)
-  df_r$num_0 <- ifelse(is.na(df_r$num_0),0,df_r$num_0)
-  df_r$sum_muni <- df_r$num_1 + df_r$num_0
-  return(df_r)
-}
-
-# Prop presence df max temp ------------------------------------------
-df_num_months_max <- function(df_pa_CAT){
-  df_r_1 <- df_pa_CAT[which(df_pa_CAT$PA == 1),] %>% 
-    group_by(R0_sum_alb_max) %>% summarize(num_1 = n())
-  df_r_0 <- df_pa_CAT[which(df_pa_CAT$PA == 0),] %>% 
-    group_by(R0_sum_alb_max) %>% summarize(num_0 = n())
-  
-  df_r <- merge(df_r_1 ,df_r_0, all.x = TRUE, all.y = TRUE)
-  df_r$prop_1 <- ifelse(is.na(df_r$num_0),1,
-                        ifelse(is.na(df_r$num_1),
-                               0,df_r$num_1/(df_r$num_1+df_r$num_0)))
-  df_r$num_1 <- ifelse(is.na(df_r$num_1),0,df_r$num_1)
-  df_r$num_0 <- ifelse(is.na(df_r$num_0),0,df_r$num_0)
-  df_r$sum_muni <- df_r$num_1 + df_r$num_0
-  return(df_r)
-}
-
-# Prop presence df avg R0 ------------------------------------------
-df_avg_months <- function(df_pa_CAT){
-  df_r_1 <- df_pa_CAT[which(df_pa_CAT$PA == 1),] %>% 
-    group_by(R0_rang_alb) %>% summarize(num_1 = n())
-  df_r_0 <- df_pa_CAT[which(df_pa_CAT$PA == 0),] %>% 
-    group_by(R0_rang_alb) %>% summarize(num_0 = n())
-  
-  df_r <- merge(df_r_1 ,df_r_0, all.x = TRUE, all.y = TRUE)
-  df_r$prop_1 <- ifelse(is.na(df_r$num_0),1,
-                        ifelse(is.na(df_r$num_1),
-                               0,df_r$num_1/(df_r$num_1+df_r$num_0)))
-  df_r$sum_muni <- df_r$num_1 + df_r$num_0
-  return(df_r)
-}
-
 # Filter df -----------------------------------------------------
 df_pa <- df_pa[, c("NATCODE", "PA")]
 df_pa$geometry <- NULL
@@ -380,46 +357,6 @@ plot_sum_p <- function(ccaa){
     ylab("Proportion of municipalities with presence") +
     ylim(c(0,1)) +
     ggtitle(ccaa) +    
-    scale_x_continuous(breaks = seq(1,12,1)) +
-    theme_bw()
-}
-
-# Func to compute plot PA prop vs summonths max temp ----------------
-plot_sum_p_max <- function(ccaa){
-  NATCODE_CAT <- esp_can[which(esp_can$ine.ccaa.name == ccaa),"NATCODE"]
-  NATCODE_CAT$geometry <- NULL
-  df_pa_CAT <- df_pa[which(as.numeric(df_pa$NATCODE) %in% 
-                             as.numeric(NATCODE_CAT$NATCODE)),]
-  
-  df_sum_CAT <- df_num_months_max(df_pa_CAT)
-  df_sum_CAT$ccaa <- ccaa
-  
-  ggplot(df_sum_CAT) +
-    geom_point(aes(R0_sum_alb_max,prop_1)) +
-    xlab("Nº months suitable") + 
-    ylab("Proportion of municipalities with presence") +
-    ylim(c(0,1)) +
-    ggtitle(ccaa) +    
-    scale_x_continuous(breaks = seq(1,12,1)) +
-    theme_bw()
-}
-
-# Func to compute plot PA prop vs summonths -----------------------
-plot_sum_p_min <- function(ccaa){
-  NATCODE_CAT <- esp_can[which(esp_can$ine.ccaa.name == ccaa),"NATCODE"]
-  NATCODE_CAT$geometry <- NULL
-  df_pa_CAT <- df_pa[which(as.numeric(df_pa$NATCODE) %in% 
-                             as.numeric(NATCODE_CAT$NATCODE)),]
-  
-  df_sum_CAT <- df_num_months_min(df_pa_CAT)
-  df_sum_CAT$ccaa <- ccaa
-  
-  ggplot(df_sum_CAT) +
-    geom_point(aes(R0_sum_alb_min,prop_1)) +
-    xlab("Nº months suitable") + 
-    ylab("Proportion of municipalities with presence") +
-    ylim(c(0,1)) +
-    ggtitle(ccaa) +  
     scale_x_continuous(breaks = seq(1,12,1)) +
     theme_bw()
 }
@@ -451,7 +388,7 @@ for(i in c(1:length(list_ccaa))){
 # Plot color related to ccaa ----------------------------------------
 name_pal = "Set1"
 display.brewer.pal(length(list_ccaa), name_pal)
-pal <- rev(brewer.pal(length(list_ccaa), name_pal))
+# pal <- rev(brewer.pal(length(list_ccaa), name_pal))
 plot_ccaa <- ggplot(df_sum_CAT) +
   geom_line(aes(R0_sum_alb,prop_1, color =ccaa_n)) +
   geom_point(aes(R0_sum_alb,prop_1, color =ccaa_n,
@@ -469,7 +406,7 @@ plot_ccaa <- ggplot(df_sum_CAT) +
                                   ">100")) +
   scale_x_continuous(breaks = seq(1,12,1)) +
   theme_bw() +
-  theme(legend.position = c(0.17,0.55),
+  theme(legend.position = c(0.17,0.6),
         text = element_text(size = 14)) 
 plot_ccaa
 
@@ -528,40 +465,6 @@ plot_esp
 NATCODE_CAT$geometry <- NULL
 df_pa_CAT <- df_pa[which(df_pa$ine.ccaa.name == "Cataluña"),]
 
-# Compute df with prop PA --------------------------------------------
-df_sum_CAT <- data.frame()
-df_mean <- df_num_months(df_pa_CAT)
-df_min <- df_num_months_min(df_pa_CAT)
-df_max <- df_num_months_max(df_pa_CAT)
-df_mean$temp <- "Mean temp"
-df_min$temp <- "Min temp"
-colnames(df_min)[1] <- "R0_sum_alb"
-df_max$temp <- "Max temp"
-colnames(df_max)[1] <- "R0_sum_alb"
-df_sum_CAT <- rbind(df_mean,df_min,df_max)
-
-# Plot color related to temp min max o mean ---------------------------------
-name_pal = "Set1"
-display.brewer.pal(3, name_pal)
-pal <- rev(brewer.pal(3, name_pal))
-plot_min_max <- ggplot(df_sum_CAT) +
-  geom_line(aes(R0_sum_alb,prop_1, color =temp)) +
-  geom_point(aes(R0_sum_alb,prop_1, color =temp,
-                 size = sum_muni), alpha = 0.6) +
-  xlab("Nº months suitable") + 
-  ylab("Proportion of municipalities with presence") +
-  ylim(c(0,1)) + 
-  scale_color_manual(name = "", values = pal) +
-  scale_size_continuous(name = "Number municipalities",
-                        breaks = c(5,100,200),
-                        labels =c("<5","[5,200]",
-                                  ">200")) +
-  scale_x_continuous(breaks = seq(1,12,1)) +
-  theme_bw() +
-  theme(legend.position = c(0.73,0.2),
-        legend.box = "horizontal",
-        text = element_text(size = 14)) 
-
 library(ggpubr)
 leg <- get_legend(plot_2020)
 as_ggplot(leg)
@@ -576,6 +479,7 @@ ggarr1 <- ggarrange(plot_ccaa+ ggtitle("C"),
                    plot_counts + ggtitle("D"),
                    widths = c(1.2,1),
                    ncol = 2, nrow = 1)
+library(ggpubr)
 ggarrange(ggarr, ggarr1, ncol = 1)
 ggarrange(ggarr ,
           plot_ccaa+ ggtitle("C"),
@@ -583,7 +487,9 @@ ggarrange(ggarr ,
           ncol = 1, nrow = 3, heights = c(1,1,1))
 
 ggarrange(ggarr,
-          plot_ccaa + ylab("Proportion presence")+ ggtitle("C"),
-          plot_min_max + ylab("Proportion presence")+ ggtitle("D"),
+          plot_ccaa + ylab("Proportion presence")
+          + ggtitle("C"),
+          plot_min_max + ylab("Proportion presence")
+          + ggtitle("D"),
           ncol = 1, nrow = 3)
 

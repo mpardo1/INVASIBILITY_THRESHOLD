@@ -36,7 +36,15 @@ plot_temp <- ggplot(df_out) +
   theme_bw() + theme(legend.position = c(0.18,0.75),
                      text = element_text(size = letsize),
                      legend.text.align = 0)
-
+# 
+# ggplot(df_out[which(df_out$variable == "albopictus"),]) + 
+#   geom_line(aes(vec,value), size = 1) +
+#   geom_hline(yintercept = 1, linetype = "dashed", color = "red") +
+#   ylab(TeX("$R_M$")) + theme_bw() +
+#   theme(legend.position = c(0.18,0.75),
+#         text = element_text(size = letsize),
+#         legend.text.align = 0) + 
+#   ggtitle(expression(italic("Ae. albopictus")))
 # checks for the text :
 esp = "albopictus"
 min(df_out[which(df_out$variable == esp &

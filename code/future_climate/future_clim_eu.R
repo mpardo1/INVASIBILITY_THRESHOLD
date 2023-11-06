@@ -21,7 +21,7 @@ SHP_0 <- get_eurostat_geospatial(resolution = 10,
 # path = 'tmpr_245'  path = 'tmpr_370'  path = 'tmpr_585'
 # (optimistic: SSP245; middle of the road: SSP370; and pessimistic: SSP585)
 dataset = 'ACCESS-CM2'
-path_dir <-'tmpr_2080'
+path_dir <-'tmpr_2060_370'
 ssp = '370'
 time = '2061-2080'
 prec_w <- geodata::cmip6_world(model = dataset,
@@ -83,6 +83,7 @@ pop <- terra::extract(pop_eu,
                          grid_points, xy =TRUE)
 pop <- pop[,c(1:2)]
 colnames(pop) <- c("id", "pop")
+
 # Join all df -------------------------------------------
 clim_df <- setDT(tmin_w) %>% left_join(setDT(tmax_w))
 rm(tmin_w,tmax_w)
@@ -151,7 +152,7 @@ alb <- ggplot(clim_df) +
                     limits = factor(seq(0,12,1)),
                     na.value = "white") +
   ylim(c(25,75)) + xlim(c(-30,40)) +
-  ggtitle("Aedes albopictus 2061-2080") +
+  ggtitle("Aedes albopictus 2041-2060") +
   xlab("") + ylab("") +
   theme_minimal() +
   theme(plot.title = element_text(hjust = 0.5,
@@ -170,7 +171,7 @@ alb <- ggplot(clim_df) +
     axis.ticks.margin = unit(0, "null"),
     legend.text = element_text(14) ) +
   guides(fill = guide_legend(nrow = 1),
-         label.position = "top")
+         label.position = "right")
 
 aeg <- ggplot(clim_df, aes(x = lon, y = lat,
                     fill = as.factor(sum_aeg))) +
@@ -181,7 +182,7 @@ aeg <- ggplot(clim_df, aes(x = lon, y = lat,
                     na.value = "white")+
   xlab("") + ylab("") +
   ylim(c(25,75)) + xlim(c(-30,40)) +
-  ggtitle("Aedes aegypti 2061-2080") +
+  ggtitle("Aedes aegypti 2041-2060") +
   theme_minimal() +
   theme(plot.title = element_text(hjust = 0.5,
                                   face = "italic"),
@@ -211,7 +212,7 @@ jap <- ggplot(clim_df, aes(x = lon, y = lat,
                     limits = factor(seq(0,12,1)),
                     na.value = "white")+
   ylim(c(25,75)) + xlim(c(-30,40)) +
-  ggtitle("Aedes japonicus 2061-2080") +
+  ggtitle("Aedes japonicus 2041-2060") +
   theme_minimal() +
   theme(plot.title = element_text(hjust = 0.5,
                                   face = "italic"),

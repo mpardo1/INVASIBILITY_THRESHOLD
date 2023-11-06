@@ -98,7 +98,7 @@ clim_pop <- clim_pop %>% left_join(grid_points)
 # save the df
 saveRDS(clim_pop,
         paste0("~/INVASIBILITY_THRESHOLD/data/ERA5/Europe/eu_R0_",2020,".Rds"))
-clim_pop <- readRDS(paste0("~/INVASIBILITY_THRESHOLD/data/ERA5/Europe/EU_R0_",2020,".Rds"))
+clim_pop <- readRDS(paste0("~/INVASIBILITY_THRESHOLD/data/ERA5/Europe/eu_R0_",2020,".Rds"))
 
 clim_pop_r <- rast(clim_pop, crs= crs(rain_eu), extent = ext(rain_eu))
 terra::writeRaster(temp_eu_mon,

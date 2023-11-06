@@ -12,7 +12,7 @@ Path <- "~/INVASIBILITY_THRESHOLD/data/japonicus/adult_larva_lifespan.csv"
 Japonicus <- read.csv(Path)
 
 head(Japonicus)
-Japonicus$lifespan <- Japonicus$Age_adult_death_mean.1  
+Japonicus$lifespan <- Japonicus$Age_adult_death_mean_female  
 plot_deltaA <- ggplot(Japonicus) + 
   geom_point(aes(Temp,lifespan)) + theme_bw()
 plot_deltaA
@@ -1176,3 +1176,80 @@ ggarrange( plotdEjap_w  +
              ylab(TeX("Egg development rate, $d_E$")) +
              theme(text = element_text(size = sizelet)),
            ncol = 4, nrow = 2)
+
+
+# Larva development rate --------------------------------------
+
+### --------------Development Egg Aegypti -----------------------#
+## Delatte
+  df_dL_alb <- data.frame(temp=c(15,20,25,30,35),
+                          days_mean = c(35,14.4,10.4,8.8,12.3),
+                          days_sd = c(0.9,0.4,0.7,0.6,0.7))
+  ggplot(df_dL_alb) +
+    geom_point(aes(temp,days_mean))
+  
+  n = 5
+  r1 <- rnorm(n, df_dL_alb$days_mean[1],
+              df_dL_alb$days_sd[1] )
+  r2 <- rnorm(n, df_dL_alb$days_mean[2],
+              df_dL_alb$days_sd[2] )
+  r3 <- rnorm(n, df_dL_alb$days_mean[3],
+              df_dL_alb$days_sd[3] )
+  r4 <- rnorm(n, df_dL_alb$days_mean[4],
+              df_dL_alb$days_sd[4] )
+  r5 <- rnorm(n, df_dL_alb$days_mean[5],
+              df_dL_alb$days_sd[5] )
+ 
+  df_dL_alb <- data.frame(temp = sort(rep(df_dL_alb[,1],n)),
+                          days_devep = c(r1,r2,r3,r4,r5))
+ 
+  ggplot(df_dL_alb) +
+    geom_point(aes(temp,develop_rate))
+  
+  df_dL_alb$develop_rate <- 1/(df_dL_alb$days_devep)
+  df_dL_alb <- rbind(df_dL_alb, c(5,0,0,0))
+  df_dL_alb <- rbind(df_dL_alb, c(10,0,0,0))
+  ggplot(df_dL_alb) +
+    geom_point(aes(temp,develop_rate))
+  saveRDS(df_dL_alb, "~/INVASIBILITY_THRESHOLD/data/df_dL_alb.Rds")
+
+## I use the random sample fixed, other wise the param would change.
+  df_dL_alb <- readRDS("~/INVASIBILITY_THRESHOLD/data/df_dL_alb.Rds")
+
+Fitting_dL_alb <- nls(develop_rate ~ c*temp*(temp-c1)*(c2-temp)^(1/2),
+                      data = df_dL_alb, algorithm = "port",
+                      start = list(c = 0.0003, c1 = 14, c2 = 40))
+
+summary(Fitting_dL_alb)
+
+Fitting_dL_alb_lin <- nls(develop_rate ~ c*temp + c1,
+                          data = df_dL_alb,
+                          start = list(c = 0.0003, c1 = 0))
+
+summary(Fitting_dL_alb_lin)
+
+AIC(Fitting_dL_alb, Fitting_dL_alb_lin)
+
+mod <- function(te){
+  c <- as.numeric(Fitting_dL_alb$m$getPars()[1])
+  c1 <- as.numeric(Fitting_dL_alb$m$getPars()[2])
+  c2 <- as.numeric(Fitting_dL_alb$m$getPars()[3])
+  c*te*(te-c1)*(c2-te)^(1/2)
+}
+
+vec <- seq(0,45,0.001)
+df_out_alb <- data.frame(temp = vec,
+                         devep_rate = sapply(vec, mod))
+
+
+# df_out_aeg[which(df_out_aeg$devep_rate < 0),2] <- 0
+
+plotdL_alb <- ggplot(df_out_alb) +
+  geom_line(aes(temp,devep_rate), size = 0.7) +
+  geom_point(data =  df_dL_alb, aes(temp,develop_rate),
+             size = 0.9, color = "black") +
+  xlim(c(5,40)) +
+  guides( color =FALSE, alpha = FALSE) +
+  ylab("Larva development time") + xlab("Temperature (Cº)") +
+  theme_bw()
+plotdL_alb

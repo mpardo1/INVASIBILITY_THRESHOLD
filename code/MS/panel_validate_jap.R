@@ -230,5 +230,5 @@ pa_jap_eu
 
 # create panel --------------------------------------------------------
 library(ggpubr)
-gg1 <- ggarrange(pa_jap_eu + ggtitle("A"),jap_esp + ggtitle("B"))
+gg1 <- ggarrange(pa_jap_eu + ggtitle("A"),prop_pres_jap + ggtitle("B"))
 ggarrange(gg1, ccaa_jap + ggtitle("C"), ncol = 1)

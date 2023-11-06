@@ -11,6 +11,7 @@ library("viridis")
 library("gganimate")
 
 # Load data weather ----------------------------------------------------------
+# this comes from maps_mcera5_group.R
 year = 2004
 Path <- paste0("~/INVASIBILITY_THRESHOLD/output/ERA5/temp/2020/R0_clim_",
                year,".Rds")
@@ -25,6 +26,7 @@ df_2020 <- setDT(readRDS(Path))
 df_2020 <- df_2020[,c("NATCODE", "R0_sum_alb", "R0_sum_aeg", "R0_sum_jap")]
 colnames(df_2020) <-c ("NATCODE", "Alb_2020", "Aeg_2020", "Jap_2020")
 
+# this comes from future_climate/future_climate.R
 year = 2040
 Path <- paste0("~/INVASIBILITY_THRESHOLD/output/ERA5/temp/2020/clim_",
                year,".Rds")
@@ -33,16 +35,17 @@ df_2040 <- df_2040[,c("NATCODE", "alb", "aeg", "jap")]
 colnames(df_2040) <-c ("NATCODE", "Alb_2040", "Aeg_2040", "Jap_2040")
 
 year = 2060
-Path <- paste0("~/INVASIBILITY_THRESHOLD/output/ERA5/temp/2020/clim_",
-               year,".Rds")
+Path <- paste0("~/INVASIBILITY_THRESHOLD/output/ERA5/temp/2020/clim_2060.Rds")
 df_2060 <- setDT(readRDS(Path))
 df_2060 <- df_2060[,c("NATCODE", "alb", "aeg", "jap")]
 colnames(df_2060) <-c ("NATCODE", "Alb_2060", "Aeg_2060", "Jap_2060")
 
 dataset = 'ACCESS-CM2'
-path_dir <-'tmpr_145'
-ssp = '245'
-time = '2021-2040'
+path_dir <-'tmpr_370'
+ssp = '370'
+time = '2041-2060'
+
+# this comes from europe_map.R
 clim_df <- readRDS(paste0("~/INVASIBILITY_THRESHOLD/output/summon_eu_alb_",
                           time,"_mo_",dataset,"_",ssp,".Rds"))
 
@@ -60,20 +63,11 @@ library(RColorBrewer)
 name_pal = "RdYlBu"
 display.brewer.pal(11, name_pal)
 pal <- rev(brewer.pal(11, name_pal))
-pal[11]
 pal[12] = "#74011C"
 pal[13] = "#4B0011"
 letsize = 16
 plot_summonths <- function(df){
   df <- esp_can %>% left_join(df)
-  num_colors <- 13
-  # Create a palette function using colorRampPalette
-  my_palette <- colorRampPalette(c("#faf0ca","#f95738", "#732c2c"))
-  
-  colors <- c("#43A2CA", "#7BCCC4", "#BAE4BC", "#F0F9E8",
-              "#FFF7EC","#FEE8C8","#FDD49E","#FDBB84",
-              "#FC8D59","#EF6548","#D7301F", "#B30000",
-              "#7F0000") 
   ggplot(df) +
     geom_sf(aes(fill = as.factor(R0)),
             colour = NA) +
@@ -161,7 +155,6 @@ alb <- ggplot(clim_df) +
   guides(fill = guide_legend(nrow = 1),
          label.position = "none")
 
-saveRDS(alb, "")
 leg_alb <- get_legend(alb)
 as_ggplot(leg_alb)
 
@@ -198,7 +191,7 @@ ggarrange(plot_2004 +
             ggtitle(expression(paste("C               ", italic("Ae. japonicus")))),
           ncol = 3,
           common.legend = TRUE)
-
+plot_2060
 ggsave("~/Documentos/PHD/2023/INVASIBILITY/Plots/MS/Maps/Aeg_2004_2020_2040.pdf",
        width = 8, height = 4)
 

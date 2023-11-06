@@ -40,18 +40,22 @@ vars <- c('prec', 'tmax', 'tmin')
 #                             ssp = '370', time = '2041-2060',
 #                             var = 'tmin', path = 'tmpr_370', res = 2.5)
 
-
+time = "2061-2080"
+path = "tmpr_2080_370_1"
+time = "2041-2060"
+path = "tmpr_2060"
+ssp = 370
 prec_w <- geodata::cmip6_world(model = 'ACCESS-CM2',
-                               ssp = '370', time = '2061-2080',
-                               var = 'prec', path = 'tmpr_2080', res = 2.5)
+                               ssp = '370', time = time,
+                               var = 'prec', path = path, res = 2.5)
 
 tmax_w <- geodata::cmip6_world(model = 'ACCESS-CM2',
-                               ssp = '370', time = '2061-2080',
-                               var = 'tmax', path = 'tmpr_2080', res = 2.5)
+                               ssp = '370', time = time,
+                               var = 'tmax', path = path, res = 2.5)
 
 tmin_w <- geodata::cmip6_world(model = 'ACCESS-CM2',
-                               ssp = '370', time = '2061-2080',
-                               var = 'tmin', path = 'tmpr_2080', res = 2.5)
+                               ssp = '370', time = time,
+                               var = 'tmin', path = path, res = 2.5)
 
 # Change coordinate system to WGS84 ---------------------------------------
 coord_sys <- crs("+proj=longlat +datum=WGS84")
@@ -164,8 +168,12 @@ ggplot(df_plot) +
   geom_sf(data = can_box) +
   scale_fill_viridis_c(option = "magma")
 
+list_NA_NATCODE <- df_plot[which(is.na(df_plot$Oct)), "NATCODE"]
+list_NA_NATCODE$geometry.x <- NULL
+saveRDS(list_NA_NATCODE, "~/INVASIBILITY_THRESHOLD/data/list_NA_futureclim.Rds")
+
 # Population density 2022------------------------------------------------------
-Path <- "/home/marta/INVASIBILITY_THRESHOLD/data/pop/pobmun22.csv"
+Path <- "~/INVASIBILITY_THRESHOLD/data/pop/pobmun22.csv"
 pop22 <- read.csv(Path, sep = ",")
 pop22$cmun <- ifelse(pop22$CMUN<10, paste0("00",pop22$CMUN),
                      ifelse(pop22$CMUN<100, paste0("0",pop22$CMUN),
@@ -227,6 +235,7 @@ rm_NA <- function(tmax_sf){
   return(tmax_sf)
 }
 
+tmax_sf[which(is.na(tmax_sf$Oct)),"NATCODE"]
 tmax_sf <- rm_NA(tmax_sf)
 tmin_sf <- rm_NA(tmin_sf)
 prec_sf <- rm_NA(prec_sf)
@@ -434,6 +443,7 @@ plot_month <- function(month){
   return(list(plot,df_Jan))
 }
 
+library(latex2exp)
 # Plot whole year monthly ----------------------------------------------------
 list_month = c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul",
                "Aug", "Sep", "Oct", "Nov", "Dec")
@@ -450,7 +460,7 @@ ggarr
 # Produce a monthly df for all year ------------------------------------------
 lmon <- list("Feb", "Mar", "Apr", "May", "Jun", "Jul", 
              "Aug", "Sep", "Oct", "Nov", "Dec")
-
+library(latex2exp)
 df_y <- plot_month("Jan")[[2]]
 df_y$month <- "Jan"
 for(i in c(1:length(lmon))){
@@ -521,6 +531,7 @@ jap <- ggplot(df_g) +
 
 # Join all species ------------------------------------------------
 # Extract the legend
+library(ggpubr)
 legend_only <- get_legend(alb +
                             theme(legend.position = "top"))
 ggarrange(alb + ggtitle(expression(italic("Ae. albopictus")))+

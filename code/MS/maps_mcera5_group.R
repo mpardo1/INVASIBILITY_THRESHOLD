@@ -14,10 +14,10 @@ source("~/INVASIBILITY_THRESHOLD/code/funcR0.R")
 ## Read the data for the R0 computed daily:
 # year = 2022
 # Path <- paste0("/home/marta/INVASIBILITY_THRESHOLD/output/mcera5/process_Daily_ERA5_daily_mcera_",year,".Rds")
+# year = 2004
+# Path <- paste0("/home/marta/INVASIBILITY_THRESHOLD/output/mcera5/process_hourly_daily_ERA5_daily_mcera_",
+#                year,".Rds")
 year = 2004
-Path <- paste0("/home/marta/INVASIBILITY_THRESHOLD/output/mcera5/process_hourly_daily_ERA5_daily_mcera_",
-               year,".Rds")
-year = 2020
 Path <- paste0("~/INVASIBILITY_THRESHOLD/output/ERA5/temp/2020/clim_",year,".Rds")
 # saveRDS(dt_weather,Path)
 df_group <- setDT(readRDS(Path))
