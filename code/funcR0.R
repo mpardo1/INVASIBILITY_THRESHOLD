@@ -50,7 +50,6 @@ h_f <- function(hum, rain){
   efac = 0.01
   edens = 0.01
   
-  
   hatch <- (1-erat)*(((1+e0)*exp(-evar*(rain-eopt)^2))/(exp(-evar*(rain - eopt)^2) + e0)) +
     erat*(edens/(edens + exp(-efac*hum)))
   return(hatch)
@@ -126,11 +125,11 @@ R0_func_jap <- function(Te, rain,hum){
     deltE = 0.1
     dE <- dE_f_jap(Te)
     dL <- dL_f_jap(Te)
-    h <- h_f(hum,rain)
+    h <- h_f(0,rain)
     if(dL == 0 | f == 0 | a == 0 | dE == 0 |  Te<0){
       R0 <- 0
     }else{
-      R0 <- ((f*a*lf)*(dL/(dL+deltaL))*(h*dE/(h*dE+deltE)))^(1/3)
+      R0 <- ((f*a*lf)*(dL/(dL+deltaL))*(h*dE/(h*dE+deltE))*hum)^(1/3)
     }
   }
   return(R0)

@@ -15,10 +15,11 @@ st_crs(prec_sf) <- st_crs(esp_can)
 points <- prec_sf[11,"geometry"]
 geometry <-  esp_can[,"geometry"]
 intersections_lp <- st_intersects(geometry,points) %>% lengths > 0
-esp_can[which(intersections_lp == TRUE),]
-ggplot(geometry) +
+esp_can[which(intersections_lp == TRUE),"NATCODE"]
+ggplot(esp_can[which(intersections_lp == TRUE),]) +
   geom_sf(aes(fill = 1), lwd = 0) + 
-  geom_sf(data = points, aes(fill = 2), color = "red", size = 0.5)
+  geom_sf(data = points, aes(fill = 2),
+          color = "red", size = 0.5)
 
 intersect_df <- data.frame(point = numeric(0), geometry = numeric(0))
 

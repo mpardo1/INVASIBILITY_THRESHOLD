@@ -37,14 +37,15 @@ plot_temp <- ggplot(df_out) +
                      text = element_text(size = letsize),
                      legend.text.align = 0)
 # 
-# ggplot(df_out[which(df_out$variable == "albopictus"),]) + 
-#   geom_line(aes(vec,value), size = 1) +
-#   geom_hline(yintercept = 1, linetype = "dashed", color = "red") +
-#   ylab(TeX("$R_M$")) + theme_bw() +
-#   theme(legend.position = c(0.18,0.75),
-#         text = element_text(size = letsize),
-#         legend.text.align = 0) + 
-#   ggtitle(expression(italic("Ae. albopictus")))
+ggplot(df_out[which(df_out$variable == "albopictus"),]) +
+  geom_line(aes(vec,value), size = 1) +
+  geom_hline(yintercept = 1, linetype = "dashed", color = "red") +
+  ylab(TeX("$R_M$")) + theme_bw() +
+  theme(legend.position = c(0.18,0.75),
+        text = element_text(size = letsize),
+        legend.text.align = 0) +
+  xlab("Temperature (Cº)") + 
+  ggtitle(expression(italic("Ae. albopictus")))
 # checks for the text :
 esp = "albopictus"
 min(df_out[which(df_out$variable == esp &
@@ -79,4 +80,14 @@ ggarrange(plot_temp + ggtitle("A"),
           plot_hum + rremove("ylab")+ ggtitle("C"),
           ncol = 3,
           widths = c(1,0.7,0.7))
+
+
+# check one parameter dependecy ------------------------------------------
+# vec <- seq(0,40,0.1)
+# hum <- sapply(vec,a_f_alb)
+# df_hum <- data.frame(vec, hum)
+# ggplot(df_hum) + 
+#   geom_line(aes(vec,hum)) +
+#   xlab("Human density") + ylab(TeX("$R_M$")) + 
+#   theme_bw() + theme(text = element_text(size = letsize))
 

@@ -17,7 +17,7 @@ source("~/INVASIBILITY_THRESHOLD/code/funcR0.R")
 # year = 2004
 # Path <- paste0("/home/marta/INVASIBILITY_THRESHOLD/output/mcera5/process_hourly_daily_ERA5_daily_mcera_",
 #                year,".Rds")
-year = 2004
+year = 2020
 Path <- paste0("~/INVASIBILITY_THRESHOLD/output/ERA5/temp/2020/clim_",year,".Rds")
 # saveRDS(dt_weather,Path)
 df_group <- setDT(readRDS(Path))
@@ -261,6 +261,31 @@ ggarr = ggarrange(plot_alb +
                   ncol = 2 )
 ggarrange(ggarr, plot_jap, ncol = 1,
           common.legend = TRUE, widths = c(1.1,0.65))
+
+# Check the Guadalquivir
+unique(df_group_mon$ine.prov.name)
+df_jaen <- df_group_mon[which(df_group_mon$ine.prov.name == "Jaén"), ]
+df_jaen <- df_group_mon[which(df_jaen$name %in% unique(df_jaen$name)[1:10]), ]
+df_val <- df_group_mon[which(df_group_mon$ine.prov.name == "Valencia/València"), ]
+df_val <- df_val[which(df_val$name %in% unique(df_val$name)[1:10]), ]
+
+ggarrange(ggplot(df_val) +
+  geom_line(aes(month, tmean, color = name)) +
+    geom_point(aes(month, R0_mon_alb), color = "red", size = 0.5) +
+    geom_point(aes(month, R0_mon_aeg), color = "black", size = 0.5) +
+    theme(legend.position = "none") +
+    geom_hline(yintercept = 14.3, color = "blue") +
+    theme_bw() +
+    geom_hline(yintercept = 15.2, color = "red")  +
+    theme(legend.position = "none") +ggtitle("Valencia"),
+ggplot(df_jaen) +
+  geom_line(aes(month, tmean, color = name)) +
+  geom_point(aes(month, R0_mon_alb), color = "red", size = 0.5) +
+  geom_point(aes(month, R0_mon_aeg), color = "black", size = 0.5) +
+  geom_hline(yintercept = 14.3, color = "blue") +
+  geom_hline(yintercept = 15.2, color = "red") +
+  theme_bw() +
+  theme(legend.position = "none") + ggtitle("Jaen"))
 
 ## ----------PLOT ANNUAL AVERAGE SEASON----------#
 ## Group by year:

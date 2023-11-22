@@ -4,7 +4,7 @@
 require(pacman)
 pacman::p_load(terra, fs, tidyverse, glue, sf, RColorBrewer,
                ggspatial, hrbrthemes, showtext, rnaturalearthdata,
-               rnaturalearth, extrafont, geodata, data.table, raster)
+               rnaturalearth, extrafont, geodata, data.table, raster,mapSpain)
 
 g <- gc(reset = T)
 rm(list = ls())
@@ -28,23 +28,10 @@ vars <- c('prec', 'tmax', 'tmin')
 # path = 'tmpr_245'  path = 'tmpr_370'  path = 'tmpr_585'
 # (optimistic: SSP245; middle of the road: SSP370; and pessimistic: SSP585)
 
-# prec_w <- geodata::cmip6_world(model = 'ACCESS-CM2',
-#                              ssp = '370', time = '2041-2060',
-#                              var = 'prec', path = 'tmpr_370', res = 2.5)
-# 
-# tmax_w <- geodata::cmip6_world(model = 'ACCESS-CM2',
-#                             ssp = '370', time = '2041-2060',
-#                             var = 'tmax', path = 'tmpr_370', res = 2.5)
-# 
-# tmin_w <- geodata::cmip6_world(model = 'ACCESS-CM2',
-#                             ssp = '370', time = '2041-2060',
-#                             var = 'tmin', path = 'tmpr_370', res = 2.5)
-
-time = "2061-2080"
-path = "tmpr_2080_370_1"
+path_dir <-'tmpr_2060_370'
+time = '2061-2080'
 time = "2041-2060"
 path = "tmpr_2060"
-ssp = 370
 prec_w <- geodata::cmip6_world(model = 'ACCESS-CM2',
                                ssp = '370', time = time,
                                var = 'prec', path = path, res = 2.5)
@@ -447,9 +434,10 @@ library(latex2exp)
 # Plot whole year monthly ----------------------------------------------------
 list_month = c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul",
                "Aug", "Sep", "Oct", "Nov", "Dec")
-ind = 11
-plot_11 <- plot_month(list_month[ind])[[1]]
-plot_11
+ind = 3
+plot_3 <- plot_month(list_month[ind])[[1]]
+plot_3
+library(ggpubr)
 ggarr <- ggarrange(plot_3,plot_4,plot_5,
                    plot_6,plot_7,plot_8,
                    plot_9,plot_10,plot_11,
@@ -489,6 +477,8 @@ df_g <- df_y %>% group_by(NATCODE) %>%
 Path <- paste0("~/INVASIBILITY_THRESHOLD/output/ERA5/temp/2020/clim_2060.Rds")
 saveRDS(df_g, Path)
 
+df_g <- readRDS(Path)
+
 # Create plot months suitable -----------------------------------------
 esp_can <- esp_get_munic_siane(moveCAN = TRUE)
 can_box <- esp_get_can_box()
@@ -505,9 +495,10 @@ pal[12] = "#74011C"
 pal[13] = "#4B0011"
 letsize = 16
 
+library(latex2exp)
 # Albopictus
 alb <- ggplot(df_g) + 
-  geom_sf(aes(fill = as.factor(alb)), colour = NA) +
+  geom_sf(aes(fill = as.factor(alb), alpha = 0.4*as.factor(alb)), colour = NA) +
   geom_sf(data = can_box) + coord_sf(datum = NA) +
   scale_fill_manual(values = pal, limits = c(1:12),
                     name = TeX("$R_M>1$ \n months")) +

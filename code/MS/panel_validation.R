@@ -74,7 +74,7 @@ for(i in c(1:length(list_cit))){
   df_aux1 <- trap_data_filt[which(trap_data_filt$city == list_cit[[i]]),]
   Fitting_fem <- nls(female ~ exp(cont1*R0_alb)*cont,
                      data = df_aux1,
-                     start = list(cont = 0.22, cont1 = 0.12))
+                     start = list(cont = 0.2, cont1 = 0.12))
   
   summary(Fitting_fem)
   
@@ -205,7 +205,7 @@ plot_summonths <- function(df){
     geom_sf(data = can_box) +
     coord_sf(datum = NA) +
     scale_fill_manual(values = pal,
-                      name = "Nº months\n suitable",
+                      name = "Nº suitable \n months",
                       limits = factor(seq(0,12,1))) +
     theme_minimal()  +
     theme(legend.position = "right",
@@ -275,19 +275,26 @@ ccaa <- esp_get_ccaa(ccaa = c(
 
 # create palette -------------------------------------------------------------
 name_pal = "Set1"
-display.brewer.pal(6, name_pal)
-pal <- brewer.pal(6, name_pal)
-pal <- pal[c(1,3:6)]
+display.brewer.pal(7, name_pal)
+pal <- brewer.pal(7, name_pal)
+pal <- pal[c(1,3:5,7)]
+pal[length(pal)] <- "#08B2E3"
+pal[4] <- "#ECA400"
+pal <- c("#301A4B", "#ECA400", "#B3001B", "#08B2E3", "#79B473")
+non_pa_col <- "#EBEBEB"
+pa_col <-  "#8CAADF"
+df_pa[is.na(df_pa$PA),"PA"] <- 0
 PA_alb <- ggplot() +
-  geom_sf(data =df_pa, aes(fill = as.factor(PA)), color = NA) +
+  geom_sf(data =df_pa, aes(fill = as.factor(PA)),
+          # lwd = 0.03, alpha = 0.7, color = "#6E6E6E") +
+          color = NA, alpha = 0.7) +
   geom_sf(data = ccaa,
           aes(fill = codauto, color = codauto),
           alpha = 0, lwd = 0.5) +
   geom_sf(data = can_box) + coord_sf(datum = NA) +
   scale_color_manual(values = pal, name = " ",guide = "none") +
   theme_minimal() +
-  scale_fill_manual(values = c("#D9EAF8","#377EB8","#377EB8","#377EB8",
-                               "#377EB8","#377EB8","#377EB8"),
+  scale_fill_manual(values = c(non_pa_col,rep(pa_col,6)),
                     name = " ", limits = c("0","1")) +
   geom_point(data = lonlat_gir, aes(long,lat),
              color = "red", shape = 8) +
@@ -397,9 +404,9 @@ plot_ccaa <- ggplot(df_sum_CAT) +
   ylab("Proportion of municipalities with presence") +
   ylim(c(0,1)) + 
   scale_color_manual(name = "", values = pal,
-                     labels = c("Andalucía","Aragón","Cataluña" ,  
-                                "C. Valenciana", 
-                                "P. Vasco")) +
+                     labels = c("Andalusia","Aragon","Catalonia" ,  
+                                "Valencian C.", 
+                                "Basque C.")) +
   scale_size_continuous(name = "Nº municipalities",
                         breaks = c(5,100,200),
                         labels =c("<5","[5,100]",
@@ -479,8 +486,9 @@ ggarr1 <- ggarrange(plot_ccaa+ ggtitle("C"),
                    plot_counts + ggtitle("D"),
                    widths = c(1.2,1),
                    ncol = 2, nrow = 1)
-library(ggpubr)
 ggarrange(ggarr, ggarr1, ncol = 1)
+
+# Other way to plot -----------------------------------------
 ggarrange(ggarr ,
           plot_ccaa+ ggtitle("C"),
           plot_counts + ggtitle("D"),

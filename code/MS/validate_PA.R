@@ -24,9 +24,9 @@ load(Path)
 unique(gi_min_model_pred$trap_name)
 
 # Presence absence data Albopictus Spain:
-Path = "~/INVASIBILITY_THRESHOLD/data/PA/Albopictus_Spain_Pa.csv"
+Path = "~/INVASIBILITY_THRESHOLD/data/PA/ALBO_PA_2023_OCT.csv"
 df_pa <- read.csv(Path)
-df_pa[which(df_pa$NATCODE == "34011111012"), "PA"] <- 1
+df_pa$PA <- ifelse(df_pa$A_PRIM_DET_OFICIAL != 0 | df_pa$A_PRIM_DET_CITSCI !=0, 1,0)
 
 # Map Spain --------------------------------------------------------------------
 esp_can <- esp_get_munic_siane(moveCAN = TRUE)
@@ -38,6 +38,7 @@ can_box <- esp_get_can_box()
 
 # Plot PA Albopictus -----------------------------------------------------------
 df_pa <- esp_can %>% left_join(df_pa)
+df_pa$PA <- ifelse(is.na(df_pa$PA),0,df_pa$PA)
 ggplot(df_pa) +
   geom_sf(aes(fill = as.factor(PA)), linewidth = 0.01) +
   geom_sf(data = can_box) + coord_sf(datum = NA) +
@@ -713,9 +714,11 @@ ggplot(PA_jap_ESP) +
                     name = "") + theme_bw()
 
 # Albopictus PA data
-Path = "~/INVASIBILITY_THRESHOLD/data/PA/PresenceAbsence_MA_BG2.Rds"
-PA_alb <- readRDS(Path)
-PA_alb$Albopictus <- ifelse(PA_alb$A_PRIM_DET_OFICIAL == 0 & PA_alb$A_PRIM_DET_CITSCI == 0, 0,1)
+PA_alb <- df_pa
+PA_alb$Albopictus <- PA_alb$PA
+# Path = "~/INVASIBILITY_THRESHOLD/data/PA/PresenceAbsence_MA_BG2.Rds"
+# PA_alb <- readRDS(Path)
+# PA_alb$Albopictus <- ifelse(PA_alb$A_PRIM_DET_OFICIAL == 0 & PA_alb$A_PRIM_DET_CITSCI == 0, 0,1)
 PA_alb <- PA_alb[,c("NATCODE", "Albopictus")]
 PA_jap <- PA_jap[,c("NATCODE", "Japonicus")]
 
@@ -724,6 +727,7 @@ PA$esp <- ifelse(PA$Albopictus == 1 & PA$Japonicus == 0, "Albopictus",
                  ifelse(PA$Albopictus == 0 & PA$Japonicus == 1, "Japonicus", 
                         ifelse(PA$Albopictus == 1 & PA$Japonicus == 1, "Both","Not detected")   ))
 # Size letter
+library("RColorBrewer")
 letsize = 15
 name_pal = "Dark2"
 display.brewer.pal(3, name_pal)
@@ -736,14 +740,20 @@ jap_col = pal[3]
 # Join with the municipalities data
 PA <- esp_can %>% left_join(PA)
 PA[which(is.na(PA$esp)),"esp"] <- "Not detected"
+PA$esp <- factor(PA$esp, levels = c("Albopictus", "Japonicus",
+                                    "Both", "Not detected"))
 PA_esp <- ggplot(PA) + 
-  geom_sf(aes(fill = as.factor(esp)), linewidth = 0.05) +
+  geom_sf(aes(fill = esp), linewidth = 0.07, color = "grey") +
   scale_fill_manual(values = c(alb_col,aeg_col,jap_col,"white") , 
-                    name = "") +
+                    name = ",",
+                    labels = c(expression(italic("Ae. albopictus")),
+                               expression(italic("Ae. japonicus")),
+                               "Both",
+                               "Not detected")) +
   geom_sf(data = can_box) + coord_sf(datum = NA) + theme_bw() +
   theme(legend.position = c(0.8, 0.2),
         text = element_text(size = letsize),
-        legend.text=element_text(size=letsize)) 
+        legend.text=element_text(hjust = 0,size=letsize)) 
 PA_esp
 
 legend <- cowplot::get_legend(PA_esp)

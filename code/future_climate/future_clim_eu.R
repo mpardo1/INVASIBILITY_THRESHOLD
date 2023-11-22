@@ -100,13 +100,12 @@ clim_df[, R0_alb := mapply(R0_func_alb, tmean, prec, pop)]
 clim_df[, R0_aeg := mapply(R0_func_aeg, tmean, prec, pop)]
 clim_df[, R0_jap := mapply(R0_func_jap, tmean, prec, pop)]
 
-
 # plots seasonal ----------------------------------------------
 grid_points$id <- c(1:nrow(grid_points))
 clim_df <- clim_df %>% left_join(grid_points)
 saveRDS(clim_df,
         paste0("~/INVASIBILITY_THRESHOLD/output/eu_alb_",time,"_mo_",dataset,"_",ssp,".Rds"))
-# clim_df <- readRDS(paste0("~/INVASIBILITY_THRESHOLD/output/eu_alb_",time,"_mo_",dataset,"_",ssp,".Rds"))
+clim_df <- readRDS(paste0("~/INVASIBILITY_THRESHOLD/output/eu_alb_",time,"_mo_",dataset,"_",ssp,".Rds"))
 
 ggplot(clim_df[which(clim_df$month == 11),],
        aes(x = lon, y = lat, fill = R0_alb)) +
@@ -148,11 +147,10 @@ alb <- ggplot(clim_df) +
   geom_tile(aes(x = lon, y = lat, 
                 fill = as.factor(sum_alb)),alpha = 1) +
   scale_fill_manual(values = pal,
-                    name = "Nº months\n suitable",
+                    name = "Nº suitable \n months",
                     limits = factor(seq(0,12,1)),
                     na.value = "white") +
   ylim(c(25,75)) + xlim(c(-30,40)) +
-  ggtitle("Aedes albopictus 2041-2060") +
   xlab("") + ylab("") +
   theme_minimal() +
   theme(plot.title = element_text(hjust = 0.5,
@@ -168,21 +166,32 @@ alb <- ggplot(clim_df) +
     axis.title = element_blank(),
     axis.line = element_blank(),
     axis.ticks.length = unit(0, "null"),
-    axis.ticks.margin = unit(0, "null"),
-    legend.text = element_text(14) ) +
-  guides(fill = guide_legend(nrow = 1),
-         label.position = "right")
+    axis.ticks.margin = unit(0, "null"), 
+    legend.position = "rigth")
 
+
+library(ggpubr)
+legend_only <- get_legend(ggplot(clim_df) +
+  geom_tile(aes(x = lon, y = lat, 
+                fill = as.factor(sum_alb)),alpha = 1) +
+  scale_fill_manual(values = pal,
+                    name = "Nº suitable \n months",
+                    limits = factor(seq(0,12,1)),
+                    na.value = "white") +
+  theme_minimal() +
+  theme(legend.position = "right"))
+
+
+plot(legend_only)
 aeg <- ggplot(clim_df, aes(x = lon, y = lat,
                     fill = as.factor(sum_aeg))) +
   geom_tile() +
   scale_fill_manual(values = pal,
-                    name = "Nº months\n suitable",
+                    name = "Nº suitable \n months",
                     limits = factor(seq(0,12,1)),
                     na.value = "white")+
   xlab("") + ylab("") +
   ylim(c(25,75)) + xlim(c(-30,40)) +
-  ggtitle("Aedes aegypti 2041-2060") +
   theme_minimal() +
   theme(plot.title = element_text(hjust = 0.5,
                                   face = "italic"),
@@ -198,9 +207,8 @@ aeg <- ggplot(clim_df, aes(x = lon, y = lat,
         axis.line = element_blank(),
         axis.ticks.length = unit(0, "null"),
         axis.ticks.margin = unit(0, "null"),
-        legend.text = element_text(14) ) +
-  guides(fill = guide_legend(nrow = 1),
-         label.position = "top")
+        legend.text = element_text(14), 
+        legend.position = "none" )
 
 
 jap <- ggplot(clim_df, aes(x = lon, y = lat,
@@ -212,7 +220,7 @@ jap <- ggplot(clim_df, aes(x = lon, y = lat,
                     limits = factor(seq(0,12,1)),
                     na.value = "white")+
   ylim(c(25,75)) + xlim(c(-30,40)) +
-  ggtitle("Aedes japonicus 2041-2060") +
+  ggtitle("Aedes japonicus 2061-2080") +
   theme_minimal() +
   theme(plot.title = element_text(hjust = 0.5,
                                   face = "italic"),
@@ -235,3 +243,4 @@ jap <- ggplot(clim_df, aes(x = lon, y = lat,
 library(ggpubr)
 ggarrange(alb, aeg, jap,
           ncol = 3, common.legend = TRUE)
+

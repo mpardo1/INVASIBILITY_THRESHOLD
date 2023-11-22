@@ -71,58 +71,59 @@ for(i in c(1:nrow(df_pa))){
   
 }
 
-# df_join <- esp_can %>% left_join(df_pa)
-# ggplot(df_join) +
-#   geom_sf(aes(fill = factor(method)), size = 0.01) + 
-#   geom_sf(data = can_box) + coord_sf(datum = NA) +
-#   theme(plot.margin = margin(0.2, 0.2, 0.2, 0.2, "cm")) + 
-#   theme_bw() +
-#   theme(legend.text=element_text(size=15),
-#         legend.position = c(0.13,0.8)) + 
-#   scale_fill_manual(values = c("#ffeda0", "#B60808", "#B60808"), name = "",
-#                     labels = c("None", "Traps","MA")) +
-#   labs(title = "Year: {current_frame}") +
-#   transition_manual(year_first)
-# df_join$pa[which(is.na(df_join$pa))] <- 0
-# 
-# df_join$pa <- ifelse((df_join$A_PRIM_DET_OFICIAL == 0 & df_join$A_PRIM_DET_CITSCI == 0),0,1)
-# df_join$pa[which(is.na(df_join$pa))] <- 0
-# 
-# ggplot(df_join) +
-#   geom_sf(aes(fill = factor(pa)), size = 0.1) +
-#   geom_sf(data = can_box) + theme_bw()
-# 
-# df_pa_filt <- df_join[,c("NATCODE","pa","year_first")]
-# df_pa_2004 <- data.frame(df_pa_filt$NATCODE, pa = 0, year_first = 2004)
-# for(i in c(2005:2022)){
-#   df_pa_2005 <- data.frame(df_pa_filt$NATCODE, pa = 0, year_first = i)
-#   
-#   df_pa_2004 <- rbind(df_pa_2004, df_pa_2005)
-# }
-# df_pa_filt$geometry <- NULL
-# colnames(df_pa_2004) <- colnames(df_pa_filt)
-# df_pa_filt <- rbind(df_pa_filt,df_pa_2004)
-# df_pa_filt <- df_pa_filt[-which(df_pa_filt$year == 0),]
-# df_pa_filt <- df_pa_filt %>% group_by(NATCODE,year_first) %>%
-#   summarise(year_first = mean(year_first), pa = max(pa))
-# 
-# filt <- df_pa_filt[which(df_pa_filt$pa == 1),c("NATCODE","year_first")]
-# for(i in c(1:nrow(filt))){
-#   df_pa_filt[which(df_pa_filt$NATCODE == as.numeric(filt[i,"NATCODE"]) & 
-#                     df_pa_filt$year_first >  as.numeric(filt[i,"year_first"])),"pa"] = 1
-# }
-# 
-# df_pa_filt <- esp_can %>% left_join(df_pa_filt)
-# ggplot(df_pa_filt) +
-#   geom_sf(aes(fill = factor(pa)), size = 0.01) + 
-#   scale_fill_manual(values = c("#ffeda0", "#B60808"), name = "",
-#                     labels = c("Absence", "Presence")) +
-#   geom_sf(data = can_box) + coord_sf(datum = NA) +
-#   theme_bw() +
-#   theme(legend.text=element_text(size=15),
-#         plot.title = element_text(size=15)) + 
-#   labs(title = "Year: {current_frame}") +
-#   transition_manual(year_first)
+df_join <- esp_can %>% left_join(df_pa)
+ggplot(df_join) +
+  geom_sf(aes(fill = factor(method)), size = 0.01) +
+  geom_sf(data = can_box) + coord_sf(datum = NA) +
+  theme(plot.margin = margin(0.2, 0.2, 0.2, 0.2, "cm")) +
+  theme_bw() +
+  theme(legend.text=element_text(size=15),
+        legend.position = c(0.13,0.8)) +
+  scale_fill_manual(values = c("#ffeda0", "#B60808", "#B60808"), name = "",
+                    labels = c("None", "Traps","MA")) +
+  labs(title = "Year: {current_frame}") +
+  transition_manual(year_first)
+df_join$pa[which(is.na(df_join$pa))] <- 0
+
+df_join$pa <- ifelse((df_join$A_PRIM_DET_OFICIAL == 0 & df_join$A_PRIM_DET_CITSCI == 0),0,1)
+df_join$pa[which(is.na(df_join$pa))] <- 0
+
+ggplot(df_join) +
+  geom_sf(aes(fill = factor(pa)), size = 0.1) +
+  geom_sf(data = can_box) + theme_bw()
+
+df_pa_filt <- df_join[,c("NATCODE","pa","year_first")]
+df_pa_2004 <- data.frame(df_pa_filt$NATCODE, pa = 0, year_first = 2004)
+for(i in c(2005:2022)){
+  df_pa_2005 <- data.frame(df_pa_filt$NATCODE, pa = 0, year_first = i)
+
+  df_pa_2004 <- rbind(df_pa_2004, df_pa_2005)
+}
+df_pa_filt$geometry <- NULL
+colnames(df_pa_2004) <- colnames(df_pa_filt)
+df_pa_filt <- rbind(df_pa_filt,df_pa_2004)
+df_pa_filt <- df_pa_filt[-which(df_pa_filt$year == 0),]
+df_pa_filt <- df_pa_filt %>% group_by(NATCODE,year_first) %>%
+  summarise(year_first = mean(year_first), pa = max(pa))
+
+filt <- df_pa_filt[which(df_pa_filt$pa == 1),c("NATCODE","year_first")]
+for(i in c(1:nrow(filt))){
+  df_pa_filt[which(df_pa_filt$NATCODE == as.numeric(filt[i,"NATCODE"]) &
+                    df_pa_filt$year_first >  as.numeric(filt[i,"year_first"])),"pa"] = 1
+}
+
+df_pa_filt <- esp_can %>% left_join(df_pa_filt)
+ggplot(df_pa_filt) +
+  geom_sf(aes(fill = factor(pa)), size = 0.01, color = NA) +
+  scale_fill_manual(values = c("#fff7d5", "#9b1d20"), name = "",
+                    labels = c("Absence", "Presence")) +
+  geom_sf(data = can_box) + coord_sf(datum = NA) +
+  theme_bw() +
+  theme(legend.text=element_text(size=15),
+        plot.title = element_text(size=15),
+        legend.position = c(0.13,0.6)) +
+  labs(title = "Year: {current_frame}") +
+  transition_manual(year_first)
 # 
 # anim_save("~/Documentos/PHD/2023/INVASIBILITY/Plots/map_PA.gif",
 #           animation = last_animation())
