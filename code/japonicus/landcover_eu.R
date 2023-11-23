@@ -27,8 +27,8 @@ plot(eu[,"locCode"])
 
 # subset raster by interest categories
 categories_of_interest_vec <- c(18,21,22,23,25)
-subsetted_raster_p <- landcover %in% categories_of_interest_vec[4]
-plot(subsetted_raster_p)
+# subsetted_raster_p <- landcover %in% categories_of_interest_vec[4]
+# plot(subsetted_raster_p)
 
 # Check crs of shapefile and raster
 crs(landcover)
