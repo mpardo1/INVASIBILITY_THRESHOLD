@@ -17,11 +17,6 @@ Path <- paste0("~/INVASIBILITY_THRESHOLD/output/ERA5/temp/2020/R0_clim_",
 df_group_tot <- readRDS(Path)
 head(df_group_tot)
 
-## Data Catu BG traps
-Path <- "~/INVASIBILITY_THRESHOLD/data/Datos_Catu/gi_min_model_pred.RData"
-load(Path)
-unique(gi_min_model_pred$trap_name)
-
 # Presence absence data Japonicus Spain:
 Path <- "~/INVASIBILITY_THRESHOLD/data/PA/MUNS_ANYS-japonicus.csv"
 PA_jap <- read.csv(Path)
@@ -112,6 +107,23 @@ ggplot(PA_jap_ESP[which(PA_jap_ESP$ine.ccaa.name == ccaa),]) +
   theme_bw() +
   theme(plot.title = element_text(hjust = 0.5))
 
+# Plot the whole map with PA ---------------------------------------------
+list_ccaa = c("Cantabria","Asturias, Principado de",
+              "País Vasco")
+ggplot(PA_jap_ESP[which(PA_jap_ESP$ine.ccaa.name %in% list_ccaa),]) +
+  geom_sf(aes(fill = as.factor(R0_sum_jap)), colour = NA) +
+  geom_point(
+    aes(color = as.factor(Japonicus),
+        geometry = geometry), size = 0.6,
+    stat = "sf_coordinates") +
+  coord_sf(datum = NA) + 
+  scale_color_manual(values = c( "white","black"), name = "PA") + 
+  scale_fill_manual(values = colors,
+                    name = "Nº months\n suitable",
+                    limits = factor(seq(0,12,1))) +
+  theme_bw() +
+  theme(plot.title = element_text(hjust = 0.5))
+
 # Plot num months vs prop PA ---------------------------------------------------
 PA_jap_ESP$geometry <- NULL
 unique(PA_jap_ESP[which(PA_jap_ESP$Japonicus == 1),"ine.ccaa.name"])
@@ -121,7 +133,6 @@ ccaa = "Cantabria"
 ccaa = "País Vasco"
 ccaa = "Cantabria"
 ccaa = "Asturias, Principado de"
-ccaa = "País Vasco"
 
 plot <- plot_sum_p(ccaa)
 plot
@@ -130,8 +141,7 @@ ggsave(Path, plot = plot)
 
 # Plot multiple ccaa together ------------------------------------------------
 # Join more than one ccaa ---------------------------------------------
-list_ccaa = c("Cantabria","País Vasco",
-              "Cantabria","Asturias, Principado de",
+list_ccaa = c("Cantabria","Asturias, Principado de",
               "País Vasco")
 
 NATCODE_CAT <- esp_can[which(esp_can$ine.ccaa.name %in% list_ccaa ),"NATCODE"]

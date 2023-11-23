@@ -11,6 +11,15 @@ library("gganimate")
 
 source("~/INVASIBILITY_THRESHOLD/code/funcR0.R")
 #----------------------------------------------------------------------#
+# Check hatching rate japonicus
+vec <- seq(0,16,0.1)
+out <- sapply(vec, h_f_jap, hum = 0)
+df_h <- data.frame(vec, out)
+ggplot(df_h) + geom_line(aes(vec,out))+
+  geom_hline(yintercept = 0)
+
+plot(0, add = TRUE)
+
 ## Read the data for the R0 computed daily:
 # year = 2022
 # Path <- paste0("/home/marta/INVASIBILITY_THRESHOLD/output/mcera5/process_Daily_ERA5_daily_mcera_",year,".Rds")
@@ -95,37 +104,37 @@ df_group[, R0_dai_aeg := mapply(R0_func_aeg, tmean, prec, dens)]
 df_group[, R0_dai_jap := mapply(R0_func_jap, tmean, prec, dens)]
 
 ## ----------PLOT TEMP----------#
-df_prov <- esp_can[,c("cpro","ine.prov.name")]
-df_prov$geometry <- NULL
-df_prov <- unique(df_prov)
-provincia = "Valencia/València"
-df_GN <- df_group[which(df_group$NATCODE %in%
-                          esp_can$NATCODE[which(esp_can$ine.prov.name == provincia)]),]
-df_GN <- df_GN[,.(tmean = mean(tmean),
-                  prec = mean(prec),
-                  dens = as.numeric(sum(pop)/sum(area))), by = list(date)]
-
-df_GN[, R0_dai_alb := mapply(R0_func_alb, tmean, prec, dens)]
-df_GN[, R0_dai_aeg := mapply(R0_func_aeg, tmean, prec, dens)]
-df_GN[, R0_dai_jap := mapply(R0_func_jap, tmean, prec, dens)]
-
-library("latex2exp")
-ggplot(df_group[which(df_group$name == "Tordera"),]) +
-  geom_line(aes(date, R0_dai_alb)) +
-  ylab(TeX("$R_M$")) +
-  scale_x_date(date_breaks = "2 month", date_labels =  "%b %Y") +
-  ggtitle(provincia) +
-  theme_bw()
+# df_prov <- esp_can[,c("cpro","ine.prov.name")]
+# df_prov$geometry <- NULL
+# df_prov <- unique(df_prov)
+# provincia = "Valencia/València"
+# df_GN <- df_group[which(df_group$NATCODE %in%
+#                           esp_can$NATCODE[which(esp_can$ine.prov.name == provincia)]),]
+# df_GN <- df_GN[,.(tmean = mean(tmean),
+#                   prec = mean(prec),
+#                   dens = as.numeric(sum(pop)/sum(area))), by = list(date)]
+# 
+# df_GN[, R0_dai_alb := mapply(R0_func_alb, tmean, prec, dens)]
+# df_GN[, R0_dai_aeg := mapply(R0_func_aeg, tmean, prec, dens)]
+# df_GN[, R0_dai_jap := mapply(R0_func_jap, tmean, prec, dens)]
+# 
+# library("latex2exp")
+# ggplot(df_group[which(df_group$name == "Tordera"),]) +
+#   geom_line(aes(date, R0_dai_alb)) +
+#   ylab(TeX("$R_M$")) +
+#   scale_x_date(date_breaks = "2 month", date_labels =  "%b %Y") +
+#   ggtitle(provincia) +
+#   theme_bw()
 
 # It is the rainfall why there are so many peaks and downs
-coeff <- 1
-ggplot(df_BCN, aes(x=date)) +
-  geom_line( aes(y=R0_dai_alb), color = "darkblue") +
-  geom_line( aes(y=prec), color = "yellow") + # Divide by 10 to get the same range than the temperature
-  scale_y_continuous(
-    name = "R0",
-    sec.axis = sec_axis(~.*coeff, name="Temperature")
-  ) + theme_bw()
+# coeff <- 1
+# ggplot(df_BCN, aes(x=date)) +
+#   geom_line( aes(y=R0_dai_alb), color = "darkblue") +
+#   geom_line( aes(y=prec), color = "yellow") + # Divide by 10 to get the same range than the temperature
+#   scale_y_continuous(
+#     name = "R0",
+#     sec.axis = sec_axis(~.*coeff, name="Temperature")
+#   ) + theme_bw()
 
 #### ----------- Monthly agg----------------###
 df_group_mon <- df_group[, .(tmean = mean(tmean),
@@ -205,18 +214,18 @@ esp_can$NATCODE <- as.numeric(paste0("34",esp_can$codauto,
 ## Para hacer un cuadrado con seis plots cambio el numero de 
 # month y el nombre del plot y lo hago para cada especie.
 df_group_mon <- esp_can %>% left_join(df_group_mon, by = "NATCODE")
-df_group_mon$R0 <- df_group_mon$R0_mon_aeg
-month = 7
-plot_7 <- plot_months(df_group_mon,month)
-plot_7
-ggarr <- ggarrange(plot_3,plot_4,plot_5,
-          plot_6,plot_7,plot_8,
-          plot_9,plot_10,plot_11,
-          nrow=3,ncol = 3, common.legend = TRUE)
-
-ggarr
-
-Path <- paste0("~/Documentos/PHD/2023/INVASIBILITY/Plots/MS/Maps/2020/WholeyearJAP",year,".pdf")
+# df_group_mon$R0 <- df_group_mon$R0_mon_aeg
+# month = 7
+# plot_7 <- plot_months(df_group_mon,month)
+# plot_7
+# ggarr <- ggarrange(plot_3,plot_4,plot_5,
+#           plot_6,plot_7,plot_8,
+#           plot_9,plot_10,plot_11,
+#           nrow=3,ncol = 3, common.legend = TRUE)
+# 
+# ggarr
+# 
+# Path <- paste0("~/Documentos/PHD/2023/INVASIBILITY/Plots/MS/Maps/2020/WholeyearJAP",year,".pdf")
 # dev.copy2pdf(file=Path, width = 7, height = 5)
 # ggsave(Path, plot = ggarr)
 
@@ -243,24 +252,24 @@ plot_months <- function(df, month,esp){
 }
 
 ## Month that you want to see the comparison
-month = 7
-df_group_mon$R0 <- df_group_mon$R0_mon_alb
-plot_alb <- plot_months(df_group_mon,month, "Aedes albopictus")
-plot_alb
-df_group_mon$R0 <- df_group_mon$R0_mon_aeg
-plot_aeg <- plot_months(df_group_mon,month, "Aedes aegypti")
-plot_aeg
-df_group_mon$R0 <- df_group_mon$R0_mon_jap
-plot_jap <- plot_months(df_group_mon,month, "Aedes japonicus")
-plot_jap
-
-ggarr = ggarrange(plot_alb +
-                    theme(legend.position = "none"),
-                  plot_aeg +
-                    theme(legend.position = "none"), 
-                  ncol = 2 )
-ggarrange(ggarr, plot_jap, ncol = 1,
-          common.legend = TRUE, widths = c(1.1,0.65))
+# month = 7
+# df_group_mon$R0 <- df_group_mon$R0_mon_alb
+# plot_alb <- plot_months(df_group_mon,month, "Aedes albopictus")
+# plot_alb
+# df_group_mon$R0 <- df_group_mon$R0_mon_aeg
+# plot_aeg <- plot_months(df_group_mon,month, "Aedes aegypti")
+# plot_aeg
+# df_group_mon$R0 <- df_group_mon$R0_mon_jap
+# plot_jap <- plot_months(df_group_mon,month, "Aedes japonicus")
+# plot_jap
+# 
+# ggarr = ggarrange(plot_alb +
+#                     theme(legend.position = "none"),
+#                   plot_aeg +
+#                     theme(legend.position = "none"), 
+#                   ncol = 2 )
+# ggarrange(ggarr, plot_jap, ncol = 1,
+#           common.legend = TRUE, widths = c(1.1,0.65))
 
 # Check the Guadalquivir
 unique(df_group_mon$ine.prov.name)
@@ -270,29 +279,36 @@ df_val <- df_group_mon[which(df_group_mon$ine.prov.name == "Valencia/València")
 df_val <- df_val[which(df_val$name %in% unique(df_val$name)[1:10]), ]
 
 ggarrange(ggplot(df_val) +
-  geom_line(aes(month, tmean, color = name)) +
-    geom_point(aes(month, R0_mon_alb), color = "red", size = 0.5) +
-    geom_point(aes(month, R0_mon_aeg), color = "black", size = 0.5) +
+  geom_line(aes(month, tmean), color = "red") +
+    geom_line(aes(month, precmean), color = "blue") +
+    geom_point(aes(month, R0_mon_jap), color = "brown", size = 0.5) +
+    # geom_point(aes(month, R0_mon_aeg), color = "black", size = 0.5) +
     theme(legend.position = "none") +
     geom_hline(yintercept = 14.3, color = "blue") +
     theme_bw() +
     geom_hline(yintercept = 15.2, color = "red")  +
     theme(legend.position = "none") +ggtitle("Valencia"),
 ggplot(df_jaen) +
-  geom_line(aes(month, tmean, color = name)) +
-  geom_point(aes(month, R0_mon_alb), color = "red", size = 0.5) +
-  geom_point(aes(month, R0_mon_aeg), color = "black", size = 0.5) +
+  geom_line(aes(month, tmean), color = "red") +
+  geom_line(aes(month, precmean), color = "blue") +
+  geom_point(aes(month, R0_mon_jap), color = "brown", size = 0.5) +
+  # geom_point(aes(month, R0_mon_aeg), color = "black", size = 0.5) +
   geom_hline(yintercept = 14.3, color = "blue") +
   geom_hline(yintercept = 15.2, color = "red") +
   theme_bw() +
   theme(legend.position = "none") + ggtitle("Jaen"))
+
+# check rainfall
+ggplot(df_group_mon[which(df_group_mon$month == 8),]) +
+  geom_sf(aes(fill = precmean), color = NA) +
+  scale_fill_viridis_c()
 
 ## ----------PLOT ANNUAL AVERAGE SEASON----------#
 ## Group by year:
 df_group_mon$geometry <- NULL
 df_group_mon <- setDT(df_group_mon)
 df_group_y <- df_group_mon[,.(tmean = mean(tmean),
-            prec = mean(prec),
+            prec = mean(precmean),
             dens =min(dens),
             R0_an_alb = mean(R0_mon_alb),
             R0_an_aeg = mean(R0_mon_aeg),
@@ -329,58 +345,6 @@ ggplot(df_group_y) +
                            name = TeX("$R_M$")) +
       theme_bw() +
       theme(plot.title = element_text(hjust = 0.5))
-
-# ## Just season:
-# df_group_y <- df_group_mon[which(df_group_mon$month<12 & df_group_mon$month>3 ),
-#                            .(tmean = mean(tmean),
-#                               prec = mean(prec),
-#                               dens =min(dens),
-#                              R0_an_alb = mean(R0_mon_alb),
-#                              R0_an_aeg = mean(R0_mon_aeg),
-#                              R0_an_jap = mean(R0_mon_jap),
-#                               R0_sum_alb = sum(bool_R0_alb),
-#                               R0_sum_aeg = sum(bool_R0_aeg),
-#                               R0_sum_jap = sum(bool_R0_jap)), by = list(NATCODE)]
-# 
-### Compute the RM for the diferent species with the annual mean temperature
-# df_group_y[, R0_anual_alb := mapply(R0_func_alb, tmean, prec, dens)]
-# df_group_y[, R0_anual_aeg := mapply(R0_func_aeg, tmean, prec, dens)]
-# df_group_y[, R0_anual_jap := mapply(R0_func_jap, tmean, prec, dens)]
-
-## Construct the maps
-# df_group_y <- esp_can %>% left_join(df_group_y)
-# ggplot(df_group_y) +
-#   geom_sf(aes(fill = R0_anual_alb), colour = NA) +
-#   geom_sf(data = can_box) + coord_sf(datum = NA) +
-#   scale_fill_distiller(palette = "Spectral",
-#                        name = TeX("$R_M$")) +
-#   theme_bw() +
-#   theme(plot.title = element_text(hjust = 0.5))
-
-## Test if variables make sense:
-# df_group_y <- esp_can %>% left_join(df_group_y)
-ggplot(df_group_y) + 
-  geom_sf(aes(fill = tmean), color = NA) +
-  scale_fill_viridis_c()
-
-ggplot(df_group_y) + 
-  geom_sf(aes(fill = prec), color = NA) +
-  scale_fill_viridis_c()
-
-ggplot(df_group_y) + 
-  geom_sf(aes(fill = dens), color = NA) +
-  scale_fill_viridis_c()
-
-## ----------------- TRANSITION MAPS ------------------#
-# df_group_mon <- esp_can %>% left_join(df_group_mon)
-# 
-# ggplot(df_group_mon) +
-#   geom_sf(aes(fill = R0_mon_jap), linewidth = 0.01) +
-#   geom_sf(data = can_box) + coord_sf(datum = NA) +
-#   scale_fill_viridis_c() +
-#   theme_void() +
-#   labs(title = "Month: {current_frame}") +
-#   transition_manual(as.factor(month))
 
 # Save RDS for validation ---------------------------------------------
 Path <- paste0("~/INVASIBILITY_THRESHOLD/output/R0/datasets/R0_",year,".Rds")
@@ -434,6 +398,10 @@ plot_sum_jap
 Path <- paste0("~/Documentos/PHD/2023/INVASIBILITY/Plots/MS/Maps/",year,"/New_JapSum",year,".pdf")
 dev.copy2pdf(file=Path, width = 7, height = 5)
 
+ggplot(df_group_y) +
+  geom_sf(aes(fill = prec), color = NA) +
+  scale_fill_viridis_c()
+
 # Extract the legend
 legend_only <- get_legend(plot_sum_alb +
                             theme(legend.position = "top"))
@@ -449,6 +417,57 @@ ggarrange(plot_sum_alb + ggtitle(expression(italic("Ae. albopictus")))+
           legend_only,
           ncol=2, nrow = 2)
 
+# ## Just season:
+# df_group_y <- df_group_mon[which(df_group_mon$month<12 & df_group_mon$month>3 ),
+#                            .(tmean = mean(tmean),
+#                               prec = mean(prec),
+#                               dens =min(dens),
+#                              R0_an_alb = mean(R0_mon_alb),
+#                              R0_an_aeg = mean(R0_mon_aeg),
+#                              R0_an_jap = mean(R0_mon_jap),
+#                               R0_sum_alb = sum(bool_R0_alb),
+#                               R0_sum_aeg = sum(bool_R0_aeg),
+#                               R0_sum_jap = sum(bool_R0_jap)), by = list(NATCODE)]
+# 
+### Compute the RM for the diferent species with the annual mean temperature
+# df_group_y[, R0_anual_alb := mapply(R0_func_alb, tmean, prec, dens)]
+# df_group_y[, R0_anual_aeg := mapply(R0_func_aeg, tmean, prec, dens)]
+# df_group_y[, R0_anual_jap := mapply(R0_func_jap, tmean, prec, dens)]
+
+## Construct the maps
+# df_group_y <- esp_can %>% left_join(df_group_y)
+# ggplot(df_group_y) +
+#   geom_sf(aes(fill = R0_anual_alb), colour = NA) +
+#   geom_sf(data = can_box) + coord_sf(datum = NA) +
+#   scale_fill_distiller(palette = "Spectral",
+#                        name = TeX("$R_M$")) +
+#   theme_bw() +
+#   theme(plot.title = element_text(hjust = 0.5))
+
+## Test if variables make sense:
+# df_group_y <- esp_can %>% left_join(df_group_y)
+ggplot(df_group_y) + 
+  geom_sf(aes(fill = tmean), color = NA) +
+  scale_fill_viridis_c()
+
+ggplot(df_group_y) + 
+  geom_sf(aes(fill = prec), color = NA) +
+  scale_fill_viridis_c()
+
+ggplot(df_group_y) + 
+  geom_sf(aes(fill = dens), color = NA) +
+  scale_fill_viridis_c()
+
+## ----------------- TRANSITION MAPS ------------------#
+# df_group_mon <- esp_can %>% left_join(df_group_mon)
+# 
+# ggplot(df_group_mon) +
+#   geom_sf(aes(fill = R0_mon_jap), linewidth = 0.01) +
+#   geom_sf(data = can_box) + coord_sf(datum = NA) +
+#   scale_fill_viridis_c() +
+#   theme_void() +
+#   labs(title = "Month: {current_frame}") +
+#   transition_manual(as.factor(month))
 ### With minimum temp :
 ## Computed with sum months maps 
 df_group_y$R0 <- df_group_y$R0_sum_alb_min
@@ -535,40 +554,40 @@ dev.copy2pdf(file=Path, width = 7, height = 5)
 
 ###--------TEST------------###
 ### Use the R0 compute daily and after average
-df_group_mon1 <- df_group[, .(tmean = mean(tmean),
-                             prec = sum(prec), 
-                             dens = min(dens),
-                             R0_mon_alb_dai = mean(R0_dai_alb),
-                             R0_mon_aeg_dai = mean(R0_dai_aeg),
-                             R0_mon_jap_dai = mean(R0_dai_jap)), 
-                         by=list(NATCODE,month)]
-
-df_group_mon1$bool_R0_alb <- ifelse(df_group_mon1$R0_mon_alb_dai < 1,0,1)
-df_group_mon1$bool_R0_aeg <- ifelse(df_group_mon1$R0_mon_aeg_dai < 1,0,1)
-df_group_mon1$bool_R0_jap <- ifelse(df_group_mon1$R0_mon_jap_dai < 1,0,1)
-
-## Rename df and delete other variables:
-df_group_y1 <- df_group_y
-df_group_y1 <- df_group_y1[,c(8,c(19:34))]
-df_group_y1$geometry <- NULL
-
-df_group_y <- df_group_mon[, .(tmean = mean(tmean),
-                             prec = sum(prec), 
-                             meanprec = mean(prec),
-                             dens = min(dens),
-                             R0_sum_alb_dai = sum(bool_R0_alb),
-                             R0_sum_aeg_dai = sum(bool_R0_aeg),
-                             R0_sum_jap_dai = sum(bool_R0_jap)), 
-                         by=list(NATCODE)]
-
-df_group_y[, R0_avg_alb := mapply(R0_func_alb, tmean, meanprec, dens)]
-df_group_y[, R0_avg_aeg := mapply(R0_func_aeg, tmean, meanprec, dens)]
-df_group_y[, R0_avg_jap := mapply(R0_func_jap, tmean, meanprec, dens)]
-
-df_group_y <- df_group_y %>% left_join(df_group_y1)
-## Save file for the validation with PA data
-Path <- paste0("~/INVASIBILITY_THRESHOLD/output/R0/datasets/R0_",year,".Rds")
-saveRDS(df_group_y, Path)
+# df_group_mon1 <- df_group[, .(tmean = mean(tmean),
+#                              prec = sum(prec), 
+#                              dens = min(dens),
+#                              R0_mon_alb_dai = mean(R0_dai_alb),
+#                              R0_mon_aeg_dai = mean(R0_dai_aeg),
+#                              R0_mon_jap_dai = mean(R0_dai_jap)), 
+#                          by=list(NATCODE,month)]
+# 
+# df_group_mon1$bool_R0_alb <- ifelse(df_group_mon1$R0_mon_alb_dai < 1,0,1)
+# df_group_mon1$bool_R0_aeg <- ifelse(df_group_mon1$R0_mon_aeg_dai < 1,0,1)
+# df_group_mon1$bool_R0_jap <- ifelse(df_group_mon1$R0_mon_jap_dai < 1,0,1)
+# 
+# ## Rename df and delete other variables:
+# df_group_y1 <- df_group_y
+# df_group_y1 <- df_group_y1[,c(8,c(19:34))]
+# df_group_y1$geometry <- NULL
+# 
+# df_group_y <- df_group_mon[, .(tmean = mean(tmean),
+#                              prec = sum(prec), 
+#                              meanprec = mean(prec),
+#                              dens = min(dens),
+#                              R0_sum_alb_dai = sum(bool_R0_alb),
+#                              R0_sum_aeg_dai = sum(bool_R0_aeg),
+#                              R0_sum_jap_dai = sum(bool_R0_jap)), 
+#                          by=list(NATCODE)]
+# 
+# df_group_y[, R0_avg_alb := mapply(R0_func_alb, tmean, meanprec, dens)]
+# df_group_y[, R0_avg_aeg := mapply(R0_func_aeg, tmean, meanprec, dens)]
+# df_group_y[, R0_avg_jap := mapply(R0_func_jap, tmean, meanprec, dens)]
+# 
+# df_group_y <- df_group_y %>% left_join(df_group_y1)
+# ## Save file for the validation with PA data
+# Path <- paste0("~/INVASIBILITY_THRESHOLD/output/R0/datasets/R0_",year,".Rds")
+# saveRDS(df_group_y, Path)
 
 # ### Extract the average R0 for the mosquito season
 # df_group_mon$geometry <- NULL

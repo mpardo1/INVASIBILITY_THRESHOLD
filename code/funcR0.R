@@ -46,12 +46,27 @@ h_f <- function(hum, rain){
   erat = 0.5
   e0 = 1.5
   evar = 0.05
+  #evar = 0.1
+  # erat = 0.5
   eopt = 8
   efac = 0.01
   edens = 0.01
   
   hatch <- (1-erat)*(((1+e0)*exp(-evar*(rain-eopt)^2))/(exp(-evar*(rain - eopt)^2) + e0)) +
     erat*(edens/(edens + exp(-efac*hum)))
+  return(hatch)
+}
+
+### Incorporating rain and human density:
+h_f_jap <- function(hum, rain){
+  # Constants:
+  e0 = 0.5
+  evar = 0.05
+  # evar = 0.1
+  eopt = 8
+  
+  hatch <- hum*(((1+e0)*exp(-evar*(rain-eopt)^2))/(exp(-evar*(rain - eopt)^2) + e0))
+  
   return(hatch)
 }
 
@@ -125,7 +140,10 @@ R0_func_jap <- function(Te, rain,hum){
     deltE = 0.1
     dE <- dE_f_jap(Te)
     dL <- dL_f_jap(Te)
-    h <- h_f(0,rain)
+    if(rain == 0){
+      print("0 rain")
+    }
+    h <- h_f_jap(hum,rain)
     if(dL == 0 | f == 0 | a == 0 | dE == 0 |  Te<0){
       R0 <- 0
     }else{

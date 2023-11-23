@@ -4,7 +4,7 @@
 require(pacman)
 pacman::p_load(terra, fs, tidyverse, 
                sf, RColorBrewer,exactextractr,
-               data.table, raster,mapSpain)
+               data.table, raster)
 
 g <- gc(reset = T)
 rm(list = ls())
@@ -17,47 +17,34 @@ landcover
 df_cat <- levels(landcover)[[1]]
 
 # Esp can shapefile --------------------------------------------------
-esp_can <- esp_get_munic_siane(moveCAN = FALSE)
-can_box <- esp_get_can_box()
-esp_can$NATCODE <- as.numeric(paste0("34",esp_can$codauto,
-                                     esp_can$cpro,
-                                     esp_can$LAU_CODE))
+path <- "~/INVASIBILITY_THRESHOLD/data/japonicus/pa/status_2303.shp"
+eu <- read_sf(path)
+plot(eu[,"locCode"])
 
 # subset raster by interest categories
 categories_of_interest_vec <- c(18,21,22,23,25)
-# categories_of_interest <- c(18,22,23,25)
-subsetted_raster <- landcover #%in% categories_of_interest
 subsetted_raster_p <- landcover %in% categories_of_interest_vec[4]
 plot(subsetted_raster_p)
-plot(landcover)
 
 # Check crs of shapefile and raster
-crs(subsetted_raster)
-crs(esp_can)
+crs(landcover)
+crs(eu)
 
 # Intersect the raster with each geometry of esp_can
-esp_can <- st_transform(esp_can, crs = crs(landcover))
-
-# crop spain from raster
-esp0 <- geodata::gadm(country = 'ESP', level = 0,
-                      path = 'tmpr')
-plot(esp0)
-esp0 <- project(esp0, crs(landcover))
-esp_rast <- crop(subsetted_raster, esp0)
-plot(esp_rast)
+eu <- st_transform(eu, crs = crs(landcover))
+plot(eu[,"locCode"])
 
 # intersect with polygon 
-plot(esp_can[1,"name"], add = TRUE)
-# landcov_fracs <- exact_extract(subsetted_raster, esp_can[,"NATCODE"], 
-#                                function(df) {
-#   df %>%
-#     mutate(frac_total = coverage_fraction / sum(coverage_fraction)) %>%
-#     group_by(NATCODE, value) %>%
-#     summarize(freq = sum(frac_total))
-# }, summarize_df = TRUE, include_cols = 'NATCODE', progress = FALSE)
+landcov_fracs <- exact_extract(landcover, eu[,"locCode"],
+                               function(df) {
+  df %>%
+    mutate(frac_total = coverage_fraction / sum(coverage_fraction)) %>%
+    group_by(locCode, value) %>%
+    summarize(freq = sum(frac_total))
+}, summarize_df = TRUE, include_cols = 'locCode', progress = FALSE)
 
-# saveRDS(landcov_fracs,"~/INVASIBILITY_THRESHOLD/data/landcov_fracs.Rds")
-landcov_fracs <- readRDS("~/INVASIBILITY_THRESHOLD/data/landcov_fracs.Rds")
+saveRDS(landcov_fracs,"~/INVASIBILITY_THRESHOLD/data/landcov_fracs_eu.Rds")
+landcov_fracs <- readRDS("~/INVASIBILITY_THRESHOLD/data/landcov_fracs_eu.Rds")
 
 # select only specific landcover type
 categories_of_interest <- categories_of_interest_vec[3]
