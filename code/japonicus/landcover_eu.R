@@ -38,8 +38,9 @@ crs(eu)
 eu <- st_transform(eu, crs = crs(landcover))
 plot(eu[,"locCode"])
 
-# intersect with polygon 
-landcov_fracs <- exact_extract(landcover, eu[,"locCode"],
+# intersect with polygon divide into two pieces
+# first piece
+landcov_fracs <- exact_extract(landcover, eu[c(1:5000),"locCode"],
                                function(df) {
   df %>%
     mutate(frac_total = coverage_fraction / sum(coverage_fraction)) %>%
@@ -47,7 +48,19 @@ landcov_fracs <- exact_extract(landcover, eu[,"locCode"],
     summarize(freq = sum(frac_total))
 }, summarize_df = TRUE, include_cols = 'locCode', progress = FALSE)
 
-saveRDS(landcov_fracs,"~/INVASIBILITY_THRESHOLD/data/landcov_fracs_eu.Rds")
+saveRDS(landcov_fracs,"~/INVASIBILITY_THRESHOLD/data/landcov_fracs_eu_1_5000.Rds")
+
+# second piece
+landcov_fracs <- exact_extract(landcover, eu[5000:nrow(eu),"locCode"],
+                               function(df) {
+                                 df %>%
+                                   mutate(frac_total = coverage_fraction / sum(coverage_fraction)) %>%
+                                   group_by(locCode, value) %>%
+                                   summarize(freq = sum(frac_total))
+                               }, summarize_df = TRUE, include_cols = 'locCode', progress = FALSE)
+
+saveRDS(landcov_fracs,"~/INVASIBILITY_THRESHOLD/data/landcov_fracs_eu_5000_nrow.Rds")
+
 landcov_fracs <- readRDS("~/INVASIBILITY_THRESHOLD/data/landcov_fracs_eu.Rds")
 
 # select only specific landcover type

@@ -24,6 +24,9 @@ SHP_0 <- get_eurostat_geospatial(resolution = 10,
                                  nuts_level = 0, 
                                  year = 2016)
 
+# intersection between geometries and lon lat ---------------
+inter_L <- readRDS("~/INVASIBILITY_THRESHOLD/data/japonicus/pa/out_inter_d.Rds")
+
 # map europe province level ----------------------------------
 # SHP_1 <- get_eurostat_geospatial(
 #   resolution = 10,
@@ -74,8 +77,8 @@ clim_pop <- setDT(clim %>% left_join(pop))
 # create df europe climate monthly data -----------------------
 grid_points$id <- c(1:nrow(grid_points))
 clim_pop <- clim_pop %>% left_join(grid_points)
-# saveRDS(clim_pop,
-        # paste0("~/INVASIBILITY_THRESHOLD/data/ERA5/Europe/eu_clim_",2020,".Rds"))
+saveRDS(clim_pop,
+         paste0("~/INVASIBILITY_THRESHOLD/data/ERA5/Europe/eu_clim_",2020,".Rds"))
 # clim_pop <- readRDS(paste0("~/INVASIBILITY_THRESHOLD/data/ERA5/Europe/eu_clim_",2020,".Rds"))
 
 # compute R0 --------------------------------------------------
