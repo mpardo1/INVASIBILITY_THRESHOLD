@@ -1,10 +1,14 @@
 # Code to extract the landcover for japonicus
 # from Corine landcover: https://land.copernicus.eu/en/products/corine-land-cover/clc2018/download-by-area
 # Load libraries ----------------------------------------------------------
-require(pacman)
-pacman::p_load(terra, fs, tidyverse, 
-               sf, RColorBrewer,exactextractr,
-               data.table, raster)
+library(terra)
+library(fs)
+library(tidyverse)
+library(sf)
+library(RColorBrewer)
+library(exactextractr)
+library(data.table)
+library(raster)
 
 g <- gc(reset = T)
 rm(list = ls())
