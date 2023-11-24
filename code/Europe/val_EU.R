@@ -7,6 +7,7 @@ library(terra)
 library(parallel)
 library(data.table)
 source("~/INVASIBILITY_THRESHOLD/code/funcR0.R")
+
 # read presence absence data ------------------------------------------
 path <- "~/INVASIBILITY_THRESHOLD/data/japonicus/pa/status_2303.shp"
 pa_jap <- read_sf(path)
@@ -33,7 +34,7 @@ clim_pop <- readRDS(paste0("~/INVASIBILITY_THRESHOLD/data/ERA5/Europe/eu_clim_20
 # 
 # # transform to match coord system -----------------------------------------
 # clim_pop_s <- st_transform(clim_pop_s, crs(pa_jap))
-# pa_jap$ind <- seq(1, nrow(pa_jap),1)
+pa_jap$ind <- seq(1, nrow(pa_jap),1)
 # # extract intersection for each geometry-----------------------------------
 # inter <- function(pol_id){
 #   pnts <- clim_pop_s[,c("geometry", "sum_jap", "id")] %>% mutate(
@@ -96,9 +97,32 @@ clim_pop <- clim_pop %>% group_by(geom_id,month) %>%
             prec = mean(prec),
             pop = mean(pop))
 
+# read cluster files
+landcov_fracs1 <- readRDS("/home/marta/INVASIBILITY_THRESHOLD/data/landcov_fracs_eu_1_5000.Rds")
+landcov_fracs2 <- readRDS("/home/marta/INVASIBILITY_THRESHOLD/data/landcov_fracs_eu_5000_nrow.Rds")
+landcov_fracs <- rbind(landcov_fracs1, landcov_fracs2)
+
+# join to get id
+pa_jap_id <- pa_jap[,c("ind", "locCode")]
+pa_jap_id$geometry <- NULL
+pa_jap_id <- unique(pa_jap_id)
+pa_jap_id <- pa_jap_id %>% left_join(landcov_fracs)
+ 
+# read landcover codes
+df_cat <- readRDS("~/INVASIBILITY_THRESHOLD/data/code_landcover.Rds")
+pa_jap_id <- pa_jap_id[pa_jap_id$value == 23,]
+pa_jap_id$geom_id <- pa_jap_id$ind
+
+# join landcover 
+clim_pop <- clim_pop %>% left_join(pa_jap_id)
+
+# check NAs
+clim_pop_NA <- clim_pop[is.na(clim_pop$tmean) | is.na(clim_pop$prec) |
+                          is.na(clim_pop$pop) , ]
+
 # compute RM per region -----------------------------------------------------
 clim_pop <- setDT(clim_pop)
-clim_pop[, R0_jap := mapply(R0_func_jap, tmean, prec, pop)]
+clim_pop[, R0_jap := mapply(R0_func_jap, tmean, prec, freq)]
 clim_pop[, R0_alb := mapply(R0_func_alb, tmean, prec, pop)]
 clim_pop$bool_rm <- ifelse(clim_pop$R0_jap>1,1,0)
 clim_pop$bool_rm_alb <- ifelse(clim_pop$R0_alb>1,1,0)
@@ -106,12 +130,20 @@ clim_pop <- clim_pop %>% group_by(geom_id) %>%
   summarise(jap = sum(bool_rm),
             alb = sum(bool_rm_alb))
 
+# european map --------------------------------------------------------------
+path <- "~/INVASIBILITY_THRESHOLD/data/japonicus/pa/status_2303.shp"
+pa_jap <- read_sf(path)
+pa_jap <- pa_jap[which(pa_jap$leave == 1),]
+list_eu <- unique(pa_jap$cntryName)[c(1:2,4,6,7:8,10:14,16,19:23,25:26,28:30,32:35,39:42,
+                                      45:52,54:56,58:59,61,62,67,68,70,71)]
+pa_jap <- pa_jap[which(pa_jap$cntryName %in% list_eu),]
+
 # join with pa data ---------------------------------------------------------
 pa_jap$geom_id <- seq(1, nrow(pa_jap),1)
 clim_pop <- pa_jap %>% left_join(clim_pop)
 
 ggplot(clim_pop) +
-  geom_sf(aes(fill = as.factor(jap)), color = NA) +
+  geom_sf(aes(fill = as.factor(alb)), color = NA) +
   scale_fill_viridis_d(option = "magma", direction = -1)
 
 # compare pa japonicus with rm ----------------------------------------------

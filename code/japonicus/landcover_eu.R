@@ -20,6 +20,8 @@ plot(landcover) # Plot the raster
 landcover
 df_cat <- levels(landcover)[[1]]
 
+ saveRDS(df_cat, "~/INVASIBILITY_THRESHOLD/data/code_landcover.Rds")
+
 # Esp can shapefile --------------------------------------------------
 path <- "~/INVASIBILITY_THRESHOLD/data/japonicus/pa/status_2303.shp"
 eu <- read_sf(path)
@@ -40,28 +42,45 @@ plot(eu[,"locCode"])
 
 # intersect with polygon divide into two pieces
 # first piece
-landcov_fracs <- exact_extract(landcover, eu[c(1:5000),"locCode"],
-                               function(df) {
-  df %>%
-    mutate(frac_total = coverage_fraction / sum(coverage_fraction)) %>%
-    group_by(locCode, value) %>%
-    summarize(freq = sum(frac_total))
-}, summarize_df = TRUE, include_cols = 'locCode', progress = FALSE)
+func_prop <- function(nrowinit,nrowend){
+  landcov_fracs <- exact_extract(landcover, eu[c(nrowinit:nrowend),"locCode"],
+                                 function(df) {
+                                   df %>%
+                                     mutate(frac_total = coverage_fraction / sum(coverage_fraction)) %>%
+                                     group_by(locCode, value) %>%
+                                     summarize(freq = sum(frac_total))
+                                 }, summarize_df = TRUE, include_cols = 'locCode', progress = FALSE)
+  saveRDS(landcov_fracs,
+          paste0("~/INVASIBILITY_THRESHOLD/data/landcov_fracs_eu_",
+                 nrowinit,"_",nrowend,".Rds"))
+  return(landcov_fracs)
+}
 
-saveRDS(landcov_fracs,"~/INVASIBILITY_THRESHOLD/data/landcov_fracs_eu_1_5000.Rds")
+# Divide the number of rows in chunks -------------------------------------
+n <- 1000
+sequence <- seq(1,nrow(eu),1)
+chunk_size <- ceiling(length(sequence) / n)
+chunks <- split(sequence, cut(seq_along(sequence),
+                              breaks = chunk_size * 0:n, labels = FALSE))
 
-# second piece
-landcov_fracs <- exact_extract(landcover, eu[5000:nrow(eu),"locCode"],
-                               function(df) {
-                                 df %>%
-                                   mutate(frac_total = coverage_fraction / sum(coverage_fraction)) %>%
-                                   group_by(locCode, value) %>%
-                                   summarize(freq = sum(frac_total))
-                               }, summarize_df = TRUE, include_cols = 'locCode', progress = FALSE)
+# Compute the landcover percentage for each chunk --------------------------
+# Display first and last number in each chunk
+df_perc <- data.frame()
+for (i in 1:length(chunks)) {
+  chunk <- chunks[[i]]
+  first_num <- chunk[1]
+  last_num <- chunk[length(chunk)]
+  df_aux <- func_prop(first_num,last_num)
+  colnames(df_aux) <- c("locCode", "value", "freq")
+  df_perc <- rbind(df_perc,df_aux)
+}
 
 saveRDS(landcov_fracs,"~/INVASIBILITY_THRESHOLD/data/landcov_fracs_eu_5000_nrow.Rds")
 
-landcov_fracs <- readRDS("~/INVASIBILITY_THRESHOLD/data/landcov_fracs_eu.Rds")
+# read cluster files
+landcov_fracs1 <- readRDS("/home/marta/INVASIBILITY_THRESHOLD/data/landcov_fracs_eu_1_5000.Rds")
+landcov_fracs2 <- readRDS("/home/marta/INVASIBILITY_THRESHOLD/data/landcov_fracs_eu_5000_nrow.Rds")
+landcov_fracs <- rbind(landcov_fracs1, landcov_fracs2)
 
 # select only specific landcover type
 categories_of_interest <- categories_of_interest_vec[3]
