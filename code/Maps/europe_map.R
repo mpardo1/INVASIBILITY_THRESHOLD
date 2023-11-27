@@ -21,8 +21,10 @@ plot(rain_eu[[1]])
 
 # shapefile europe eurostats ---------------------------------
 SHP_0 <- get_eurostat_geospatial(resolution = 10, 
-                                 nuts_level = 0, 
+                                 nuts_level = 3, 
                                  year = 2016)
+
+plot(SHP_0[,"id"])
 
 # intersection between geometries and lon lat ---------------
 inter_L <- readRDS("~/INVASIBILITY_THRESHOLD/data/japonicus/pa/out_inter_d.Rds")

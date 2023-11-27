@@ -12,7 +12,8 @@ source("~/INVASIBILITY_THRESHOLD/code/funcR0.R")
 path <- "~/INVASIBILITY_THRESHOLD/data/japonicus/pa/status_2303.shp"
 pa_jap <- read_sf(path)
 pa_jap <- pa_jap[which(pa_jap$leave == 1),]
-list_eu <- unique(pa_jap$cntryName)[c(1:2,4,6,7:8,10:14,16,19:23,25:26,28:30,32:35,39:42,
+list_eu <- unique(pa_jap$cntryName)[c(1:2,4,6,7:8,10:14,16,19:23,25:26,28:30,
+                                      32:35,39:42,
                                       45:52,54:56,58:59,61,62,67,68,70,71)]
 pa_jap <- pa_jap[which(pa_jap$cntryName %in% list_eu),]
 # ggplot(pa_jap) +
@@ -25,7 +26,7 @@ clim_pop <- readRDS(paste0("~/INVASIBILITY_THRESHOLD/data/ERA5/Europe/eu_clim_20
 # transform crs raster ----------------------------------------------
  temp_eu <- rast("~/INVASIBILITY_THRESHOLD/data/ERA5/Europe/3monthly_aggregated_raster.tif")
 # # plot(temp_eu[[1]])
- clim_pop_s <- st_as_sf(clim_pop,
+ clim_pop <- st_as_sf(clim_pop,
                         coords = c("lon","lat"),
                         crs = crs(temp_eu))
 # # ggplot(clim_pop_s) + 
@@ -35,10 +36,12 @@ clim_pop <- readRDS(paste0("~/INVASIBILITY_THRESHOLD/data/ERA5/Europe/eu_clim_20
 # # transform to match coord system -----------------------------------------
 clim_pop_s <- st_transform(clim_pop_s, crs(pa_jap))
 pa_jap$ind <- seq(1, nrow(pa_jap),1)
+
 # # extract intersection for each geometry-----------------------------------
  inter <- function(pol_id){
-   pnts <- clim_pop_s[,c("geometry", "sum_jap", "id")] %>% mutate(
-     intersection = as.integer(st_intersects(geometry, pa_jap[pol_id,c("geometry")]))
+   pnts <- clim_pop_s[,c("geometry", "sum_jap", "id")] %>% 
+      mutate(intersection = as.integer(st_intersects(geometry,
+                                             pa_jap[pol_id,c("geometry")]))
    )
    pnts <- pnts[which(is.na(pnts$intersection) == FALSE),c("sum_jap","id")]
    if(nrow(pnts) > 0){
@@ -65,4 +68,5 @@ pa_jap$ind <- seq(1, nrow(pa_jap),1)
  cores = 12
  intersect_p_g <- mclapply(1:nrow(pa_jap), mc.cores = cores,
                           mc.preschedule = F,inter)
- saveRDS(intersect_p_g, "~/INVASIBILITY_THRESHOLD/data/japonicus/pa/out_inter_dd.Rds")
+ saveRDS(intersect_p_g,
+         "~/INVASIBILITY_THRESHOLD/data/japonicus/pa/out_inter_dd.Rds")

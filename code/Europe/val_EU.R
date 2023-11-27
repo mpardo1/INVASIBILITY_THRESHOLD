@@ -1,4 +1,4 @@
-# code to validate the PA for japonicus in europe
+# Code to validate the PA for japonicus in europe
 rm(list=ls())
 library(sf)
 library(ggplot2)
@@ -8,7 +8,7 @@ library(parallel)
 library(data.table)
 source("~/INVASIBILITY_THRESHOLD/code/funcR0.R")
 
-# read presence absence data ------------------------------------------
+# Read presence absence data ------------------------------------------
 path <- "~/INVASIBILITY_THRESHOLD/data/japonicus/pa/status_2303.shp"
 pa_jap <- read_sf(path)
 pa_jap <- pa_jap[which(pa_jap$leave == 1),]
@@ -18,7 +18,7 @@ pa_jap <- pa_jap[which(pa_jap$cntryName %in% list_eu),]
 # ggplot(pa_jap) +
 #   geom_sf(aes(fill = japonicus)) 
 
-# load data for RM Japonicus Europe 2020
+# Load data for RM Japonicus Europe 2020
 clim_pop <- readRDS(paste0("~/INVASIBILITY_THRESHOLD/data/ERA5/Europe/eu_clim_2020.Rds"))
 
 # ------------------------- CLUSTER --------------------------------#
@@ -68,7 +68,7 @@ pa_jap$ind <- seq(1, nrow(pa_jap),1)
 # saveRDS(intersect_p_g, "~/INVASIBILITY_THRESHOLD/data/japonicus/pa/out_inter_dd.Rds")
 # ------------------------- CLUSTER --------------------------------#
 
-# read results cluster
+# Read results cluster
 # rm(clim_pop, temp_eu)
 inter_L <- readRDS("~/INVASIBILITY_THRESHOLD/data/japonicus/pa/out_inter_d.Rds")
 inter_df <- data.frame()
@@ -82,7 +82,7 @@ for(i in c(1:length(inter_L))){
 
 rm(inter_L)
 
-# remove rows with no intersection and join with climatic data --------------
+# Remove rows with no intersection and join with climatic data --------------
 inter_df <- inter_df[which(inter_df$pnt_id != 0 & inter_df$geom_id != 0),]
 check_dup <- inter_df %>% group_by(pnt_id) %>% 
   summarise(geom_id = min(geom_id), n = n())
@@ -91,13 +91,13 @@ check_dup$pnt_id <- NULL
 check_dup$n <- NULL
 clim_pop <- clim_pop %>% left_join(check_dup)
 
-# group by to have climate data for each region -----------------------------
+# Group by to have climate data for each region -----------------------------
 clim_pop <- clim_pop %>% group_by(geom_id,month) %>%
   summarise(tmean = mean(tmean),
             prec = mean(prec),
             pop = mean(pop))
 
-# read cluster files
+# Read cluster files
 landcov_fracs1 <- readRDS("/home/marta/INVASIBILITY_THRESHOLD/data/landcov_fracs_eu_1_5000.Rds")
 landcov_fracs2 <- readRDS("/home/marta/INVASIBILITY_THRESHOLD/data/landcov_fracs_eu_5000_nrow.Rds")
 landcov_fracs <- rbind(landcov_fracs1, landcov_fracs2)
