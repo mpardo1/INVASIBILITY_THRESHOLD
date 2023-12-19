@@ -17,7 +17,7 @@ dataset = 'ACCESS-CM2'
 path_dir <-'tmpr_2060_370'
 ssp = '370'
 
-dataset <- c("ACCESS-CM2", "ACCESS-ESM1-5", "AWI-CM-1-1-MR", 
+dataset <- c("ACCESS-CM2",  "AWI-CM-1-1-MR", 
              "BCC-CSM2-MR", "CanESM5", "CanESM5-CanOE", 
              "CMCC-ESM2", "CNRM-CM6-1", "CNRM-CM6-1-HR",
              "CNRM-ESM2-1", "EC-Earth3-Veg", "EC-Earth3-Veg-LR",
