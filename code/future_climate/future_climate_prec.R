@@ -1,10 +1,9 @@
 # Code that extracts the future weather from CMIP6
 # Tutorial: https://geofabio.com/2022/12/13/modelamiento-con-ecocrop-para-identificar-impacto-del-cambio-climatico-sobre-el-cultivo-de-cafe/
 # Load libraries ----------------------------------------------------------
-require(pacman)
-pacman::p_load(terra, eurostat,tidyverse,
-               sf, RColorBrewer,
-               geodata, data.table)
+library(terra)
+library(eurostat)
+library(geodata)
 
 g <- gc(reset = T)
 rm(list = ls())
@@ -50,6 +49,7 @@ dataset <- c("ACCESS-CM2",  "AWI-CM-1-1-MR",
 
 # Future predictions precipitacion 2041-2060
 time = '2041-2060'
+path_dir = paste0("temp_", time)
 prec_w1 <- geodata::cmip6_world(model = dataset[1],
                                 ssp = ssp, time = time,
                                 var = 'prec', path = path_dir, res = 2.5)
