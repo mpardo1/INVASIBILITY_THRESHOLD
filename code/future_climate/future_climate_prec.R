@@ -2,7 +2,6 @@
 # Tutorial: https://geofabio.com/2022/12/13/modelamiento-con-ecocrop-para-identificar-impacto-del-cambio-climatico-sobre-el-cultivo-de-cafe/
 # Load libraries ----------------------------------------------------------
 library(terra)
-library(eurostat)
 library(geodata)
 
 g <- gc(reset = T)
