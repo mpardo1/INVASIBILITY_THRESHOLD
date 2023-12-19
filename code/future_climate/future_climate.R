@@ -30,8 +30,8 @@ vars <- c('prec', 'tmax', 'tmin')
 
 path_dir <-'tmpr_2060_370'
 time = '2061-2080'
-time = "2041-2060"
-path = "tmpr_2060"
+# time = "2041-2060"
+ path = "tmpr_2060"
 prec_w <- geodata::cmip6_world(model = 'ACCESS-CM2',
                                ssp = '370', time = time,
                                var = 'prec', path = path, res = 2.5)
@@ -372,7 +372,7 @@ plots <- comp_climate(month)
 plots[[3]]
 
 # Function to compute plot and df monthly --------------------------------------
-plot_month <- function(month){
+plot_month <- function(month, esp){
   # Join df by months ----------------------------------------------------------
   tmin_Jan <- tmin_sf[,c("NATCODE", month)]
   colnames(tmin_Jan) <- c("NATCODE", "tmin")
@@ -415,28 +415,45 @@ plot_month <- function(month){
   NA_df <- df_Jan[which(is.na(R0_alb)),]
   
   df_Jan_p <- esp_can %>% left_join(df_Jan)
-  plot <- ggplot(df_Jan_p) +
-    geom_sf(data = can_box) +
-    geom_sf(aes(fill = R0_alb), colour = NA) +
-    coord_sf(datum = NA) +
-    scale_fill_distiller(palette = "Spectral",
-                         limits = c(min(df_Jan_p$R0_alb),max(df_Jan_p$R0_alb)),
-                         name = TeX("$R_M$")) +
-    ggtitle(as.character(month_num)) +
-    theme_bw() +
-    theme(plot.title = element_text(hjust = 0.5),
-          legend.position = c(0.1,0.6))
+  if(esp == "alb"){
+    plot <- ggplot(df_Jan_p) +
+      geom_sf(data = can_box) +
+      geom_sf(aes(fill = R0_alb), colour = NA) +
+      coord_sf(datum = NA) +
+      scale_fill_distiller(palette = "Spectral",
+                           limits = c(min(df_Jan_p$R0_alb),max(df_Jan_p$R0_alb)),
+                           name = TeX("$R_M$")) +
+      ggtitle(as.character(month_num)) +
+      theme_bw() +
+      theme(plot.title = element_text(hjust = 0.5),
+            legend.position = c(0.1,0.6))
+  }else{
+    plot <- ggplot(df_Jan_p) +
+      geom_sf(data = can_box) +
+      geom_sf(aes(fill = R0_aeg), colour = NA) +
+      coord_sf(datum = NA) +
+      scale_fill_distiller(palette = "Spectral",
+                           limits = c(min(df_Jan_p$R0_aeg),max(df_Jan_p$R0_aeg)),
+                           name = TeX("$R_M$")) +
+      ggtitle(as.character(month_num)) +
+      theme_bw() +
+      theme(plot.title = element_text(hjust = 0.5),
+            legend.position = c(0.1,0.6))
+  }
+  
   
   return(list(plot,df_Jan))
 }
 
 library(latex2exp)
+
 # Plot whole year monthly ----------------------------------------------------
 list_month = c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul",
                "Aug", "Sep", "Oct", "Nov", "Dec")
 ind = 3
-plot_3 <- plot_month(list_month[ind])[[1]]
-plot_3
+# plot_3 <- plot_month(list_month[ind], "alb")[[1]]
+plot_3 <- plot_month(list_month[ind], "aeg")[[1]]
+plot_11
 library(ggpubr)
 ggarr <- ggarrange(plot_3,plot_4,plot_5,
                    plot_6,plot_7,plot_8,

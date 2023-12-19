@@ -103,20 +103,37 @@ clim_df[, R0_jap := mapply(R0_func_jap, tmean, prec, pop)]
 # plots seasonal ----------------------------------------------
 grid_points$id <- c(1:nrow(grid_points))
 clim_df <- clim_df %>% left_join(grid_points)
-saveRDS(clim_df,
+ saveRDS(clim_df,
         paste0("~/INVASIBILITY_THRESHOLD/output/eu_alb_",time,"_mo_",dataset,"_",ssp,".Rds"))
 clim_df <- readRDS(paste0("~/INVASIBILITY_THRESHOLD/output/eu_alb_",time,"_mo_",dataset,"_",ssp,".Rds"))
-
-ggplot(clim_df[which(clim_df$month == 11),],
-       aes(x = lon, y = lat, fill = R0_alb)) +
-  geom_tile() +
+library(latex2exp)
+month_n =11
+plot_11 <- ggplot(clim_df[which(clim_df$month == month_n),],
+       aes(x = lon, y = lat, fill = R0_aeg)) +
+  geom_raster() +
   scale_fill_distiller(na.value = "white",
-                       palette = "Spectral")+
+                       palette = "Spectral",
+                       name = TeX("$R_M$"))+
   ylim(c(25,75)) + xlim(c(-30,40)) +
-  ggtitle("Aedes albopictus 2061-2080") +
-  theme_bw() +
+  ggtitle(month_n) +
+  theme_bw() + coord_fixed() +
   theme(plot.title = element_text(hjust = 0.5,
-                                  face = "italic")) 
+                                  face = "italic"),
+        panel.background = element_rect(fill = "transparent", colour = NA),
+        plot.background = element_rect(fill = "transparent", colour = NA),
+        panel.grid = element_blank(),
+        plot.margin = unit(c(0, 0, 0, 0), "null"),
+        panel.margin = unit(c(0, 0, 0, 0), "null"),
+        axis.ticks = element_blank(),
+        axis.text = element_blank(),
+        axis.title = element_blank(),
+        axis.line = element_blank(),
+        axis.ticks.length = unit(0, "null"),
+        axis.ticks.margin = unit(0, "null")) 
+plot_11
+
+library(ggpubr)
+ggarrange(plot_5, plot_8,plot_11, ncol = 3, common.legend= TRUE)
 
 # aggregate by year -------------------------------------------
 clim_df$bool_alb <- ifelse(clim_df$R0_alb>1,1,0)
@@ -130,9 +147,9 @@ clim_df <- clim_df[,.(sum_alb = sum(bool_alb),
 # plot  sum months ------------------------------------------------
 grid_points$id <- c(1:nrow(grid_points))
 clim_df <- clim_df %>% left_join(grid_points)
-saveRDS(clim_df,
-        paste0("~/INVASIBILITY_THRESHOLD/output/summon_eu_alb_",
-               time,"_mo_",dataset,"_",ssp,".Rds"))
+# saveRDS(clim_df,
+        # paste0("~/INVASIBILITY_THRESHOLD/output/summon_eu_alb_",
+               # time,"_mo_",dataset,"_",ssp,".Rds"))
 clim_df <- readRDS(paste0("~/INVASIBILITY_THRESHOLD/output/summon_eu_alb_",
                time,"_mo_",dataset,"_",ssp,".Rds"))
 library(RColorBrewer)
@@ -210,37 +227,37 @@ aeg <- ggplot(clim_df, aes(x = lon, y = lat,
         legend.text = element_text(14), 
         legend.position = "none" )
 
-
-jap <- ggplot(clim_df, aes(x = lon, y = lat,
-                    fill = as.factor(sum_jap))) +
-  geom_tile() +
-  xlab("") + ylab("") +
-  scale_fill_manual(values = pal,
-                    name = "Nº months\n suitable",
-                    limits = factor(seq(0,12,1)),
-                    na.value = "white")+
-  ylim(c(25,75)) + xlim(c(-30,40)) +
-  ggtitle("Aedes japonicus 2061-2080") +
-  theme_minimal() +
-  theme(plot.title = element_text(hjust = 0.5,
-                                  face = "italic"),
-        panel.background = element_rect(fill = "transparent", colour = NA),
-        plot.background = element_rect(fill = "transparent", colour = NA),
-        panel.grid = element_blank(),
-        panel.border = element_blank(),
-        plot.margin = unit(c(0, 0, 0, 0), "null"),
-        panel.margin = unit(c(0, 0, 0, 0), "null"),
-        axis.ticks = element_blank(),
-        axis.text = element_blank(),
-        axis.title = element_blank(),
-        axis.line = element_blank(),
-        axis.ticks.length = unit(0, "null"),
-        axis.ticks.margin = unit(0, "null"),
-        legend.text = element_text(14) ) +
-  guides(fill = guide_legend(nrow = 1),
-         label.position = "top")
+# jap <- ggplot(clim_df, aes(x = lon, y = lat,
+#                     fill = as.factor(sum_jap))) +
+#   geom_tile() +
+#   xlab("") + ylab("") +
+#   scale_fill_manual(values = pal,
+#                     name = "Nº months\n suitable",
+#                     limits = factor(seq(0,12,1)),
+#                     na.value = "white")+
+#   ylim(c(25,75)) + xlim(c(-30,40)) +
+#   ggtitle("Aedes japonicus 2061-2080") +
+#   theme_minimal() +
+#   theme(plot.title = element_text(hjust = 0.5,
+#                                   face = "italic"),
+#         panel.background = element_rect(fill = "transparent", colour = NA),
+#         plot.background = element_rect(fill = "transparent", colour = NA),
+#         panel.grid = element_blank(),
+#         panel.border = element_blank(),
+#         plot.margin = unit(c(0, 0, 0, 0), "null"),
+#         panel.margin = unit(c(0, 0, 0, 0), "null"),
+#         axis.ticks = element_blank(),
+#         axis.text = element_blank(),
+#         axis.title = element_blank(),
+#         axis.line = element_blank(),
+#         axis.ticks.length = unit(0, "null"),
+#         axis.ticks.margin = unit(0, "null"),
+#         legend.text = element_text(14) ) +
+#   guides(fill = guide_legend(nrow = 1),
+#          label.position = "top")
 
 library(ggpubr)
-ggarrange(alb, aeg, jap,
-          ncol = 3, common.legend = TRUE)
-
+# ggarrange(alb, aeg, jap,
+#           ncol = 3, common.legend = TRUE)
+ggarrange(alb, aeg,
+          ncol = 2, common.legend = TRUE)

@@ -37,6 +37,7 @@ crs(esp_can)
 
 # Intersect the raster with each geometry of esp_can
 esp_can <- st_transform(esp_can, crs = crs(landcover))
+plot(esp_can[,"NATCODE"])
 
 # crop spain from raster
 esp0 <- geodata::gadm(country = 'ESP', level = 0,
@@ -48,15 +49,30 @@ plot(esp_rast)
 
 # intersect with polygon 
 plot(esp_can[1,"name"], add = TRUE)
-# landcov_fracs <- exact_extract(subsetted_raster, esp_can[,"NATCODE"], 
-#                                function(df) {
-#   df %>%
-#     mutate(frac_total = coverage_fraction / sum(coverage_fraction)) %>%
-#     group_by(NATCODE, value) %>%
-#     summarize(freq = sum(frac_total))
-# }, summarize_df = TRUE, include_cols = 'NATCODE', progress = FALSE)
+landcov_fracs <- exact_extract(subsetted_raster, esp_can[,"NATCODE"],
+                               function(df) {
+  df %>%
+    mutate(frac_total = coverage_fraction / sum(coverage_fraction)) %>%
+    group_by(NATCODE, value) %>%
+    summarize(freq = sum(frac_total))
+}, summarize_df = TRUE, include_cols = 'NATCODE', progress = FALSE)
 
-# saveRDS(landcov_fracs,"~/INVASIBILITY_THRESHOLD/data/landcov_fracs.Rds")
+
+# test
+landcov_fracs_f <- landcov_fracs[landcov_fracs$value == 23,]
+# Esp can shapefile --------------------------------------------------
+esp_can <- esp_get_munic_siane(moveCAN = FALSE)
+can_box <- esp_get_can_box()
+esp_can$NATCODE <- as.numeric(paste0("34",esp_can$codauto,
+                                     esp_can$cpro,
+                                     esp_can$LAU_CODE))
+
+landcov_fracs_f <- esp_can %>% left_join(landcov_fracs_f)
+landcov_fracs_f[is.na(landcov_fracs_f$freq), "freq" ] <- 0
+ggplot(landcov_fracs_f) + geom_sf(aes(fill = freq), color = NA) + theme_bw()
+
+# Save the Rds
+saveRDS(landcov_fracs,"~/INVASIBILITY_THRESHOLD/data/landcov_fracs.Rds")
 landcov_fracs <- readRDS("~/INVASIBILITY_THRESHOLD/data/landcov_fracs.Rds")
 
 # select only specific landcover type

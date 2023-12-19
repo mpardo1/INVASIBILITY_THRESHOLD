@@ -67,7 +67,7 @@ rain <- reshape::melt(rain[,c(1:13)],id.vars = "ID")
 colnames(rain) <- c("id", "month", "prec")
 
 # transform rain into mm per squared km
-rain$prec <- (rain$prec*1000)/3.47
+rain$prec <- rain$prec*1000
 pop <- terra::extract(pop_eu,
                        grid_points, xy =TRUE)[,c(1:2)]
 colnames(pop) <- c("id", "pop")
@@ -122,7 +122,7 @@ clim_pop_sf <- st_as_sf(clim_pop,coords = c("lon", "lat"))
 alb <- ggplot(clim_pop,
        aes(x = lon, y = lat,
            fill = as.factor(sum_alb))) +
-  geom_tile() +
+  geom_raster() +
   scale_fill_manual(values = pal,
                     name = "Nº months\n suitable",
                     limits = factor(seq(0,12,1)),
@@ -138,16 +138,16 @@ alb <- ggplot(clim_pop,
         axis.title = element_blank(),
         axis.line = element_blank(),
         axis.ticks.length = unit(0, "null"),
-        axis.ticks.margin = unit(0, "null")) 
+        axis.ticks.margin = unit(0, "null"))  + coord_fixed()
 
 
 aeg <- ggplot(clim_pop, aes(x = lon, y = lat, fill = as.factor(sum_aeg))) +
-  geom_tile() +
+  geom_raster() +
   scale_fill_manual(values = pal,
                     name = "Nº months\n suitable",
                     limits = factor(seq(0,12,1)),
                     na.value = "white")+  theme_minimal() +
-  theme(legend.position = "none",
+  theme(legend.position = "right",
         panel.background = element_rect(fill = "transparent", colour = NA),
         plot.background = element_rect(fill = "transparent", colour = NA),
         panel.grid = element_blank(),
@@ -158,7 +158,11 @@ aeg <- ggplot(clim_pop, aes(x = lon, y = lat, fill = as.factor(sum_aeg))) +
         axis.title = element_blank(),
         axis.line = element_blank(),
         axis.ticks.length = unit(0, "null"),
-        axis.ticks.margin = unit(0, "null")) 
+        axis.ticks.margin = unit(0, "null")) + coord_fixed()
+library(ggpubr)
+ggarrange(alb + ggtitle(expression("A")),
+          aeg+ ggtitle(expression("B")), widths = c(0.8,1))
+plot(get_legend(aeg))
 
 jap <- ggplot(clim_pop, aes(x = lon, y = lat, fill = as.factor(sum_jap))) +
   geom_tile() +

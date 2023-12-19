@@ -46,8 +46,7 @@ h_f <- function(hum, rain){
   erat = 0.5
   e0 = 1.5
   evar = 0.05
-  #evar = 0.1
-  # erat = 0.5
+  evar = 0.1
   eopt = 8
   efac = 0.01
   edens = 0.01
@@ -58,18 +57,41 @@ h_f <- function(hum, rain){
 }
 
 ### Incorporating rain and human density:
-h_f_jap <- function(hum, rain){
+h_f_jap <- function(land, rain){
+  # Constants:
+  e0 = 1.5
+  evar = 0.05
+  # evar = 0.1
+  eopt = 8
+  
+  hatch <- land*(((1+e0)*exp(-evar*(rain-eopt)^2))/(exp(-evar*(rain - eopt)^2) + e0))
+  return(hatch)
+}
+
+### Incorporating rain and human density:
+h_f_jap_2 <- function(land1, rain, land2){
   # Constants:
   e0 = 0.5
   evar = 0.05
   # evar = 0.1
   eopt = 8
   
-  hatch <- hum*(((1+e0)*exp(-evar*(rain-eopt)^2))/(exp(-evar*(rain - eopt)^2) + e0))
+  hatch <- land1*(((1+e0)*exp(-evar*(rain-eopt)^2))/(exp(-evar*(rain - eopt)^2) + e0)) + land2
   
   return(hatch)
 }
 
+### Incorporating rain and human density:
+h_f_jap_3 <- function(land, rain){
+  # Constants:
+  e0 = 0.5
+  evar = 0.05
+  #evar = 0.1
+  eopt = 8
+  
+  hatch <- land*(((1+e0)*exp(-evar*(rain-eopt)^2))/(exp(-evar*(rain - eopt)^2) + e0))
+  return(hatch)
+}
 #### -------------------------- Albopictus ------------------------- ####
 ## Thermal responses Aedes Albopictus from Mordecai 2017:
 a_f_alb <- function(temp){Briere_func(0.000193,10.25,38.32,temp)} # Biting rate
@@ -140,14 +162,58 @@ R0_func_jap <- function(Te, rain,hum){
     deltE = 0.1
     dE <- dE_f_jap(Te)
     dL <- dL_f_jap(Te)
-    if(rain == 0){
-      print("0 rain")
-    }
     h <- h_f_jap(hum,rain)
     if(dL == 0 | f == 0 | a == 0 | dE == 0 |  Te<0){
       R0 <- 0
     }else{
-      R0 <- ((f*a*lf)*(dL/(dL+deltaL))*(h*dE/(h*dE+deltE))*hum)^(1/3)
+      R0 <- ((f*a*lf)*(dL/(dL+deltaL))*(h*dE/(h*dE+deltE)))^(1/3)
+    }
+  }
+  return(R0)
+}
+
+# Second function R_M with independent landcover
+R0_func_jap_2 <- function(Te, rain,land1, land2){
+  if(is.na(Te) | is.na(rain) | is.na(land1)){
+    R0 <- NA
+  }else{
+    a <- 0.35
+    f <- 40 #183/2
+    lf <- lf_f_jap(Te)
+    deltaL <- deltaL_f_jap(Te)
+    deltE = 0.1
+    dE <- dE_f_jap(Te)
+    dL <- dL_f_jap(Te)
+    if(rain == 0){
+      print("0 rain")
+    }
+    h <- h_f_jap_2(land1,rain,land2)
+    if(dL == 0 | f == 0 | a == 0 | dE == 0 |  Te<0){
+      R0 <- 0
+    }else{
+      R0 <- ((f*a*lf)*(dL/(dL+deltaL))*(h*dE/(h*dE+deltE)))^(1/3)
+    }
+  }
+  return(R0)
+}
+
+# R0 function by temperature with evar = 0.05:
+R0_func_jap_3 <- function(Te, rain,hum){
+  if(is.na(Te) | is.na(rain) | is.na(hum)){
+    R0 <- NA
+  }else{
+    a <- 0.35
+    f <- 40 #183/2
+    lf <- lf_f_jap(Te)
+    deltaL <- deltaL_f_jap(Te)
+    deltE = 0.1
+    dE <- dE_f_jap(Te)
+    dL <- dL_f_jap(Te)
+    h <- h_f_jap_3(hum,rain)
+    if(dL == 0 | f == 0 | a == 0 | dE == 0 |  Te<0){
+      R0 <- 0
+    }else{
+      R0 <- ((f*a*lf)*(dL/(dL+deltaL))*(h*dE/(h*dE+deltE)))^(1/3)
     }
   }
   return(R0)
