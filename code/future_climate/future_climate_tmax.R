@@ -36,7 +36,7 @@ for(i in c(2:length(dataset))){
   prec_w2 <- geodata::cmip6_world(model = dataset[i],
                                   ssp = ssp, time = time,
                                   var = 'tmax', path = path_dir, res = 2.5)
-  prec_w1 <- mean(prec_w1, prec_w2)
+  # prec_w1 <- mean(prec_w1, prec_w2)
   print("mean done")
 }
 
@@ -54,7 +54,7 @@ for(i in c(2:length(dataset))){
   prec_w2 <- geodata::cmip6_world(model = dataset[i],
                                   ssp = ssp, time = time,
                                   var = 'tmax', path = path_dir, res = 2.5)
-  prec_w1 <- mean(prec_w1, prec_w2)
+  # prec_w1 <- mean(prec_w1, prec_w2)
   print("mean done")
 }
 
