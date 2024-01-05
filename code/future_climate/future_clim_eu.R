@@ -16,25 +16,26 @@ SHP_0 <- get_eurostat_geospatial(resolution = 10,
                                  nuts_level = 0, 
                                  year = 2016)
 
-# Download 30s ------------------------------------------------------------
-# A valid Shared Socio-economic Pathway code: "126", "245", "370" or "585".
-# path = 'tmpr_245'  path = 'tmpr_370'  path = 'tmpr_585'
-# (optimistic: SSP245; middle of the road: SSP370; and pessimistic: SSP585)
-dataset = 'ACCESS-CM2'
-path_dir <-'tmpr_2060_370'
-ssp = '370'
-time = '2061-2080'
-prec_w <- geodata::cmip6_world(model = dataset,
-                               ssp = ssp, time = time,
-                               var = 'prec', path = path_dir, res = 2.5)
+# Load future climate data average all data sets------------------------------------------------
+# code in ~/INVASIBILITY_THRESHOLD/code/future-climate/avg_all_dataset_future_clim.R 
+time = "2061-2080"
+var = "prec"
+Path <- paste0("~/INVASIBILITY_THRESHOLD/data/future-climate/",
+                var,"_mean",time,".tif")
+prec_w = rast(Path)
+plot(prec_w[[2]])
 
-tmax_w <- geodata::cmip6_world(model = dataset,
-                               ssp = ssp, time = time,
-                               var = 'tmax', path = path_dir, res = 2.5)
+var = "tmin"
+Path <- paste0("~/INVASIBILITY_THRESHOLD/data/future-climate/",
+               var,"_mean",time,".tif")
+tmin_w = rast(Path)
+plot(tmin_w[[2]])
 
-tmin_w <- geodata::cmip6_world(model = dataset,
-                               ssp = ssp, time = time,
-                               var = 'tmin', path = path_dir, res = 2.5)
+var = "tmax"
+Path <- paste0("~/INVASIBILITY_THRESHOLD/data/future-climate/",
+               var,"_mean",time,".tif")
+tmax_w = rast(Path)
+plot(tmax_w[[2]])
 
 # Crop the raster to the exact extent ------------------------
 exact_extent <- c(xmin = -25, xmax = 40, ymin = 25, ymax = 75)
@@ -104,8 +105,9 @@ clim_df[, R0_jap := mapply(R0_func_jap, tmean, prec, pop)]
 grid_points$id <- c(1:nrow(grid_points))
 clim_df <- clim_df %>% left_join(grid_points)
  saveRDS(clim_df,
-        paste0("~/INVASIBILITY_THRESHOLD/output/eu_alb_",time,"_mo_",dataset,"_",ssp,".Rds"))
-clim_df <- readRDS(paste0("~/INVASIBILITY_THRESHOLD/output/eu_alb_",time,"_mo_",dataset,"_",ssp,".Rds"))
+        paste0("~/INVASIBILITY_THRESHOLD/output/eu_alb_aeg_",time,"_.Rds"))
+ 
+clim_df <- readRDS(paste0("~/INVASIBILITY_THRESHOLD/output/eu_alb_aeg_",time,"_.Rds"))
 library(latex2exp)
 month_n =11
 plot_11 <- ggplot(clim_df[which(clim_df$month == month_n),],
@@ -147,11 +149,9 @@ clim_df <- clim_df[,.(sum_alb = sum(bool_alb),
 # plot  sum months ------------------------------------------------
 grid_points$id <- c(1:nrow(grid_points))
 clim_df <- clim_df %>% left_join(grid_points)
-# saveRDS(clim_df,
-        # paste0("~/INVASIBILITY_THRESHOLD/output/summon_eu_alb_",
-               # time,"_mo_",dataset,"_",ssp,".Rds"))
-clim_df <- readRDS(paste0("~/INVASIBILITY_THRESHOLD/output/summon_eu_alb_",
-               time,"_mo_",dataset,"_",ssp,".Rds"))
+saveRDS(clim_df,paste0("~/INVASIBILITY_THRESHOLD/output/summon_eu_",time,".Rds"))
+clim_df <- readRDS(paste0("~/INVASIBILITY_THRESHOLD/output/summon_eu_",time,".Rds"))
+
 library(RColorBrewer)
 name_pal = "RdYlBu"
 display.brewer.pal(11, name_pal)
@@ -161,7 +161,7 @@ pal[12] = "#74011C"
 pal[13] = "#4B0011"
 letsize = 16
 alb <- ggplot(clim_df) +
-  geom_tile(aes(x = lon, y = lat, 
+  geom_raster(aes(x = lon, y = lat, 
                 fill = as.factor(sum_alb)),alpha = 1) +
   scale_fill_manual(values = pal,
                     name = "Nº suitable \n months",
@@ -169,7 +169,7 @@ alb <- ggplot(clim_df) +
                     na.value = "white") +
   ylim(c(25,75)) + xlim(c(-30,40)) +
   xlab("") + ylab("") +
-  theme_minimal() +
+  theme_minimal() + coord_fixed() +
   theme(plot.title = element_text(hjust = 0.5,
                                   face = "italic"),
     panel.background = element_rect(fill = "transparent", colour = NA),

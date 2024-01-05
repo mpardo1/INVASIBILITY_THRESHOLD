@@ -46,7 +46,7 @@ dataset <- c("ACCESS-CM2",  "AWI-CM-1-1-MR",
 # 
 # plot(prec_w1[[8]])
 
-# Future predictions precipitacion 2041-2060
+# Future predictions precipitation 2041-2060
 time = '2041-2060'
 path_dir = paste0("temp_", time)
 prec_w1 <- geodata::cmip6_world(model = dataset[1],
@@ -64,3 +64,6 @@ for(i in c(2:length(dataset))){
 
 writeRaster(prec_w1,paste0("~/INVASIBILITY_THRESHOLD/data/future-climate/prec",
                      time,".tif"))
+
+# Aggregate the raster of all data sets into one raster with the mean
+list_files <- list.files()
