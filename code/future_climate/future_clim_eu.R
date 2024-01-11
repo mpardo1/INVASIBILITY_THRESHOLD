@@ -44,10 +44,10 @@ tmax_w <- crop(tmax_w, exact_extent)
 prec_w <- crop(prec_w, exact_extent)
 
 # read population density europe -----------------------------
-path <- "~/INVASIBILITY_THRESHOLD/data/pop/Eurostat_Census-GRID_2021_V1-0/ESTAT_OBS-VALUE-T_2021_V1-0.tiff"
+path <- "~/INVASIBILITY_THRESHOLD/data/pop_eu.tif"
 pop_eu <- rast(path)
 # plot(pop_eu[[1]])
-pop_eu <- terra::project(pop_eu,tmin_w, method = "average")
+pop_eu <- terra::project(pop_eu,tmin_w, method = "near")
 
 # Create a grid of longitude and latitude values
 lon <- seq(from = xmin(tmin_w), to = xmax(tmin_w),
@@ -110,15 +110,16 @@ clim_df <- clim_df %>% left_join(grid_points)
 clim_df <- readRDS(paste0("~/INVASIBILITY_THRESHOLD/output/eu_alb_aeg_",time,"_.Rds"))
 library(latex2exp)
 month_n =11
-plot_11 <- ggplot(clim_df[which(clim_df$month == month_n),],
-       aes(x = lon, y = lat, fill = R0_aeg)) +
+plot_11_alb <- ggplot(clim_df[which(clim_df$month == month_n),],
+       aes(x = lon, y = lat, fill = R0_alb)) +
   geom_raster() +
   scale_fill_distiller(na.value = "white",
                        palette = "Spectral",
-                       name = TeX("$R_M$"))+
+                       name = TeX("$R_M$"),
+                       limits = c(0,6))+
   ylim(c(25,75)) + xlim(c(-30,40)) +
   ggtitle(month_n) +
-  theme_bw() + coord_fixed() +
+  theme_minimal() + coord_fixed() +
   theme(plot.title = element_text(hjust = 0.5,
                                   face = "italic"),
         panel.background = element_rect(fill = "transparent", colour = NA),
@@ -132,10 +133,12 @@ plot_11 <- ggplot(clim_df[which(clim_df$month == month_n),],
         axis.line = element_blank(),
         axis.ticks.length = unit(0, "null"),
         axis.ticks.margin = unit(0, "null")) 
-plot_11
+plot_8
 
 library(ggpubr)
-ggarrange(plot_5, plot_8,plot_11, ncol = 3, common.legend= TRUE)
+ggarrange(plot_5_alb, plot_8_alb,plot_11_alb,
+          plot_5_aeg, plot_8_aeg,plot_11_aeg,
+          ncol = 3,nrow=2, common.legend= TRUE)
 
 # aggregate by year -------------------------------------------
 clim_df$bool_alb <- ifelse(clim_df$R0_alb>1,1,0)

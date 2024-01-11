@@ -30,19 +30,24 @@ vars <- c('prec', 'tmax', 'tmin')
 
 path_dir <-'tmpr_2060_370'
 time = '2061-2080'
-# time = "2041-2060"
- path = "tmpr_2060"
-prec_w <- geodata::cmip6_world(model = 'ACCESS-CM2',
-                               ssp = '370', time = time,
-                               var = 'prec', path = path, res = 2.5)
-
-tmax_w <- geodata::cmip6_world(model = 'ACCESS-CM2',
-                               ssp = '370', time = time,
-                               var = 'tmax', path = path, res = 2.5)
-
-tmin_w <- geodata::cmip6_world(model = 'ACCESS-CM2',
-                               ssp = '370', time = time,
-                               var = 'tmin', path = path, res = 2.5)
+ time = "2041-2060"
+ # time = "2061-2080"
+ var = "prec"
+ Path <- paste0("~/INVASIBILITY_THRESHOLD/data/future-climate/",
+                var,"_mean",time,".tif")
+ prec_w = rast(Path)
+ plot(prec_w[[2]])
+ 
+ var = "tmin"
+ Path <- paste0("~/INVASIBILITY_THRESHOLD/data/future-climate/",
+                var,"_mean",time,".tif")
+ tmin_w = rast(Path)
+ plot(tmin_w[[2]])
+ 
+ var = "tmax"
+ Path <- paste0("~/INVASIBILITY_THRESHOLD/data/future-climate/",
+                var,"_mean",time,".tif")
+ tmax_w = rast(Path)
 
 # Change coordinate system to WGS84 ---------------------------------------
 coord_sys <- crs("+proj=longlat +datum=WGS84")
@@ -227,149 +232,6 @@ tmax_sf <- rm_NA(tmax_sf)
 tmin_sf <- rm_NA(tmin_sf)
 prec_sf <- rm_NA(prec_sf)
 
-# Load weather 2022 ----------------------------------------------------------
-year = 2022
-Path <- paste0("/home/marta/INVASIBILITY_THRESHOLD/output/mcera5/process_Daily_ERA5_daily_mcera_",year,".Rds")
-df_group <- setDT(readRDS(Path))
-df_group$month <- lubridate::month(df_group$date)
-df_group <- df_group[,.(tmean = mean(tmean),
-                        tmin = min(tmin),
-                        tmax = max(tmax),
-                        sumprec = sum(prec1),
-                        prec = mean(prec1)), by = list(month,NATCODE)]
-
-# Function: Compare weather 2022 with climate change scenario -----------------
-comp_climate <- function(month){
-
-  month_s <- substr(month, 1,3)
-
-  # Join df by months ----------------------------------------------------------
-  tmin_Jan <- tmin_sf[,c("NATCODE", month_s)]
-  colnames(tmin_Jan) <- c("NATCODE", "tmin")
-  tmax_Jan <- tmax_sf[,c("NATCODE", month_s)]
-  colnames(tmax_Jan) <- c("NATCODE", "tmax")
-  prec_Jan <- prec_sf[,c("NATCODE", month_s)]
-  colnames(prec_Jan) <- c("NATCODE", "prec")
-
-  # Group by NATCODE there are more than 1 raster point at each municipality
-  tmin_Jan <- tmin_Jan %>% group_by(NATCODE) %>%
-    summarise(tmin = mean(tmin))
-  tmax_Jan <- tmax_Jan %>% group_by(NATCODE) %>%
-    summarise(tmax = mean(tmax))
-  prec_Jan <- prec_Jan %>% group_by(NATCODE) %>%
-    summarise(prec = mean(prec))
-
-  df_Jan <- setDT(prec_Jan %>% left_join(tmax_Jan) %>%
-                    left_join(tmin_Jan) %>% left_join(pop))
-  df_Jan$tmean <- (df_Jan$tmin + df_Jan$tmax)/2
-
-  # Filter the df for 2022
-  month_s = as.integer(factor(month, levels = month.name))
-  df_group_m <- df_group[which(df_group$month == month_s),]
-
-  df_group_m <- esp_can %>% left_join(df_group_m)
-  df_Jan <- esp_can %>% left_join(df_Jan)
-
-  plot_1 <- ggplot(df_group_m) +
-    geom_sf(aes(fill = tmin), colour = NA) +
-    geom_sf(data = can_box) +
-    scale_fill_viridis_c(option="magma",
-                         limits = c(min(df_group_m$tmin,
-                                        df_Jan$tmin[which(is.na(df_Jan$tmin)==FALSE)]),
-                                    max(df_group_m$tmin,
-                                        df_Jan$tmin[which(is.na(df_Jan$tmin)==FALSE)]))) +
-    ggtitle(paste(month, " 2022")) +
-    theme_bw()
-
-  plot_2 <- ggplot(df_Jan) +
-    geom_sf(aes(fill = tmin), colour = NA) +
-    geom_sf(data = can_box) +
-    scale_fill_viridis_c(option="magma",
-                         limits = c(min(df_group_m$tmin,
-                                        df_Jan$tmin[which(is.na(df_Jan$tmin)==FALSE)]),
-                                    max(df_group_m$tmin,
-                                        df_Jan$tmin[which(is.na(df_Jan$tmin)==FALSE)]))) +
-    ggtitle(paste0(month, "2041-2060")) +
-    theme_bw()
-
-  plot_3 <- ggplot(df_group_m) +
-    geom_sf(aes(fill = tmax), colour = NA) +
-    geom_sf(data = can_box) +
-    scale_fill_viridis_c(option="magma",
-                         limits = c(min(df_group_m$tmax,
-                                        df_Jan$tmax[which(is.na(df_Jan$tmax)==FALSE)]),
-                                    max(df_group_m$tmax,
-                                        df_Jan$tmax[which(is.na(df_Jan$tmax)==FALSE)]))) +
-    ggtitle(paste(month, " 2022")) +
-    theme_bw()
-
-  plot_4 <- ggplot(df_Jan) +
-    geom_sf(aes(fill = tmax), colour = NA) +
-    geom_sf(data = can_box) +
-    scale_fill_viridis_c(option="magma",
-                         limits = c(min(df_group_m$tmax,
-                                        df_Jan$tmax[which(is.na(df_Jan$tmax)==FALSE)]),
-                                    max(df_group_m$tmax,
-                                        df_Jan$tmax[which(is.na(df_Jan$tmax)==FALSE)]))) +
-    ggtitle(paste0(month, " 2041-2060")) +
-    theme_bw()
-
-  plot_5 <- ggplot(df_group_m) +
-    geom_sf(aes(fill = tmean), colour = NA) +
-    geom_sf(data = can_box) +
-    scale_fill_viridis_c(option="magma",
-                         limits = c(min(df_group_m$tmean,
-                                        df_Jan$tmean[which(is.na(df_Jan$tmean)==FALSE)]),
-                                    max(df_group_m$tmean,
-                                        df_Jan$tmean[which(is.na(df_Jan$tmean)==FALSE)]))) +
-    ggtitle(paste(month, " 2022")) +
-    theme_bw()
-
-  plot_6 <- ggplot(df_Jan) +
-    geom_sf(aes(fill = tmean), colour = NA) +
-    geom_sf(data = can_box) +
-    scale_fill_viridis_c(option="magma",
-                         limits = c(min(df_group_m$tmean,
-                                        df_Jan$tmean[which(is.na(df_Jan$tmean)==FALSE)]),
-                                    max(df_group_m$tmean,
-                                        df_Jan$tmean[which(is.na(df_Jan$tmean)==FALSE)]))) +
-    ggtitle(paste0(month, " 2041-2060")) +
-    theme_bw()
-
-  plot_7 <- ggplot(df_group_m) +
-    geom_sf(aes(fill = sumprec), colour = NA) +
-    geom_sf(data = can_box) +
-    scale_fill_viridis_c(option="magma",
-                         limits = c(min(df_group_m$sumprec,
-                                        df_Jan$prec[which(is.na(df_Jan$prec)==FALSE)]),
-                                    max(df_group_m$sumprec,
-                                        df_Jan$prec[which(is.na(df_Jan$prec)==FALSE)]))) +
-    ggtitle(paste(month, " 2022")) +
-    theme_bw()
-
-  plot_8 <- ggplot(df_Jan) +
-    geom_sf(aes(fill = prec), colour = NA) +
-    geom_sf(data = can_box) +
-    scale_fill_viridis_c(option="magma",
-                         limits = c(min(df_group_m$sumprec,
-                                        df_Jan$prec[which(is.na(df_Jan$prec)==FALSE)]),
-                                    max(df_group_m$sumprec,
-                                        df_Jan$prec[which(is.na(df_Jan$prec)==FALSE)]))) +
-    ggtitle(paste0(month, " 2041-2060")) +
-    theme_bw()
-
-  ggarr1 <- ggarrange(plot_1,plot_2, ncol = 2, common.legend = TRUE)
-  ggarr2 <- ggarrange(plot_3,plot_4, ncol = 2, common.legend = TRUE)
-  ggarr3 <- ggarrange(plot_5,plot_6, ncol = 2, common.legend = TRUE)
-  ggarr4 <- ggarrange(plot_7,plot_8, ncol = 2, common.legend = TRUE)
-
-  return(list(ggarr1, ggarr2, ggarr3, ggarr4))
-}
-
-# Select month to see comparison ----------------------------------------------
-month = "January"
-plots <- comp_climate(month)
-plots[[3]]
 
 # Function to compute plot and df monthly --------------------------------------
 plot_month <- function(month, esp){
@@ -466,10 +328,10 @@ ggarr
 lmon <- list("Feb", "Mar", "Apr", "May", "Jun", "Jul", 
              "Aug", "Sep", "Oct", "Nov", "Dec")
 library(latex2exp)
-df_y <- plot_month("Jan")[[2]]
+df_y <- plot_month("Jan","alb")[[2]]
 df_y$month <- "Jan"
 for(i in c(1:length(lmon))){
-  df_aux <- plot_month(lmon[[i]])[[2]]
+  df_aux <- plot_month(lmon[[i]],"alb")[[2]]
   df_aux$month <- lmon[[i]]
   df_y <- rbind(df_y,df_aux)
 }
@@ -491,7 +353,24 @@ df_g <- df_y %>% group_by(NATCODE) %>%
             avg_jap = mean(R0_jap)
             )
 
-Path <- paste0("~/INVASIBILITY_THRESHOLD/output/ERA5/temp/2020/clim_2060.Rds")
+library(RColorBrewer)
+name_pal = "RdYlBu"
+display.brewer.pal(11, name_pal)
+pal <- rev(brewer.pal(11, name_pal))
+pal[11]
+pal[12] = "#74011C"
+pal[13] = "#4B0011"
+ggplot(df_g) +
+  geom_sf(data = can_box) +
+  geom_sf(aes(fill = as.factor(alb)), colour = NA) +
+  coord_sf(datum = NA) +
+  scale_fill_manual(values = pal,
+                       limits = factor(seq(0,12,1)),
+                       name = TeX("$R_M$")) +
+  theme_bw()
+
+# Save file
+Path <- paste0("~/INVASIBILITY_THRESHOLD/output/ERA5/temp/2020/clim_2080.Rds")
 saveRDS(df_g, Path)
 
 df_g <- readRDS(Path)
