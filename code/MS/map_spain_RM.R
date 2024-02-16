@@ -124,6 +124,8 @@ df_group[, R0_dai_alb := mapply(R0_func_alb, tmean, prec, dens)]
 df_group[, R0_dai_aeg := mapply(R0_func_aeg, tmean, prec, dens)]
 df_group[, R0_dai_jap := mapply(R0_func_jap, tmean, prec, freq)]
 
+saveRDS(df_group,paste0("~/albo_mobility/data/R_M/R_M_daily_",year,".Rds"))
+
 # Aggregate monthly ------------------------------------------------------
 df_group_mon <- df_group[, .(tmean = mean(tmean),
                              tmin = min(tmean),

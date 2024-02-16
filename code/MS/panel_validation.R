@@ -512,15 +512,15 @@ df_pa_CAT <- df_pa[which(df_pa$ine.ccaa.name == "Cataluña"),]
 library(ggpubr)
 leg <- get_legend(plot_2020)
 as_ggplot(leg)
-ggarr <- ggarrange( PA_alb+ ggtitle("A"),
-                    plot_2020 + ggtitle("B") +
+ggarr <- ggarrange( PA_alb+ ggtitle("a)"),
+                    plot_2020 + ggtitle("b)") +
                       theme(legend.position = "none"),
                     leg,
                     ncol = 3,
                    nrow = 1, widths = c(1,1,0.2))
 
-ggarr1 <- ggarrange(plot_ccaa+ ggtitle("C"),
-                   plot_counts + ggtitle("D"),
+ggarr1 <- ggarrange(plot_ccaa+ ggtitle("c)"),
+                   plot_counts + ggtitle("d)"),
                    widths = c(1.2,1),
                    ncol = 2, nrow = 1)
 ggarrange(ggarr, ggarr1, ncol = 1)
