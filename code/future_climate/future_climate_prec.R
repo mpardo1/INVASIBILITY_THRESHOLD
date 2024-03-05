@@ -12,8 +12,8 @@ rm(list = ls())
 # path = 'tmpr_245'  path = 'tmpr_370'  path = 'tmpr_585'
 # (optimistic: SSP245; middle of the road: SSP370; and pessimistic: SSP585)
 dataset = 'ACCESS-CM2'
-path_dir <-'tmpr_2060_370'
-ssp = '370'
+path_dir <-'tmpr_2060_245'
+ssp = '245'
 
 dataset <- c("ACCESS-CM2",  "AWI-CM-1-1-MR", 
              "BCC-CSM2-MR", "CanESM5", "CanESM5-CanOE", 
@@ -26,23 +26,23 @@ dataset <- c("ACCESS-CM2",  "AWI-CM-1-1-MR",
 
 # Prec ---------------------------------------------------------------------
 # Future predictions precipitacion 2041-2060
-# time = '2061-2080'
-# 
-# prec_w1 <- geodata::cmip6_world(model = dataset[1],
-#                                ssp = ssp, time = time,
-#                                var = 'prec', path = path_dir, res = 2.5)
-# 
-# for(i in c(16:length(dataset))){
-#   print(paste0("dataset:",dataset[i]))
-#   prec_w2 <- geodata::cmip6_world(model = dataset[i],
-#                                   ssp = ssp, time = time,
-#                                   var = 'prec', path = path_dir, res = 2.5)
-#   prec_w1 <- mean(prec_w1, prec_w2)
-#   print("mean done")
-# }
-# 
-# writeRaster(prec_w1,paste0("~/INVASIBILITY_THRESHOLD/data/future-climate/prec",
-#                      time,".tif"), overwrite=TRUE)
+time = '2061-2080'
+
+prec_w1 <- geodata::cmip6_world(model = dataset[1],
+                               ssp = ssp, time = time,
+                               var = 'prec', path = path_dir, res = 2.5)
+
+for(i in c(16:length(dataset))){
+  print(paste0("dataset:",dataset[i]))
+  prec_w2 <- geodata::cmip6_world(model = dataset[i],
+                                  ssp = ssp, time = time,
+                                  var = 'prec', path = path_dir, res = 2.5)
+  prec_w1 <- mean(prec_w1, prec_w2)
+  print("mean done")
+}
+
+writeRaster(prec_w1,paste0("~/INVASIBILITY_THRESHOLD/data/future-climate/prec",
+                     time,".tif"), overwrite=TRUE)
 # 
 # plot(prec_w1[[8]])
 

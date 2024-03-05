@@ -12,8 +12,8 @@ rm(list = ls())
 # path = 'tmpr_245'  path = 'tmpr_370'  path = 'tmpr_585'
 # (optimistic: SSP245; middle of the road: SSP370; and pessimistic: SSP585)
 dataset = 'ACCESS-CM2'
-path_dir <-'tmpr_2060_370'
-ssp = '370'
+path_dir <-'tmpr_2060_2445'
+ssp = '245'
 
 dataset <- c("ACCESS-CM2",  "AWI-CM-1-1-MR", 
              "BCC-CSM2-MR", "CanESM5", "CanESM5-CanOE", 
