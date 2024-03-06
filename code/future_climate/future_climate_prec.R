@@ -19,10 +19,11 @@ dataset <- c("ACCESS-CM2",  "AWI-CM-1-1-MR",
              "BCC-CSM2-MR", "CanESM5", "CanESM5-CanOE", 
              "CMCC-ESM2", "CNRM-CM6-1", "CNRM-CM6-1-HR",
              "CNRM-ESM2-1", "EC-Earth3-Veg", "EC-Earth3-Veg-LR",
-              "GFDL-ESM4", "GISS-E2-1-G", "GISS-E2-1-H",
-              "INM-CM4-8", "INM-CM5-0", "IPSL-CM6A-LR",
+             "GISS-E2-1-G", "GISS-E2-1-H",
+             "INM-CM4-8", "INM-CM5-0", "IPSL-CM6A-LR",
              "MIROC-ES2L", "MIROC6", "MPI-ESM1-2-HR", "MPI-ESM1-2-LR", 
              "MRI-ESM2-0", "UKESM1-0-LL")
+
 
 # Prec ---------------------------------------------------------------------
 # Future predictions precipitacion 2041-2060
@@ -32,7 +33,7 @@ prec_w1 <- geodata::cmip6_world(model = dataset[1],
                                ssp = ssp, time = time,
                                var = 'prec', path = path_dir, res = 2.5)
 
-for(i in c(16:length(dataset))){
+for(i in c(1:length(dataset))){
   print(paste0("dataset:",dataset[i]))
   prec_w2 <- geodata::cmip6_world(model = dataset[i],
                                   ssp = ssp, time = time,
@@ -41,7 +42,7 @@ for(i in c(16:length(dataset))){
   print("mean done")
 }
 
-writeRaster(prec_w1,paste0("~/INVASIBILITY_THRESHOLD/data/future-climate/prec",
+writeRaster(prec_w1,paste0("~/INVASIBILITY_THRESHOLD/data/future-climate/ssp245_prec",
                      time,".tif"), overwrite=TRUE)
 # 
 # plot(prec_w1[[8]])
@@ -58,11 +59,11 @@ for(i in c(2:length(dataset))){
   prec_w2 <- geodata::cmip6_world(model = dataset[i],
                                   ssp = ssp, time = time,
                                   var = 'prec', path = path_dir, res = 2.5)
-  # prec_w1 <- mean(prec_w1, prec_w2)
+  prec_w1 <- mean(prec_w1, prec_w2)
   print("mean done")
 }
 
-writeRaster(prec_w1,paste0("~/INVASIBILITY_THRESHOLD/data/future-climate/prec",
+writeRaster(prec_w1,paste0("~/INVASIBILITY_THRESHOLD/data/future-climate/ssp245_prec",
                      time,".tif"))
 
 # Aggregate the raster of all data sets into one raster with the mean
