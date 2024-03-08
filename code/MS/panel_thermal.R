@@ -1,615 +1,10 @@
-## Compute the thermal responses for Aedes Japonicus from literature data
+## Compute the thermal responses for Aedes aegypti and albopictus from literature data
 # compare also different functions and compute its AIC value
 rm(list= ls())
 library(thermPerf)
 library(ggplot2)
 library(tidyverse)
 library(nls2)
-
-## Data taken from https://parasitesandvectors.biomedcentral.com/articles/10.1186/s13071-018-2659-1
-## https://www.researchgate.net/publication/235430511_The_ecology_of_the_exotic_mosquito_Ochlerotatus_Finlaya_japonicus_japonicus_Theobald_1901_Diptera_Culicidae_and_an_examination_of_its_role_in_the_West_Nile_virus_cycle_in_New_Jersey
-Path <- "~/INVASIBILITY_THRESHOLD/data/japonicus/adult_larva_lifespan.csv"
-Japonicus <- read.csv(Path)
-
-head(Japonicus)
-Japonicus$lifespan <- Japonicus$Age_adult_death_mean_female  
-plot_deltaA <- ggplot(Japonicus) + 
-  geom_point(aes(Temp,lifespan)) + theme_bw()
-plot_deltaA
-
-## Linear Fit
-Fitting_deltaA <- nls(lifespan ~ cont*Temp + cont1,
-                      data = Japonicus,
-                      start = list(cont = 0.001, cont1 = 0.0))
-summary(Fitting_deltaA)
-
-mod <- function(te){
-  c <- as.numeric(Fitting_deltaA$m$getPars()[1])
-  c1 <- as.numeric(Fitting_deltaA$m$getPars()[2])
-  c*te+c1
-}
-# Quadratic Fit
-Fitting_deltaA_quad <- nls(lifespan ~ cont*Temp^2 + cont1*Temp +cont2,
-                           data = Japonicus,
-                           start = list(cont = 0.001, cont1 = 0.0, cont2 = 0.0))
-
-summary(Fitting_deltaA_quad)
-
-# Compute the AIC value
-AIC(Fitting_deltaA,Fitting_deltaA_quad)
-
-# mod <- function(te){
-#   c <- as.numeric(Fitting_deltaA$m$getPars()[1])
-#   c1 <- as.numeric(Fitting_deltaA$m$getPars()[2])
-#   c2 <- as.numeric(Fitting_deltaA$m$getPars()[3])
-#   c*te^2+c1*te+c2
-# }
-
-## Exponential Fit
-# Fitting_deltaA <- nls(lifespan ~ cont*exp(cont1+cont2*Temp),
-#                       data = Japonicus,
-#                       start = list(cont = 15, cont1 = 2.1, cont2 = -0.01))
-# 
-# summary(Fitting_deltaA)
-
-# mod <- function(te){
-#   c <- as.numeric(Fitting_deltaA$m$getPars()[1])
-#   c1 <- as.numeric(Fitting_deltaA$m$getPars()[2])
-#   c2 <- as.numeric(Fitting_deltaA$m$getPars()[3])
-#   c*te^2+c1*te+c2
-# }
-vec <- seq(0,45,0.001)
-df_out_deltaA <- data.frame(temp_ae = vec,
-                            deltaA_jap <- sapply(vec, mod))
-colnames(df_out_deltaA) <- c("temp_ae","deltaA_jap")
-df_out_deltaA[which(df_out_deltaA$deltaA_jap < 0 ),2] <- 0
-# df_out_deltaA[which(df_out_deltaA$temp_ae < 5 ),2] <- 0
-# df_out_deltaA[which(df_out_deltaA$temp_ae > 34 ),2] <- 0
-plotdeltaA <- ggplot(df_out_deltaA) +
-  geom_line(aes(temp_ae,deltaA_jap), size = 0.7) +
-  geom_point(data = Japonicus,
-             aes(x = Temp,y = lifespan),
-             size = 0.9, color = "red") +
-  xlim(c(0,45))  +
-  ylab("Adult Life Span") + xlab("Temperature (Cº)") +
-  theme_bw()
-plotdeltaA
-
-####----------- +/- SD-------------####
-# Mean - sd
-mod_min <- function(te){
-  c <- as.numeric(Fitting_deltaA$m$getPars()[1]) - 
-    summary(Fitting_deltaA)$coefficients[1,2]
-  c1 <- as.numeric(Fitting_deltaA$m$getPars()[2])-
-    summary(Fitting_deltaA)$coefficients[2,2]
-  c*te+c1
-}
-
-vec <- seq(0,45,0.001)
-df_out_deltaA_min <- data.frame(temp_ae = vec,
-                                deltaA_jap <- sapply(vec, mod_min))
-colnames(df_out_deltaA_min) <- c("temp_ae","deltaA_jap")
-# df_out_deltaA_min[which(df_out_deltaA_min$deltaA_jap < 0),2] <- 0
-df_out_deltaA_min$group <- "min"
-
-ggplot(df_out_deltaA_min) + 
-  geom_line(aes(temp_ae,deltaA_jap))
-
-### Mean + sd
-mod_max <- function(te){
-  c <- as.numeric(Fitting_deltaA$m$getPars()[1]) +
-    summary(Fitting_deltaA)$coefficients[1,2]
-  c1 <- as.numeric(Fitting_deltaA$m$getPars()[2]) + 
-    summary(Fitting_deltaA)$coefficients[2,2]
-  c*te+c1
-}
-
-vec <- seq(0,45,0.001)
-df_out_deltaA_max <- data.frame(temp_ae = vec,
-                                deltaA_jap <- sapply(vec, mod_max))
-colnames(df_out_deltaA_max) <- c("temp_ae","deltaA_jap")
-# df_out_deltaA_max[which(df_out_deltaA_max$deltaA_jap < 0),2] <- 0
-df_out_deltaA_max$group <- "max"
-df_out_deltaA$group <- "mean"
-
-# Plot all three curves together
-df_out_deltaA <- rbind(df_out_deltaA_max,
-                       df_out_deltaA_min,
-                       df_out_deltaA)
-
-plotdeltaA <- ggplot(df_out_deltaA) +
-  geom_line(aes(temp_ae,deltaA_jap,
-                color = group,
-                group = group, 
-                alpha = group), size = 0.7) +
-  geom_point(data = Japonicus,aes(x = Temp,y = lifespan),
-             size = 0.9, color = "black") +
-  scale_color_manual(values=c("red", "blue", "red")) + 
-  scale_alpha_manual(values = c(0.5,1,0.5)) +
-  xlim(c(5,35)) + ylim(c(0,80)) +
-  guides( color =FALSE, alpha = FALSE) +
-  ylab("Adult life span") + xlab("Temperature (Cº)") +
-  theme_bw() 
-
-plotdeltaA 
-
-# add grey ribbon --------------------------------------------
-df_out_deltaA_w <- reshape(df_out_deltaA, idvar ="temp_ae" ,
-        timevar = "group", direction = "wide")
-
-plotdeltaA_w <- ggplot(df_out_deltaA_w, aes(x=temp_ae,y=deltaA_jap.min)) +
-  geom_line(aes(y=deltaA_jap.min), color = "grey", size = 0.7, alpha=0.5) +
-  geom_line(aes(y=deltaA_jap.max), color = "grey", size = 0.7, alpha=0.5) +
-  geom_line(aes(y=deltaA_jap.mean), color = "blue", size = 0.7) +
-  geom_ribbon(data = df_out_deltaA_w,aes(ymin=deltaA_jap.min,
-                  ymax=deltaA_jap.max), fill="grey", alpha=0.5) +
-  geom_point(data = Japonicus,aes(x = Temp,y = lifespan),
-             size = 0.9, color = "black") +
-  xlim(c(5,33)) +  ylim(c(-20,80)) + 
-  guides( color =FALSE, alpha = FALSE) +
-  ylab("Adult life span") + xlab("Temperature (Cº)") +
-  theme_bw() 
-plotdeltaA_w  
-
-###----------------------------------------------
-# Path <- "~/INVASIBILITY_THRESHOLD/data/japonicus/japonicus_temp_developmenttime.csv"
-# developL <- read.csv(Path)
-# head(developL)
-# 
-# n_points <- 8
-# r1 <- rnorm(n_points,as.numeric(gsub(",", ".",developL$First_instar_mean[1])),
-#                    as.numeric(gsub(",", ".",developL$First_instar_sd[1])) )
-# r2 <- rnorm(n_points,as.numeric(gsub(",", ".",developL$First_instar_mean[2])),
-#             as.numeric(gsub(",", ".",developL$First_instar_sd[2])) )
-# r3 <- rnorm(n_points,as.numeric(gsub(",", ".",developL$First_instar_mean[3])),
-#             as.numeric(gsub(",", ".",developL$First_instar_sd[3])) )
-# r4 <- rnorm(n_points,as.numeric(gsub(",", ".",developL$First_instar_mean[4])),
-#             as.numeric(gsub(",", ".",developL$First_instar_sd[4])) )
-# r5 <- rnorm(n_points,as.numeric(gsub(",", ".",developL$First_instar_mean[5])),
-#             as.numeric(gsub(",", ".",developL$First_instar_sd[5])) )
-# 
-# developL <- data.frame(Temp = sort(rep(developL[,1],n_points)),
-#                        First_instar_mean = c(r1,r2,r3,r4,r5))
-#
-# saveRDS(developL, "~/INVASIBILITY_THRESHOLD/data/japonicus/developL.Rds")
-# developL$First_instar_mean <- 1/developL$First_instar_mean
-
-###### Random sample from a gaussian distribution, since if we take the mean
-# there are only 4 points in the data, and the fit it is overfitting
-# We do it once since each iteration the curves are different. So we save the random sample.
-# tiene sentido como lo estoy congiendo por que si ves el texto asociado pone que
-# first instar es desde huevo a first instar, es decir cuanto tarda en hatch.
-developL <- readRDS( "~/INVASIBILITY_THRESHOLD/data/japonicus/developL.Rds")
-
-plot_dE <- ggplot(developL) + 
-  geom_point(aes(Temp,First_instar_mean)) + theme_bw()
-plot_dE
-
-# Compute the fit for the Briere function:
-Fitting_dE <- nls(First_instar_mean ~ cont*Temp*(Temp-cont1)*(cont2-Temp)^(1/2) ,
-                  data = developL,
-                  start = list(cont = 0.00035, cont1 = 9.5, cont2 = 36))
-
-summary(Fitting_dE)
-
-# Compute the fit for the Quadratic function:
-Fitting_dE_quad <- nls(First_instar_mean ~ cont*(Temp-cont1)*(Temp - cont2) ,
-                       data = developL,
-                       start = list(cont = 0.00035, cont1 = 9.5, cont2 = 36))
-
-summary(Fitting_dE_quad)
-
-# Compute the fit for the Linear function:
-Fitting_dE_lin <- nls(First_instar_mean ~ cont*Temp + cont1 ,
-                      data = developL,
-                      start = list(cont = 0.00035, cont1 = 0))
-
-summary(Fitting_dE_lin)
-
-# Compute the AIC value for the three models:
-AIC(Fitting_dE_lin,Fitting_dE,Fitting_dE_quad)
-
-mod <- function(te){
-  c <- as.numeric(Fitting_dE$m$getPars()[1])
-  c1 <- as.numeric(Fitting_dE$m$getPars()[2])
-  c2 <- as.numeric(Fitting_dE$m$getPars()[3])
-  c*te*(te-c1)*(c2-te)^(1/2)
-}
-
-
-vec <- seq(0,45,0.001)
-df_out_dE  <- data.frame(temp_ae = vec,
-                         dE_jap <- sapply(vec, mod))
-colnames(df_out_dE) <- c("temp_ae","dE_jap")
-df_out_dE[which(df_out_dE$dE_jap < 0),2] <- 0
-df_out_dE$group <- "mean"
-plotdE <- ggplot(df_out_dE) +
-  geom_line(aes(temp_ae,dE_jap), size = 0.7) +
-  geom_point(data = developL,aes(Temp,First_instar_mean), size = 0.9, color = "red") +
-  xlim(c(0,40)) + ylim(c(0,0.7)) +  
-  ylab("Develop rate from Egg to Larva") + xlab("Temperature (Cº)") +
-  theme_bw()
-plotdE
-
-####----------- +/- SD-------------####
-# Mean - sd
-mod_min <- function(te){
-  c <- as.numeric(Fitting_dE$m$getPars()[1]) - summary(Fitting_dE)$coefficients[1,2]
-  c1 <- as.numeric(Fitting_dE$m$getPars()[2])- summary(Fitting_dE)$coefficients[2,2]
-  c2 <- as.numeric(Fitting_dE$m$getPars()[3])- summary(Fitting_dE)$coefficients[3,2]
-  c*te*(te-c1)*(c2-te)^(1/2)
-}
-
-vec <- seq(0,45,0.001)
-df_out_dE_min  <- data.frame(temp_ae = vec,
-                             dE_jap <- sapply(vec, mod_min))
-colnames(df_out_dE_min) <- c("temp_ae","dE_jap")
-df_out_dE_min[which(df_out_dE_min$dE_jap < 0),2] <- 0
-df_out_dE_min$group <- "min"
-
-### Mean + sd
-mod_max <- function(te){
-  c <- as.numeric(Fitting_dE$m$getPars()[1]) + summary(Fitting_dE)$coefficients[1,2]
-  c1 <- as.numeric(Fitting_dE$m$getPars()[2]) + summary(Fitting_dE)$coefficients[2,2]
-  c2 <- as.numeric(Fitting_dE$m$getPars()[3]) + summary(Fitting_dE)$coefficients[3,2]
-  c*te*(te-c1)*(c2-te)^(1/2)
-}
-
-vec <- seq(0,45,0.001)
-df_out_dE_max  <- data.frame(temp_ae = vec,
-                             dE_jap <- sapply(vec, mod_max))
-colnames(df_out_dE_max) <- c("temp_ae","dE_jap")
-df_out_dE_max[which(df_out_dE_max$dE_jap < 0),2] <- 0
-df_out_dE_max$group <- "max"
-
-# Plot all three curves together
-df_out_dE <- rbind(df_out_dE_max,df_out_dE_min, df_out_dE)
-plotdE <- ggplot(df_out_dE) +
-  geom_line(aes(temp_ae,dE_jap,
-                color = group,
-                group = group, 
-                alpha = group), size = 0.7) +
-  geom_point(data = developL,aes(Temp,First_instar_mean),
-             size = 0.9, color = "black") +
-  scale_color_manual(values=c("red", "blue", "red")) + 
-  scale_alpha_manual(values = c(0.5,1,0.5)) +
-  xlim(c(5,36)) + ylim(c(0,0.7)) + 
-  guides( color =FALSE, alpha = FALSE) +
-  ylab("Develop rate from Egg to Larva") + xlab("Temperature (Cº)") +
-  theme_bw()
-plotdE
-
-# ####-----------CI-------------####
-# new.data <- data.frame(Temp=seq(5, 35.9, by = 0.1))
-# interval <- as_tibble(predFit(Fitting_dE, newdata = new.data,
-#                               interval = "confidence", level= 0.9)) %>%
-#   mutate(Temp = new.data$Temp)
-# 
-# p1 <-  ggplot(data = developL,
-#               aes(x = Temp,y = First_instar_mean)) +
-#   geom_point(size = 0.7)
-# 
-# plotdeltaA <- p1 +
-#   geom_line(data = df_out_dE, aes(temp_ae,dE_jap), size = 0.7) +
-#   geom_ribbon(data=interval, aes(x=Temp, ymin=lwr, ymax=upr),
-#               alpha=0.5, inherit.aes=F, fill="blue") +
-#   xlim(c(0,40))  + ylim(c(0,0.5)) +
-#   ylab("Adult mortality rate") + xlab("Temperature (Cº)") +
-#   theme_bw()
-# 
-# plotdeltaA
-
-# add grey ribbon --------------------------------------------
-df_out_dE_w <- reshape(df_out_dE, idvar ="temp_ae" ,
-                           timevar = "group", direction = "wide")
-
-plotdEjap_w <- ggplot(df_out_dE_w, aes(x=temp_ae,y=dE_jap.min)) +
-  geom_line(aes(y=dE_jap.min), color = "grey", size = 0.7, alpha=0.5) +
-  geom_line(aes(y=dE_jap.max), color = "grey", size = 0.7, alpha=0.5) +
-  geom_line(aes(y=dE_jap.mean), color = "blue", size = 0.7) +
-  geom_ribbon(data = df_out_dE_w,aes(ymin=dE_jap.min,
-                                         ymax=dE_jap.max), fill="grey", alpha=0.5) +
-  geom_point(data = developL,aes(Temp,First_instar_mean),
-             size = 0.9, color = "black") +
-  xlim(c(5,36)) + ylim(c(0,0.7)) + 
-  guides( color =FALSE, alpha = FALSE) +
-  ylab("Develop rate from Egg to Larva") + xlab("Temperature (Cº)") +
-  theme_bw()
-plotdEjap_w  
-
-#--------------------------------------------------------
-# Paper Germany:
-Path <- "~/INVASIBILITY_THRESHOLD/data/japonicus/adult_larva_lifespan.csv"
-Japonicus <- read.csv(Path)
-head(Japonicus)
-## Aunque ponga male es female
-# Coger esta variable tiene sentido por que en el experimento cuentan como dia cero
-# cuando la larva tiene como maximo 24h. Es decir este tiempo es de larva a adulto
-Japonicus$FemaledL <- 1/(Japonicus$Age_emergence_female_mean) 
-Japonicus <- Japonicus[,c("Temp","FemaledL")]
-# Thesis Jamesina
-# Japonicus <- data.frame(Temp <- numeric(), FemaledL <- numeric())
-Japonicus <- rbind(Japonicus, c(10,1/140.8))
-Japonicus <- rbind(Japonicus, c(16,1/84))
-Japonicus <- rbind(Japonicus, c(22,1/31.3))
-Japonicus <- rbind(Japonicus, c(28,1/17))
-Japonicus <- rbind(Japonicus, c(34,0))
-colnames(Japonicus) <-  c("Temp", "FemaledL")
-plot_dL <- ggplot(Japonicus) + 
-  geom_point(aes(Temp,FemaledL)) + theme_bw()
-plot_dL
-
-# Briere function fit    
-Fitting_dL <- nls(FemaledL ~ cont*Temp*(Temp-cont1)*(cont2-Temp)^(1/2) ,
-                  data = Japonicus, algorithm = "port",
-                  start = list(cont = 0.0035, cont1 = 9.5, cont2 = 36), 
-                  lower=c(7e-05,min(developL$Temp)-5,max(developL$Temp)+0.1), upper=c(1,min(developL$Temp)-0.1,max(developL$Temp)+4))
-
-summary(Fitting_dL)
-
-# Linear function fit
-Fitting_dL_lin <- nls(FemaledL ~ cont*Temp + cont1,
-                      data = Japonicus,
-                      start = list(cont = 0.00035, cont1 = 0))
-summary(Fitting_dL_lin)
-
-# Compute the AIC value
-AIC(Fitting_dL,Fitting_dL_lin)
-mod <- function(te){
-  c <- as.numeric(Fitting_dL$m$getPars()[1])
-  c1 <- as.numeric(Fitting_dL$m$getPars()[2])
-  c2 <- as.numeric(Fitting_dL$m$getPars()[3])
-  c*te*(te-c1)*(c2-te)^(1/2)
-}
-
-vec <- seq(0,45,0.001)
-df_out_dL  <- data.frame(temp_ae = vec,
-                         dL_jap <- sapply(vec, mod))
-
-colnames(df_out_dL) <- c("temp_ae","dL_jap")
-df_out_dL[which(df_out_dL$dL_jap < 0),2] <- 0
-
-plotdL <- ggplot(df_out_dL) +
-  geom_line(aes(temp_ae,dL_jap), size = 0.7) +
-  geom_point(data = Japonicus,aes(Temp,FemaledL), size = 0.9, color = "red") +
-  xlim(c(0,45)) + 
-  ylab("Develop rate from Larva to Adult") + xlab("Temperature (Cº)") +
-  theme_bw()
-plotdL
-
-####----------- +/- SD-------------####
-# Mean - sd
-mod_min <- function(te){
-  c <- as.numeric(Fitting_dL$m$getPars()[1]) - 
-    summary(Fitting_dL)$coefficients[1,2]
-  c1 <- as.numeric(Fitting_dL$m$getPars()[2])- 
-    summary(Fitting_dL)$coefficients[2,2]
-  c2 <- as.numeric(Fitting_dL$m$getPars()[3])- 
-    summary(Fitting_dL)$coefficients[3,2]
-  c*te*(te-c1)*(c2-te)^(1/2)
-}
-
-vec <- seq(0,45,0.001)
-df_out_dL_min  <- data.frame(temp_ae = vec,
-                             dL_jap <- sapply(vec, mod_min))
-
-colnames(df_out_dL_min) <- c("temp_ae","dL_jap")
-df_out_dL_min[which(df_out_dL_min$dL_jap < 0),2] <- 0
-df_out_dL_min$group <- "min"
-
-### Mean + sd
-mod_max <- function(te){
-  c <- as.numeric(Fitting_dL$m$getPars()[1]) + 
-    summary(Fitting_dL)$coefficients[1,2]
-  c1 <- as.numeric(Fitting_dL$m$getPars()[2]) +
-    summary(Fitting_dL)$coefficients[2,2]
-  c2 <- as.numeric(Fitting_dL$m$getPars()[3]) + 
-    summary(Fitting_dL)$coefficients[3,2]
-  c*te*(te-c1)*(c2-te)^(1/2)
-}
-
-vec <- seq(0,45,0.001)
-df_out_dL_max  <- data.frame(temp_ae = vec,
-                             dL_jap <- sapply(vec, 
-                                              mod_max))
-
-colnames(df_out_dL_max) <- c("temp_ae","dL_jap")
-df_out_dL_max[which(df_out_dL_max$dL_jap < 0),2] <- 0
-df_out_dL_max$group <- "max"
-df_out_dL$group <- "mean"
-
-# Plot all three curves together
-df_out_dL <- rbind(df_out_dL_min,
-                   df_out_dL_max,
-                   df_out_dL)
-plotdL <- ggplot(df_out_dL) +
-  geom_line(aes(temp_ae,dL_jap,
-                color = group,
-                group = group, 
-                alpha = group), size = 0.7) +
-  geom_point(data = Japonicus,aes(Temp,FemaledL),
-             size = 0.9, color = "black") +
-  scale_color_manual(values=c("red", "blue", "red")) + 
-  scale_alpha_manual(values = c(0.5,1,0.5)) +
-  xlim(c(0,45)) + 
-  ylab("Develop rate from Larva to Adult") +
-  guides(color = FALSE, alpha = FALSE) +
-  xlab("Temperature (Cº)") + ylab("Develop rate from Egg to Larva") + xlab("Temperature (Cº)") +
-  theme_bw()
-plotdL
-
-# add grey ribbon --------------------------------------------
-df_out_dL_w <- reshape(df_out_dL, idvar ="temp_ae" ,
-                       timevar = "group", direction = "wide")
-
-plotdL_w <- ggplot(df_out_dL_w, aes(x=temp_ae,y=dL_jap.min)) +
-  geom_line(aes(y=dL_jap.min), color = "grey", size = 0.7, alpha=0.5) +
-  geom_line(aes(y=dL_jap.max), color = "grey", size = 0.7, alpha=0.5) +
-  geom_line(aes(y=dL_jap.mean), color = "blue", size = 0.7) +
-  geom_ribbon(data = df_out_dL_w,aes(ymin=dL_jap.min,
-                                     ymax=dL_jap.max), fill="grey", alpha=0.5) +
-  geom_point(data = Japonicus,aes(Temp,FemaledL),
-             size = 0.9, color = "black") +
-  xlim(c(0,45)) + 
-  ylab("Develop rate from Larva to Adult") +
-  guides(color = FALSE, alpha = FALSE) +
-  xlab("Temperature (Cº)") + ylab("Develop rate from Egg to Larva") + xlab("Temperature (Cº)") +
-  theme_bw()
-plotdL_w 
-
-###----------------------------------------------
-## Paper Germany:
-#https://parasitesandvectors.biomedcentral.com/articles/10.1186/s13071-018-2659-1
-Lmortality <- data.frame(Temp = c(0,5,10,12,14,15,17,19,20,23,25,26,27,28,29,31),
-                         mean_mort_perc = c(100,99.5,16,38.5,18,15,19,29.5,11.3,48.5,13.8,6,41.5,12.5,70.5,87.5),
-                         sd_mort_perc = c(0,1.1,5.5,14.2,4.8,7.9,9.6,12.4,6.5,27.6,8.4,5.2,31.1,7.7,22.2,6.4))
-Lmortality$mean_mort_perc = Lmortality$mean_mort_perc/100
-Lmortality[nrow(Lmortality) +1,] <- c(10,0.5,0)
-Lmortality[nrow(Lmortality) +1,] <- c(16,1-0.6,0)
-Lmortality[nrow(Lmortality) +1,] <- c(22,1-0.27,0)
-Lmortality[nrow(Lmortality) +1,] <- c(28,1-0.33,0)
-Lmortality[nrow(Lmortality) +1,] <- c(34,1,0)
-Lmortality[nrow(Lmortality) +1,] <- c(40,1,0)
-
-head(Lmortality)
-
-plot_deltaL <- ggplot(Lmortality) + 
-  geom_point(aes(Temp,mean_mort_perc)) + theme_bw()
-plot_deltaL
-
-## Quadratic normal fit
-Fitting_deltaL <- nls(mean_mort_perc ~ cont*Temp^2 + cont1*Temp + cont2,
-                      data = Lmortality,
-                      start = list(cont = 15, cont1 = -20,
-                                   cont2 = 30))
-
-summary(Fitting_deltaL)
-
-# Linear function fit
-Fitting_deltaL_lin <- nls(mean_mort_perc ~ cont*Temp + cont1,
-                          data = Lmortality,
-                          start = list(cont = 0, cont1 = 0))
-
-summary(Fitting_deltaL_lin)
-
-# AIC for the two models:
-AIC(Fitting_deltaL,Fitting_deltaL_lin)
-
-mod <- function(te){
-  c <- as.numeric(Fitting_deltaL$m$getPars()[1])
-  c1 <- as.numeric(Fitting_deltaL$m$getPars()[2])
-  c2 <- as.numeric(Fitting_deltaL$m$getPars()[3])
-  c*te^2+c1*te+c2
-}
-
-vec <- seq(0,45,0.001)
-df_out_deltaL <- data.frame(temp_ae = vec,
-                            deltaL_jap <- sapply(vec, mod))
-
-colnames(df_out_deltaL) <- c("temp_ae","deltaL_jap")
-df_out_deltaL[which(df_out_deltaL$deltaL_jap < 0),2] <- 0
-
-plotdeltaL <- ggplot(df_out_deltaL) +
-  geom_line(aes(temp_ae,deltaL_jap), size = 0.8) +
-  geom_point(data = Lmortality,aes(Temp,mean_mort_perc),
-             size = 0.9, color = "red") +
-  ylab("Larva mortality rate") + xlab("Temperature (Cº)") +
-  theme_bw()
-plotdeltaL
-
-####----------- +/- SD-------------####
-# Mean - sd
-mod_min <- function(te){
-  c <- as.numeric(Fitting_deltaL$m$getPars()[1]) - 
-    summary(Fitting_deltaL)$coefficients[1,2]
-  c1 <- as.numeric(Fitting_deltaL$m$getPars()[2])- 
-    summary(Fitting_deltaL)$coefficients[2,2]
-  c2 <- as.numeric(Fitting_deltaL$m$getPars()[3])- 
-    summary(Fitting_deltaL)$coefficients[3,2]
-  c*te^2+c1*te+c2
-}
-
-vec <- seq(0,45,0.001)
-df_out_deltaL_min <- data.frame(temp_ae = vec,
-                                deltaL_jap <- sapply(vec,
-                                                     mod_min))
-
-colnames(df_out_deltaL_min) <- c("temp_ae","deltaL_jap")
-df_out_deltaL_min$group <- "min"
-
-### Mean + sd
-mod_max <- function(te){
-  c <- as.numeric(Fitting_deltaL$m$getPars()[1]) + 
-    summary(Fitting_deltaL)$coefficients[1,2]
-  c1 <- as.numeric(Fitting_deltaL$m$getPars()[2])+ 
-    summary(Fitting_deltaL)$coefficients[2,2]
-  c2 <- as.numeric(Fitting_deltaL$m$getPars()[3])+ 
-    summary(Fitting_deltaL)$coefficients[3,2]
-  c*te^2+c1*te+c2
-}
-
-vec <- seq(0,45,0.001)
-df_out_deltaL_max <- data.frame(temp_ae = vec,
-                                deltaL_jap <- sapply(vec,
-                                                     mod_max))
-
-colnames(df_out_deltaL_max) <- c("temp_ae","deltaL_jap")
-df_out_deltaL_max[which(df_out_deltaL_max$deltaL_jap < 0),2] <- 0
-df_out_deltaL_max$group <- "max"
-df_out_deltaL$group <- "mean"
-
-# Plot all three curves together
-df_out_deltaL <- rbind(df_out_deltaL_min,
-                       df_out_deltaL_max,
-                       df_out_deltaL)
-
-plotdeltaL <- ggplot(df_out_deltaL) +
-  geom_line(aes(temp_ae,deltaL_jap,
-                color = group,
-                group = group, 
-                alpha = group), size = 0.8) +
-  geom_point(data = Lmortality,aes(Temp,mean_mort_perc),
-             size = 0.9, color = "black") +
-  ylab("Larva mortality rate") + xlab("Temperature (Cº)") +
-  scale_color_manual(values=c("red", "blue", "red")) + 
-  scale_alpha_manual(values = c(0.5,1,0.5)) +
-  xlim(c(5,35)) + ylim(c(-1,2)) + 
-  guides(color = FALSE, alpha = FALSE) +
-  theme_bw()
-plotdeltaL
-
-# add grey ribbon --------------------------------------------
-df_out_deltaL_w <- reshape(df_out_deltaL, idvar ="temp_ae" ,
-                       timevar = "group", direction = "wide")
-
-plotdeltaL_w <- ggplot(df_out_deltaL_w, aes(x=temp_ae,y=deltaL_jap.min)) +
-  geom_line(aes(y=deltaL_jap.min), color = "grey", size = 0.7, alpha=0.5) +
-  geom_line(aes(y=deltaL_jap.max), color = "grey", size = 0.7, alpha=0.5) +
-  geom_line(aes(y=deltaL_jap.mean), color = "blue", size = 0.7) +
-  geom_ribbon(data = df_out_deltaL_w,aes(ymin=deltaL_jap.min,
-                                     ymax=deltaL_jap.max), fill="grey", alpha=0.5) +
-  geom_point(data = Lmortality,aes(Temp,mean_mort_perc),
-             size = 0.9, color = "black") +
-  ylab("Larva mortality rate") + xlab("Temperature (Cº)") +
-  xlim(c(5,35)) + ylim(c(-0.6,2.3)) + 
-  guides(color = FALSE, alpha = FALSE) +
-  theme_bw()
-plotdeltaL_w 
-
-###----------------------------------------------
-library(ggpubr)
-sizelet = 14
-ggarrange(plotdE  +
-            theme(text = element_text(size = sizelet)) +
-            xlab("") ,
-          plotdL +
-            theme(text = element_text(size = sizelet)) +
-            ylab("Development rate from Egg to Larva") +
-            xlab(""),
-          plotdeltaL + ylim(c(0,1.3)) +
-            theme(text = element_text(size = sizelet)),
-          plotdeltaA  +
-            theme(text = element_text(size = sizelet)))
 
 # Albopictus and Aegypti --------------------------------
 # Data frame data taken from Tun-Lin et al 2001 
@@ -1030,11 +425,10 @@ df_dE_aeg <- rbind(df_dE_aeg, c(36,0,0,0.001))
 
 ## I use the random sample fixed, other wise the param would change.
 # df_dE_aeg <- readRDS("~/INVASIBILITY_THRESHOLD/data/df_dE_aeg.Rds")
-
-
 ggplot(df_dE_aeg) + 
   geom_point(aes(temp,develop_rate))
 
+# Do a briere fitting
 Fitting_dE_aeg <- nls(develop_rate ~ c*temp*(temp-c1)*(c2-temp)^(1/2),
                       data = df_dE_aeg, algorithm = "port",
                       start = list(c = 0.0003, c1 = 14, c2 = 40), 
@@ -1042,12 +436,14 @@ Fitting_dE_aeg <- nls(develop_rate ~ c*temp*(temp-c1)*(c2-temp)^(1/2),
 
 summary(Fitting_dE_aeg)
 
+# Do a linear fitting
 Fitting_dE_aeg_lin <- nls(develop_rate ~ c*temp + c1,
                           data = df_dE_aeg,
                           start = list(c = 0.0003, c1 = 0))
 
 summary(Fitting_dE_aeg_lin)
 
+# Compute the AIC value to compare models
 AIC(Fitting_dE_aeg, Fitting_dE_aeg_lin)
 
 mod <- function(te){
@@ -1090,31 +486,33 @@ mod_min <- function(te){
   c*te*(te-c1)*(c2-te)^(1/2)
 }
 
+# Store in a data frame and add column with measure
 df_out_aeg_min <- data.frame(temp = vec,
                              devep_rate = sapply(vec, mod_min))
 df_out_aeg_min[which(df_out_aeg_min$devep_rate < 0),2] <- 0
 df_out_aeg_min$group = "min"
 df_out_aeg$group = "mean"
 
-
+# Join all data frames
 df_out_aeg <- rbind(df_out_aeg_max,
                     df_out_aeg_min,
                     df_out_aeg)
 
-plotdE_aeg <- ggplot(df_out_aeg) +
-  geom_line(aes(temp,devep_rate,
-                color = group,
-                group = group, 
-                alpha = group), size = 0.7) +
-  geom_point(data =  df_dE_aeg, aes(temp,develop_rate),
-             size = 0.9, color = "black") +
-  scale_color_manual(values=c("red", "blue", "red")) + 
-  scale_alpha_manual(values = c(0.5,1,0.5)) +
-  xlim(c(5,40)) +
-  guides( color =FALSE, alpha = FALSE) +
-  ylab("Egg development time") + xlab("Temperature (Cº)") +
-  theme_bw()
-plotdE_aeg
+# Plot results
+# plotdE_aeg <- ggplot(df_out_aeg) +
+#   geom_line(aes(temp,devep_rate,
+#                 color = group,
+#                 group = group, 
+#                 alpha = group), size = 0.7) +
+#   geom_point(data =  df_dE_aeg, aes(temp,develop_rate),
+#              size = 0.9, color = "black") +
+#   scale_color_manual(values=c("red", "blue", "red")) + 
+#   scale_alpha_manual(values = c(0.5,1,0.5)) +
+#   xlim(c(5,40)) +
+#   guides( color =FALSE, alpha = FALSE) +
+#   ylab("Egg development time") + xlab("Temperature (Cº)") +
+#   theme_bw()
+# plotdE_aeg
 
 # add ribbon -----------------------------------------------------
 df_out_aeg_w <- reshape(df_out_aeg, idvar ="temp" ,
@@ -1160,9 +558,7 @@ ggarrange( plotalb_w  +
            ncol = 2, nrow = 2)
 
 
-# Larva development rate --------------------------------------
-
-### --------------Development Egg Aegypti -----------------------#
+# Development Egg albopictus -----------------------------------------------
 ## Delatte
   df_dL_alb <- data.frame(temp=c(15,20,25,30,35),
                           days_mean = c(35,14.4,10.4,8.8,12.3),
@@ -1235,3 +631,336 @@ plotdL_alb <- ggplot(df_out_alb) +
   ylab("Larva development time") + xlab("Temperature (Cº)") +
   theme_bw()
 plotdL_alb
+
+
+# Egg mortality rate ------------------------------------------
+# Data from paper https://www.ncbi.nlm.nih.gov/pmc/articles/PMC2944657/
+# Aedes Albopictus deltaE -------------------------------------
+Egg_mortality_alb <- data.frame(
+  month = numeric(0), temp = numeric(0), rel_hum = numeric(0), prop_mort =numeric(0)
+)
+
+# Plot month 1
+# Egg_mortality_alb[nrow(Egg_mortality_alb)+1,] <- c(1, 22,95,0.35)
+# Egg_mortality_alb[nrow(Egg_mortality_alb)+1,] <- c(1, 24,95,0.05)
+# Egg_mortality_alb[nrow(Egg_mortality_alb)+1,] <- c(1, 26,95,0.1)
+Egg_mortality_alb[nrow(Egg_mortality_alb)+1,] <- c(1, 22,75,0.4)
+Egg_mortality_alb[nrow(Egg_mortality_alb)+1,] <- c(1, 24,75,0.25)
+Egg_mortality_alb[nrow(Egg_mortality_alb)+1,] <- c(1, 26,75,0.2)
+# Egg_mortality_alb[nrow(Egg_mortality_alb)+1,] <- c(1, 22,55,0.1)
+# Egg_mortality_alb[nrow(Egg_mortality_alb)+1,] <- c(1, 24,55,0.2)
+# Egg_mortality_alb[nrow(Egg_mortality_alb)+1,] <- c(1, 26,55,0.39)
+# Egg_mortality_alb[nrow(Egg_mortality_alb)+1,] <- c(1, 22,25,0.61)
+# Egg_mortality_alb[nrow(Egg_mortality_alb)+1,] <- c(1, 24,25,0.38)
+# Egg_mortality_alb[nrow(Egg_mortality_alb)+1,] <- c(1, 26,25,0.62)
+
+ggplot(Egg_mortality_alb) +
+  geom_point(aes(temp,prop_mort, 
+                 color=as.factor(rel_hum),
+                 shape = as.factor(month))) + theme_bw()
+
+# Egg mortality albo 
+# Paper https://www.scielo.br/j/rsp/a/dvPQ8QMr7Y687hPJxsTxjDg/abstract/?lang=en#
+Egg_mortality_alb_2 <- data.frame(
+  temp = numeric(0), rel_hum = character(0), prop_mort =numeric(0)
+)
+
+# Plot month 1
+Egg_mortality_alb_2[nrow(Egg_mortality_alb_2)+1,] <- c(15, "70-85",1-0.66)
+Egg_mortality_alb_2[nrow(Egg_mortality_alb_2)+1,] <- c(20,"70-85",1-0.82)
+Egg_mortality_alb_2[nrow(Egg_mortality_alb_2)+1,] <- c(25, "70-85",1-0.735)
+Egg_mortality_alb_2[nrow(Egg_mortality_alb_2)+1,] <- c(30, "70-85",1-0.80)
+
+ggplot(Egg_mortality_alb_2) +
+  geom_point(aes(temp,prop_mort)) + theme_bw()
+
+
+# Join data sets to fit thermal response
+Egg_mortality_alb$paper <- "Juliano et al 2002, Oecologia."
+Egg_mortality_alb_2$paper <- "Calado et al 2002, Scielo."
+Egg_mortality_alb <- Egg_mortality_alb[,c(2:5)] 
+Egg_mortality_alb$rel_hum <- as.character(Egg_mortality_alb$rel_hum)
+Egg_mort_alb <- rbind(Egg_mortality_alb, Egg_mortality_alb_2)
+Egg_mort_alb$prop_mort <- as.numeric(Egg_mort_alb$prop_mort)
+Egg_mort_alb$temp <- as.numeric(Egg_mort_alb$temp)
+ggplot(Egg_mort_alb) +
+  geom_point(aes(temp, prop_mort)) + 
+  theme_bw()
+
+# Do the fitting with nls
+Fitting_alb_quad <- nls(prop_mort ~ (cont*temp*temp+Tmin*temp+Tmax),
+                   data = Egg_mort_alb,
+                   start = list(cont = 0.001, Tmin = 0.001, Tmax = 0.001))
+
+summary(Fitting_alb_quad)
+
+# Fit for a linear model
+Fitting_alb <- nls(prop_mort ~ cont*temp+cont1,
+                       data = Egg_mort_alb,
+                       start = list(cont = 0.001, cont1 = 0))
+
+summary(Fitting_alb)
+
+# Compute the AIC value for the two models
+AIC(Fitting_alb,Fitting_alb_quad)
+
+# Plot the model
+mod <- function(te){
+  c <- as.numeric(Fitting_alb$m$getPars()[1])
+  t0 <- as.numeric(Fitting_alb$m$getPars()[2])
+  c*te+t0
+}
+
+vec <- seq(0,45,0.01)
+df_out_alb <- data.frame(temp_ae = vec, life_span_ae <- sapply(vec, mod))
+colnames(df_out_alb) <- c("temp_ae", "deltaE")
+df_out_alb$group <- "mean"
+
+###---------------+/- SD---------------------######
+## Mean - SD
+mod_min <- function(te){
+  t0 <- as.numeric(Fitting_alb$m$getPars()[2]) - 
+    summary(Fitting_alb)$coefficients[2,2]
+  c <- as.numeric(Fitting_alb$m$getPars()[1]) - 
+    summary(Fitting_alb)$coefficients[1,2]
+  c*te+t0
+}
+
+vec <- seq(0,45,0.01)
+df_out_alb_min <- data.frame(temp_ae = vec,
+                             deltaE = sapply(vec, mod_min))
+df_out_alb_min$group <- "min"
+
+plot(df_out_alb_min$temp_ae,df_out_alb_min$deltaE)
+
+## Mean - SD
+mod_max <- function(te){
+  t0 <- as.numeric(Fitting_alb$m$getPars()[2]) + 
+    summary(Fitting_alb)$coefficients[2,2]
+  c <- as.numeric(Fitting_alb$m$getPars()[1]) + 
+    summary(Fitting_alb)$coefficients[1,2]
+  c*te+t0
+}
+
+vec <- seq(0,45,0.01)
+df_out_alb_max <- data.frame(temp_ae = vec,
+                             deltaE= sapply(vec, mod_max))
+df_out_alb_max$group <- "max"
+plot(df_out_alb_max$temp_ae,df_out_alb_max$deltaE)
+
+# Plot all three curves together
+df_out_alb <- rbind(df_out_alb_max,
+                    df_out_alb_min,
+                    df_out_alb)
+
+df_out_w <- reshape(df_out_alb, idvar ="temp_ae" ,
+                    timevar = "group", direction = "wide")
+plotdE_w <- ggplot(df_out_w, aes(x=temp_ae,y=deltaE.max)) +
+  geom_line(aes(y=deltaE.min), color = "grey", size = 0.7, alpha=0.5) +
+  geom_line(aes(y=deltaE.max), color = "grey", size = 0.7, alpha=0.5) +
+  geom_line(aes(y=deltaE.mean), color = "blue", size = 0.7) +
+  geom_ribbon(data = df_out_w,aes(ymin=deltaE.max,
+                                  ymax=deltaE.min), fill="grey",
+              alpha=0.5) +
+  geom_point(data = Egg_mort_alb,aes(temp,prop_mort),
+             size = 0.9, color = "black") +
+  xlim(c(5,37)) + 
+  guides( color =FALSE, alpha = FALSE) +
+  ylab("Egg mortality rate") + xlab("Temperature (Cº)") +
+  theme_bw() 
+plotdE_w 
+
+# Aedes Aegypti deltaE ------------------------------------------------
+Egg_mortality_aeg <- data.frame(
+  month = numeric(0), temp = numeric(0), rel_hum = numeric(0), prop_mort =numeric(0)
+)
+
+# Plot month 1
+Egg_mortality_aeg[nrow(Egg_mortality_aeg)+1,] <- c(1, 22,95,0.02)
+Egg_mortality_aeg[nrow(Egg_mortality_aeg)+1,] <- c(1, 24,95,0.3)
+Egg_mortality_aeg[nrow(Egg_mortality_aeg)+1,] <- c(1, 26,95,0.01)
+Egg_mortality_aeg[nrow(Egg_mortality_aeg)+1,] <- c(1, 22,75,0.05)
+Egg_mortality_aeg[nrow(Egg_mortality_aeg)+1,] <- c(1, 24,75,0.03)
+Egg_mortality_aeg[nrow(Egg_mortality_aeg)+1,] <- c(1, 26,75,0.05)
+Egg_mortality_aeg[nrow(Egg_mortality_aeg)+1,] <- c(1, 22,55,0.02)
+Egg_mortality_aeg[nrow(Egg_mortality_aeg)+1,] <- c(1, 24,55,0.01)
+Egg_mortality_aeg[nrow(Egg_mortality_aeg)+1,] <- c(1, 26,55,0.1)
+Egg_mortality_aeg[nrow(Egg_mortality_aeg)+1,] <- c(1, 22,25,0.08)
+Egg_mortality_aeg[nrow(Egg_mortality_aeg)+1,] <- c(1, 24,25,0.02)
+Egg_mortality_aeg[nrow(Egg_mortality_aeg)+1,] <- c(1, 26,25,0.05)
+
+# Plot month 2
+Egg_mortality_aeg[nrow(Egg_mortality_aeg)+1,] <- c(2, 22,95,0)
+Egg_mortality_aeg[nrow(Egg_mortality_aeg)+1,] <- c(2, 24,95,0.01)
+Egg_mortality_aeg[nrow(Egg_mortality_aeg)+1,] <- c(2, 26,95,0.01)
+Egg_mortality_aeg[nrow(Egg_mortality_aeg)+1,] <- c(2, 22,75,0)
+Egg_mortality_aeg[nrow(Egg_mortality_aeg)+1,] <- c(2, 24,75,0)
+Egg_mortality_aeg[nrow(Egg_mortality_aeg)+1,] <- c(2, 26,75,0.05)
+Egg_mortality_aeg[nrow(Egg_mortality_aeg)+1,] <- c(2, 22,55,0)
+Egg_mortality_aeg[nrow(Egg_mortality_aeg)+1,] <- c(2, 24,55,0.01)
+Egg_mortality_aeg[nrow(Egg_mortality_aeg)+1,] <- c(2, 26,55,0.05)
+Egg_mortality_aeg[nrow(Egg_mortality_aeg)+1,] <- c(2, 22,25,0.1)
+Egg_mortality_aeg[nrow(Egg_mortality_aeg)+1,] <- c(2, 24,25,0.01)
+Egg_mortality_aeg[nrow(Egg_mortality_aeg)+1,] <- c(2, 26,25,0.01)
+
+# Month 3
+Egg_mortality_aeg[nrow(Egg_mortality_aeg)+1,] <- c(3, 22,95,0.1)
+Egg_mortality_aeg[nrow(Egg_mortality_aeg)+1,] <- c(3, 24,95,0.35)
+Egg_mortality_aeg[nrow(Egg_mortality_aeg)+1,] <- c(3, 26,95,0.3)
+Egg_mortality_aeg[nrow(Egg_mortality_aeg)+1,] <- c(3, 22,75,0.1)
+Egg_mortality_aeg[nrow(Egg_mortality_aeg)+1,] <- c(3, 24,75,0.1)
+Egg_mortality_aeg[nrow(Egg_mortality_aeg)+1,] <- c(3, 26,75,0.35)
+Egg_mortality_aeg[nrow(Egg_mortality_aeg)+1,] <- c(3, 22,55,0.15)
+Egg_mortality_aeg[nrow(Egg_mortality_aeg)+1,] <- c(3, 24,55,0.2)
+Egg_mortality_aeg[nrow(Egg_mortality_aeg)+1,] <- c(3, 26,55,0.7)
+Egg_mortality_aeg[nrow(Egg_mortality_aeg)+1,] <- c(3, 22,25,0.55)
+Egg_mortality_aeg[nrow(Egg_mortality_aeg)+1,] <- c(3, 24,25,0.75)
+Egg_mortality_aeg[nrow(Egg_mortality_aeg)+1,] <- c(3, 26,25,0.95)
+
+ggplot(Egg_mortality_aeg) +
+  geom_point(aes(temp,prop_mort, 
+                 color=as.factor(rel_hum),
+                 shape = as.factor(month))) + theme_bw()
+
+# Join all in one df
+Egg_mortality_alb$esp <- "Albopictus"
+Egg_mortality_aeg$esp <- "Aegypti"
+df_egg_mort <- rbind(Egg_mortality_alb,Egg_mortality_aeg)
+write.csv(df_egg_mort, "~/INVASIBILITY_THRESHOLD/data/df_deltaE_alb_aeg.csv")
+
+# Egg mortality aeg
+# Paper: https://academic.oup.com/jme/article/51/1/97/863390?login=false
+Egg_mortality_aeg_2 <- data.frame(
+  temp = numeric(0), rel_hum = character(0), prop_mort =numeric(0)
+)
+
+# Add manually values from table 2
+Egg_mortality_aeg_2[nrow(Egg_mortality_aeg_2)+1,] <- c(12, "70-80",1-0.43)
+Egg_mortality_aeg_2[nrow(Egg_mortality_aeg_2)+1,] <- c(14,"70-80",1-0.53)
+Egg_mortality_aeg_2[nrow(Egg_mortality_aeg_2)+1,] <- c(16, "70-80",1-0.60)
+Egg_mortality_aeg_2[nrow(Egg_mortality_aeg_2)+1,] <- c(18, "70-80",1-0.55)
+Egg_mortality_aeg_2[nrow(Egg_mortality_aeg_2)+1,] <- c(20, "70-80",1-0.72)
+
+ggplot(Egg_mortality_aeg_2) +
+  geom_point(aes(temp,prop_mort)) + theme_bw()
+
+# Egg mortality aeg
+# Paper: https://www.scielo.br/j/mioc/a/6QjKLKZYL5Yr8KFfwGGqSPc/?format=pdf&lang=en#:~:text=Temperatures%20tested%20ranged%20between%2012,tropical%20and%20subtropical%20world%20regions
+Egg_mortality_aeg_3 <- data.frame(
+  temp = numeric(0), rel_hum = character(0), prop_mort =numeric(0)
+)
+
+# Add manually values from unique table 
+Egg_mortality_aeg_3[nrow(Egg_mortality_aeg_3)+1,] <- c(16, "NA",1-0.81)
+Egg_mortality_aeg_3[nrow(Egg_mortality_aeg_3)+1,] <- c(22,"NA",1-0.94)
+Egg_mortality_aeg_3[nrow(Egg_mortality_aeg_3)+1,] <- c(25, "NA",1-0.96)
+Egg_mortality_aeg_3[nrow(Egg_mortality_aeg_3)+1,] <- c(28, "NA",1-0.93)
+Egg_mortality_aeg_3[nrow(Egg_mortality_aeg_3)+1,] <- c(31, "NA",1-0.83)
+Egg_mortality_aeg_3[nrow(Egg_mortality_aeg_3)+1,] <- c(35, "NA",1-0.49)
+Egg_mortality_aeg_3[nrow(Egg_mortality_aeg_3)+1,] <- c(36, "NA",1)
+
+ggplot(Egg_mortality_aeg_3) +
+  geom_point(aes(temp,prop_mort)) + theme_bw()
+
+# Join data sets to fit thermal response
+Egg_mortality_aeg$paper <- "Juliano et al 2002, Oecologia"
+Egg_mortality_aeg_2$paper <- "Byttebier et al 2014, J.Med.Entomol."
+Egg_mortality_aeg_3$paper <- "Farnesi et al 2009 Scielo."
+Egg_mortality_aeg_1 <- Egg_mortality_aeg[Egg_mortality_aeg$rel_hum == 75,
+                                         c("temp", "rel_hum", "prop_mort","paper")]
+Egg_mortality_aeg_1$rel_hum <- as.character(Egg_mortality_aeg_1$rel_hum)
+Egg_mort_aeg <- rbind(Egg_mortality_aeg_1, Egg_mortality_aeg_2, Egg_mortality_aeg_3)
+Egg_mort_aeg$prop_mort <- as.numeric(Egg_mort_aeg$prop_mort)
+Egg_mort_aeg$temp <- as.numeric(Egg_mort_aeg$temp)
+ggplot(Egg_mort_aeg) +
+  geom_point(aes(temp, prop_mort)) + 
+  theme_bw()
+
+# Do the fitting with nls
+Fitting_aeg <- nls(prop_mort ~ (cont*temp*temp+Tmin*temp+Tmax),
+                   data = Egg_mort_aeg,
+                   start = list(cont = 0.001, Tmin = 0.001, Tmax = 0.001))
+
+summary(Fitting_aeg)
+
+# Fit for a linear model
+Fitting_aeg_lin <- nls(prop_mort ~ cont*temp+cont1,
+                       data = Egg_mort_aeg,
+                       start = list(cont = 0.001, cont1 = 0))
+
+summary(Fitting_aeg_lin)
+
+# Compute the AIC value for the two models
+AIC(Fitting_aeg,Fitting_aeg_lin)
+
+# Plot the model
+mod <- function(te){
+  c <- as.numeric(Fitting_aeg$m$getPars()[1])
+  t0 <- as.numeric(Fitting_aeg$m$getPars()[2])
+  tm <- as.numeric(Fitting_aeg$m$getPars()[3])
+  c*te*te+t0*te+tm
+}
+
+vec <- seq(0,45,0.01)
+df_out_aeg <- data.frame(temp_ae = vec, life_span_ae <- sapply(vec, mod))
+colnames(df_out_aeg) <- c("temp_ae", "deltaE")
+df_out_aeg$group <- "mean"
+
+###---------------+/- SD---------------------######
+## Mean - SD
+mod_min <- function(te){
+  t0 <- as.numeric(Fitting_aeg$m$getPars()[2]) - 
+    summary(Fitting_aeg)$coefficients[2,2]
+  tm <- as.numeric(Fitting_aeg$m$getPars()[3]) - 
+    summary(Fitting_aeg)$coefficients[3,2]
+  c <- as.numeric(Fitting_aeg$m$getPars()[1]) - 
+    summary(Fitting_aeg)$coefficients[1,2]
+  c*te*te+t0*te+tm
+}
+
+vec <- seq(0,45,0.01)
+df_out_aeg_min <- data.frame(temp_ae = vec,
+                             deltaE = sapply(vec, mod_min))
+df_out_aeg_min$group <- "min"
+
+plot(df_out_aeg_min$temp_ae,df_out_aeg_min$deltaE)
+
+## Mean - SD
+mod_max <- function(te){
+  t0 <- as.numeric(Fitting_aeg$m$getPars()[2]) + 
+    summary(Fitting_aeg)$coefficients[2,2]
+  tm <- as.numeric(Fitting_aeg$m$getPars()[3]) + 
+    summary(Fitting_aeg)$coefficients[3,2]
+  c <- as.numeric(Fitting_aeg$m$getPars()[1]) + 
+    summary(Fitting_aeg)$coefficients[1,2]
+  c*te*te+t0*te+tm
+}
+
+vec <- seq(0,45,0.01)
+df_out_aeg_max <- data.frame(temp_ae = vec,
+                            deltaE= sapply(vec, mod_max))
+df_out_aeg_max$group <- "max"
+plot(df_out_aeg_max$temp_ae,df_out_aeg_max$deltaE)
+
+# Plot all three curves together
+df_out_aeg <- rbind(df_out_aeg_max,
+                    df_out_aeg_min,
+                    df_out_aeg)
+
+df_out_w <- reshape(df_out_aeg, idvar ="temp_ae" ,
+                    timevar = "group", direction = "wide")
+plotdE_w <- ggplot(df_out_w, aes(x=temp_ae,y=deltaE.max)) +
+  geom_line(aes(y=deltaE.min), color = "grey", size = 0.7, alpha=0.5) +
+  geom_line(aes(y=deltaE.max), color = "grey", size = 0.7, alpha=0.5) +
+  geom_line(aes(y=deltaE.mean), color = "blue", size = 0.7) +
+  geom_ribbon(data = df_out_w,aes(ymin=deltaE.max,
+                                  ymax=deltaE.min), fill="grey",
+              alpha=0.5) +
+  geom_point(data = Egg_mort_aeg,aes(temp,prop_mort),
+             size = 0.9, color = "black") +
+  xlim(c(5,37)) + ylim(c(-1.7,3.1)) + 
+  guides( color =FALSE, alpha = FALSE) +
+  ylab("Egg mortality rate") + xlab("Temperature (Cº)") +
+  theme_bw() 
+plotdE_w 
+

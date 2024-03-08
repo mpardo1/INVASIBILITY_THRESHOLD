@@ -28,7 +28,6 @@ vars <- c('prec', 'tmax', 'tmin')
 # path = 'tmpr_245'  path = 'tmpr_370'  path = 'tmpr_585'
 # (optimistic: SSP245; middle of the road: SSP370; and pessimistic: SSP585)
 
-path_dir <-'tmpr_2060_370'
 time = '2061-2080'
  time = "2041-2060"
  # time = "2061-2080"

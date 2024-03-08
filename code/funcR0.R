@@ -99,7 +99,8 @@ TFD_f_alb <- function(temp){Briere_func(0.0488,8.02,35.65,temp)} # Fecundity
 pLA_f_alb <- function(temp){Quad_func(0.002663,6.668,38.92,temp)} # Survival probability Egg-Adult
 MDR_f_alb <- function(temp){Briere_func(0.0000638,8.6,39.66,temp)} # Mosquito Development Rate
 lf_f_alb <- function(temp){Quad_func(1.43,13.41,31.51,temp)} # Adult life span
-dE_f_alb <- function(temp){Quad_func(0.00071,1.73,40.51,temp)} # Adult life span
+dE_f_alb <- function(temp){Quad_func(0.00071,1.73,40.51,temp)} # egg development rate
+deltaE_f_alb <- function(temp){Lin_func(-0.008346 ,0.455282,temp)} # Egg mortality rate
 
 # R0 function by temperature:
 R0_func_alb <- function(Te, rain, hum){
@@ -112,8 +113,9 @@ R0_func_alb <- function(Te, rain, hum){
     dE <- dE_f_alb(Te)
     probla <- pLA_f_alb(Te)
     h <- h_f(hum,rain)
-    deltaE = 0.1
-    R0 <- ((f*a*deltaa)*probla*(h*dE/(h*dE+deltaE)))^(1/3)
+    deltaE = deltaE_f_alb(Te)#0.1
+    
+    R0 <- ((f*a*deltaa)*probla*((h*dE)/(h*dE+deltaE)))^(1/3)
   }
   return(R0)
 }
@@ -124,21 +126,22 @@ EFD_f_aeg <- function(temp){Briere_func(0.00856,14.58,34.61,temp)} # Fecundity
 pLA_f_aeg <- function(temp){Quad_func(0.004186,9.373,40.26,temp)} # Survival probability Egg-Adult
 MDR_f_aeg <- function(temp){Briere_func(0.0000786,11.36,39.17,temp)} # Mosquito Development Rate
 lf_f_aeg <- function(temp){Quad_func(0.148,9.16,37.73,temp)} # Adult life span
-dE_f_aeg <- function(temp){Briere_func(0.0003775 ,14.88,37.42,temp)} # Adult life span
+dE_f_aeg <- function(temp){Briere_func(0.0003775 ,14.88,37.42,temp)} # Egg development rate
+deltaE_f_aeg <- function(temp){QuadN_func(0.004475,-0.210787,2.552370,temp)} # Egg mortality rate
 
 # R0 function by temperature:
 R0_func_aeg <- function(Te, rain,hum){
   if(is.na(Te) | is.na(rain) | is.na(hum)){
     R0 <- NA
   }else{
-    a <- a_f_aeg(Te)
-    f <- 40
+    a <- 1#a_f_aeg(Te)
+    f <-EFD_f_aeg(Te) #40
     deltaa <- lf_f_aeg(Te)
     dE <- dE_f_aeg(Te)
     probla <- pLA_f_aeg(Te)
     h <- h_f(hum,rain)
-    deltE = 0.1
-    R0 <- ((f*a*deltaa)*probla*(h*dE/(h*dE+deltE)))^(1/3)
+    deltaE = deltaE_f_aeg(Te)#0.1
+    R0 <- ((f*a*deltaa)*probla*((h*dE)/(h*dE+deltaE)))^(1/3)
   }
   return(R0)
 }
