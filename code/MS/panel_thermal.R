@@ -1,7 +1,6 @@
 ## Compute the thermal responses for Aedes aegypti and albopictus from literature data
 # compare also different functions and compute its AIC value
 rm(list= ls())
-library(thermPerf)
 library(ggplot2)
 library(tidyverse)
 library(nls2)
@@ -675,16 +674,30 @@ ggplot(Egg_mortality_alb_2) +
   geom_point(aes(temp,prop_mort)) + theme_bw()
 
 
+# Egg mortality albo paper 2
+# Paper Table 2 https://oaktrust.library.tamu.edu/bitstream/handle/1969.1/ETD-TAMU-2508/DICKERSON-DISSERTATION.pdf?sequence=1&isAllowed=y
+Egg_mortality_alb_3 <- data.frame(
+  temp = numeric(0), rel_hum = character(0), prop_mort =numeric(0)
+)
+
+# Plot month 1
+Egg_mortality_alb_3[nrow(Egg_mortality_alb_3)+1,] <- c(15, NA ,1-0.56)
+Egg_mortality_alb_3[nrow(Egg_mortality_alb_3)+1,] <- c(21,NA ,1-0.75)
+Egg_mortality_alb_3[nrow(Egg_mortality_alb_3)+1,] <- c(27,NA ,1-0.74)
+Egg_mortality_alb_3[nrow(Egg_mortality_alb_3)+1,] <- c(32,NA ,1-0.53)
+Egg_mortality_alb_3[nrow(Egg_mortality_alb_3)+1,] <- c(35,NA ,1-0.52)
+
 # Join data sets to fit thermal response
 Egg_mortality_alb$paper <- "Juliano et al 2002, Oecologia."
 Egg_mortality_alb_2$paper <- "Calado et al 2002, Scielo."
+Egg_mortality_alb_3$paper <- "Dickerson et al 2007, Thesis"
 Egg_mortality_alb <- Egg_mortality_alb[,c(2:5)] 
 Egg_mortality_alb$rel_hum <- as.character(Egg_mortality_alb$rel_hum)
-Egg_mort_alb <- rbind(Egg_mortality_alb, Egg_mortality_alb_2)
+Egg_mort_alb <- rbind(Egg_mortality_alb, Egg_mortality_alb_2, Egg_mortality_alb_3)
 Egg_mort_alb$prop_mort <- as.numeric(Egg_mort_alb$prop_mort)
 Egg_mort_alb$temp <- as.numeric(Egg_mort_alb$temp)
 ggplot(Egg_mort_alb) +
-  geom_point(aes(temp, prop_mort)) + 
+  geom_point(aes(temp, prop_mort, color = paper)) + 
   theme_bw()
 
 # Do the fitting with nls
@@ -711,12 +724,24 @@ mod <- function(te){
   c*te+t0
 }
 
+# Plot the model Quad
+mod <- function(te){
+  c <- as.numeric(Fitting_alb_quad$m$getPars()[1])
+  t0 <- as.numeric(Fitting_alb_quad$m$getPars()[2])
+  t1 <- as.numeric(Fitting_alb_quad$m$getPars()[3])
+  c*te^2+t0*te+t1
+}
+
 vec <- seq(0,45,0.01)
 df_out_alb <- data.frame(temp_ae = vec, life_span_ae <- sapply(vec, mod))
 colnames(df_out_alb) <- c("temp_ae", "deltaE")
 df_out_alb$group <- "mean"
 
-###---------------+/- SD---------------------######
+ggplot(df_out_alb) +
+  geom_line(aes(temp_ae, deltaE)) +
+  geom_point(data = Egg_mort_alb, aes(temp, prop_mort), color = "red") + theme_bw()
+
+# +/- SD---------------------
 ## Mean - SD
 mod_min <- function(te){
   t0 <- as.numeric(Fitting_alb$m$getPars()[2]) - 
@@ -724,6 +749,16 @@ mod_min <- function(te){
   c <- as.numeric(Fitting_alb$m$getPars()[1]) - 
     summary(Fitting_alb)$coefficients[1,2]
   c*te+t0
+}
+
+mod_min <- function(te){
+  t0 <- as.numeric(Fitting_alb_quad$m$getPars()[2]) - 
+    summary(Fitting_alb_quad)$coefficients[2,2]
+  c <- as.numeric(Fitting_alb_quad$m$getPars()[1]) - 
+    summary(Fitting_alb_quad)$coefficients[1,2]
+  t1 <- as.numeric(Fitting_alb_quad$m$getPars()[3]) - 
+    summary(Fitting_alb_quad)$coefficients[3,2]
+  c*te^2+t0*te+t1
 }
 
 vec <- seq(0,45,0.01)
@@ -742,6 +777,15 @@ mod_max <- function(te){
   c*te+t0
 }
 
+mod_max <- function(te){
+  t0 <- as.numeric(Fitting_alb_quad$m$getPars()[2]) + 
+    summary(Fitting_alb_quad)$coefficients[2,2]
+  c <- as.numeric(Fitting_alb_quad$m$getPars()[1]) +
+    summary(Fitting_alb_quad)$coefficients[1,2]
+  t1 <- as.numeric(Fitting_alb_quad$m$getPars()[3]) + 
+    summary(Fitting_alb_quad)$coefficients[3,2]
+  c*te^2+t0*te+t1
+}
 vec <- seq(0,45,0.01)
 df_out_alb_max <- data.frame(temp_ae = vec,
                              deltaE= sapply(vec, mod_max))
@@ -764,7 +808,7 @@ plotdE_w <- ggplot(df_out_w, aes(x=temp_ae,y=deltaE.max)) +
               alpha=0.5) +
   geom_point(data = Egg_mort_alb,aes(temp,prop_mort),
              size = 0.9, color = "black") +
-  xlim(c(5,37)) + 
+  xlim(c(5,37)) + ylim(c(-2,3)) +
   guides( color =FALSE, alpha = FALSE) +
   ylab("Egg mortality rate") + xlab("Temperature (Cº)") +
   theme_bw() 

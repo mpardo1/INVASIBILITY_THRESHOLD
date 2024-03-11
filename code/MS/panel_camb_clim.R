@@ -16,6 +16,8 @@ colnames(clim_df_41) <- c("id","sum_alb_fut41","sum_aeg_fut41","sum_jap_fut41","
 time = "2061-2080"
 clim_df <- readRDS(paste0("~/INVASIBILITY_THRESHOLD/output/summon_eu_",time,".Rds"))
 colnames(clim_df) <- c("id","sum_alb_fut","sum_aeg_fut","sum_jap_fut","lon","lat")
+
+# Source code ~/INVASIBILITY_THRESHOLD/code/Europe/eu_map_same_coords_futclum.R
 clim_pop <- readRDS(paste0("~/INVASIBILITY_THRESHOLD/data/ERA5/Europe/eu_R0_fitfuture_clim_",2020,".Rds"))
 colnames(clim_pop) <- c("id","sum_alb_pres","sum_aeg_pres","sum_jap_pres","lon","lat")
 
@@ -28,9 +30,9 @@ pal <- rev(brewer.pal(11, name_pal))
 pal[11]
 pal[12] = "#74011C"
 pal[13] = "#4B0011"
-alb <- ggplot(clim_pop,
+aeg <- ggplot(clim_pop,
               aes(x = lon, y = lat,
-                  fill = as.factor(sum_alb_pres))) +
+                  fill = as.factor(sum_aeg_pres))) +
   geom_raster() +
   scale_fill_manual(values = pal,
                     name = "Nº suitable \n months",
@@ -62,6 +64,7 @@ leg_sum <- get_legend(ggplot(clim_pop,
                           title.position = "left",  # Position title at the top
                           label.position = "bottom"  # Position labels at the bottom
                         )))
+
 gg1 <- ggarrange(alb + ggtitle(expression(paste("a) ",italic("Ae. albopictus")))),
           aeg + ggtitle(expression(paste("b) ",italic("Ae. aegypti")))),
           nrow = 1)

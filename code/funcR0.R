@@ -46,7 +46,7 @@ h_f <- function(hum, rain){
   erat = 0.5
   e0 = 1.5
   evar = 0.05
-  evar = 0.1
+  # evar = 0.1
   eopt = 8
   efac = 0.01
   edens = 0.01
@@ -100,7 +100,7 @@ pLA_f_alb <- function(temp){Quad_func(0.002663,6.668,38.92,temp)} # Survival pro
 MDR_f_alb <- function(temp){Briere_func(0.0000638,8.6,39.66,temp)} # Mosquito Development Rate
 lf_f_alb <- function(temp){Quad_func(1.43,13.41,31.51,temp)} # Adult life span
 dE_f_alb <- function(temp){Quad_func(0.00071,1.73,40.51,temp)} # egg development rate
-deltaE_f_alb <- function(temp){Lin_func(-0.008346 ,0.455282,temp)} # Egg mortality rate
+deltaE_f_alb <- function(temp){QuadN_func(0.0019328,-0.091868,1.3338874,temp)} # Egg mortality rate
 
 # R0 function by temperature:
 R0_func_alb <- function(Te, rain, hum){
@@ -134,13 +134,13 @@ R0_func_aeg <- function(Te, rain,hum){
   if(is.na(Te) | is.na(rain) | is.na(hum)){
     R0 <- NA
   }else{
-    a <- 1#a_f_aeg(Te)
-    f <-EFD_f_aeg(Te) #40
+    a <- a_f_aeg(Te)
+    f <- EFD_f_aeg(Te) #40
     deltaa <- lf_f_aeg(Te)
     dE <- dE_f_aeg(Te)
     probla <- pLA_f_aeg(Te)
     h <- h_f(hum,rain)
-    deltaE = deltaE_f_aeg(Te)#0.1
+    deltaE = deltaE_f_aeg(Te)
     R0 <- ((f*a*deltaa)*probla*((h*dE)/(h*dE+deltaE)))^(1/3)
   }
   return(R0)

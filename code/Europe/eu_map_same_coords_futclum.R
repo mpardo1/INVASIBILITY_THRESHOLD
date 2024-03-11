@@ -8,13 +8,17 @@ library(giscoR)
 source("~/INVASIBILITY_THRESHOLD/code/funcR0.R")
 #https://cds.climate.copernicus.eu/cdsapp#!/dataset/reanalysis-era5-single-levels-monthly-means?tab=form
 
+# Load population density from: https://sedac.ciesin.columbia.edu/data/collection/gpw-v4
 Path <- "~/INVASIBILITY_THRESHOLD/data/gpw_v4_population_density_rev11_2020_2pt5_min.tif"
 pop <- rast(Path)
-plot(pop)
+plot(log(pop))
+
+# Crop the extent
 exact_extent <- c(xmin = -25, xmax = 40, ymin = 25, ymax = 75)
 pop_eu <- crop(pop,exact_extent)
 plot(log(pop_eu))
 
+# Remove non European countries
 sf_eu <- gisco_get_countries(year = "2020", region = "Europe")
 sf_eu <- sf_eu[sf_eu$CNTR_ID != "BY" &
                  sf_eu$CNTR_ID != "RU"  & sf_eu$CNTR_ID != "IS", ]
@@ -166,7 +170,7 @@ alb <- ggplot(clim_pop) +
         axis.line = element_blank(),
         axis.ticks.length = unit(0, "null"),
         axis.ticks.margin = unit(0, "null"), 
-        legend.position = "none",
+        # legend.position = "none",
         legend.box = "horizontal")
 
 aeg <- ggplot(clim_pop) +
