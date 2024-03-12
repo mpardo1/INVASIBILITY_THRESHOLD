@@ -26,7 +26,7 @@ pop_dif <- pop_world_fut - pop_world
 plot(log(pop_dif))
 
 # Load Spanish municipality maps
-esp_can <- esp_get_munic_siane(moveCAN = TRUE)
+esp_can <- esp_get_munic_siane(moveCAN = FALSE)
 can_box <- esp_get_can_box()
 esp_can$NATCODE <- as.numeric(paste0("34",esp_can$codauto,
                                      esp_can$cpro,
@@ -53,6 +53,19 @@ esp_can$ID <- c(1:nrow(esp_can))
 
 # Project EU future density in Spain  munis
 pop_esp_fut <- terra::extract(pop_world_fut,esp_can)
-clim_df1 <- clim_df1 %>% group_by(ID) %>%
-  summarise(dens = mean(value))
+colnames(pop_esp_fut) <- c("ID", "dens")
+pop_esp_fut <- pop_esp_fut %>% group_by(ID) %>%
+  summarise(dens1 = mean(dens))
+pop_esp_fut <- esp_can %>% left_join(pop_esp_fut)
 
+# Save Rds with future population density
+pop_esp_fut_s <- pop_esp_fut[, c("NATCODE","dens1")]
+pop_esp_fut_s$geometry <- NULL
+saveRDS(pop_esp_fut_s, "/home/marta/INVASIBILITY_THRESHOLD/data/pop/dens_fut.Rds")
+
+# Check diffs
+pop_esp_fut$diff_dens <- pop_esp_fut$dens1 - pop_esp_fut$dens
+
+ggplot(pop_esp_fut) +
+  geom_sf(aes(fill = log(diff_dens)), color= NA) +
+  scale_fill_viridis_c()

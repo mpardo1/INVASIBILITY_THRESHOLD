@@ -30,9 +30,9 @@ pal <- rev(brewer.pal(11, name_pal))
 pal[11]
 pal[12] = "#74011C"
 pal[13] = "#4B0011"
-aeg <- ggplot(clim_pop,
+alb <- ggplot(clim_pop,
               aes(x = lon, y = lat,
-                  fill = as.factor(sum_aeg_pres))) +
+                  fill = as.factor(sum_alb_pres))) +
   geom_raster() +
   scale_fill_manual(values = pal,
                     name = "Nº suitable \n months",

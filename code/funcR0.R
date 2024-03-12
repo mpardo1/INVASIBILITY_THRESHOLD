@@ -135,7 +135,7 @@ R0_func_aeg <- function(Te, rain,hum){
     R0 <- NA
   }else{
     a <- a_f_aeg(Te)
-    f <- EFD_f_aeg(Te) #40
+    f <- 40#EFD_f_aeg(Te) #40
     deltaa <- lf_f_aeg(Te)
     dE <- dE_f_aeg(Te)
     probla <- pLA_f_aeg(Te)

@@ -122,6 +122,14 @@ clim_pop$bool_alb <- ifelse(clim_pop$R0_alb>1,1,0)
 clim_pop$bool_aeg <- ifelse(clim_pop$R0_aeg>1,1,0)
 clim_pop$bool_jap <- ifelse(clim_pop$R0_jap>1,1,0)
 
+# test for decundity alb
+ggplot(clim_pop) +
+  geom_point(aes(tmean, R0_alb))
+
+ggplot(clim_pop) +
+  geom_point(aes(tmean, R0_aeg))
+
+# Group by location
 clim_pop <- clim_pop[,.(sum_alb = sum(bool_alb),
                         sum_aeg = sum(bool_aeg),
                         sum_jap = sum(bool_jap)), by = list(id)]
@@ -137,7 +145,7 @@ ggplot(clim_pop,
 
 # save the df
 saveRDS(clim_pop,
-        paste0("~/INVASIBILITY_THRESHOLD/data/ERA5/Europe/eu_R0_fitfuture_clim_",2020,".Rds"))
+        paste0("~/INVASIBILITY_THRESHOLD/data/ERA5/Europe/aeg_fec_temp_eu_R0_fitfuture_clim_",2020,".Rds"))
 
 clim_pop <- readRDS("~/INVASIBILITY_THRESHOLD/data/ERA5/Europe/eu_R0_fitfuture_clim_2020.Rds")
 
