@@ -55,8 +55,8 @@ ggplot(df_group_y) +  geom_sf(aes(fill = prec), color = NA) +
 # Add population density ---------------------------------------------
 Path <- "/home/marta/INVASIBILITY_THRESHOLD/data/pop/pobmun20.csv"
 pop22 <- read.csv(Path, sep = ";")
-Path <- "/home/marta/INVASIBILITY_THRESHOLD/data/pop/pobmun04.csv"
-pop22 <- read.csv(Path, sep = ";")
+# Path <- "/home/marta/INVASIBILITY_THRESHOLD/data/pop/pobmun04.csv"
+# pop22 <- read.csv(Path, sep = ";")
 pop22$cmun <- ifelse(pop22$CMUN<10, paste0("00",pop22$CMUN),
                      ifelse(pop22$CMUN<100, paste0("0",pop22$CMUN),
                             as.character(pop22$CMUN)))

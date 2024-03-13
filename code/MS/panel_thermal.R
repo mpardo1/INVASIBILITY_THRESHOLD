@@ -532,31 +532,6 @@ plotdE_aeg_w <- ggplot(df_out_aeg_w, aes(x=temp,y=devep_rate.max)) +
   theme_bw()
 plotdE_aeg_w 
 
-# Join thermal responses all species --------------------
-library(latex2exp)
-sizelet = 12
-ggarrange( plotalb_w  +
-             theme(text = element_text(size = sizelet)) +
-             ylab(TeX("Prob. from Larva to Adult, $p_{LA}$")) +
-             xlab("") + ylim(c(0,1.3)) +
-             ggtitle(expression(italic("Ae. albopictus"))) +
-             ylab(TeX("Prob. from Larva to Adult, $p_{LA}$"))+ 
-             theme(text = element_text(size = sizelet)),
-           plotaeg_w  + 
-             theme(text = element_text(size = sizelet)) +
-             ylab(TeX("Prob. from Larva to Adult, $p_{LA}$")) +
-             xlab("") + ylim(c(0,1.3))  +
-             ggtitle(expression(italic("Ae. aegypti"))) +
-             theme(text = element_text(size = sizelet)),
-           plotdE_w + 
-             ylab(TeX("Egg development rate, $d_E$")) +
-             theme(text = element_text(size = sizelet)),
-           plotdE_aeg_w + ylim(c(0,0.55)) + ylab("") +
-             ylab(TeX("Egg development rate, $d_E$")) +
-             theme(text = element_text(size = sizelet)),
-           ncol = 2, nrow = 2)
-
-
 # Development Egg albopictus -----------------------------------------------
 ## Delatte
   df_dL_alb <- data.frame(temp=c(15,20,25,30,35),
@@ -799,7 +774,7 @@ df_out_alb <- rbind(df_out_alb_max,
 
 df_out_w <- reshape(df_out_alb, idvar ="temp_ae" ,
                     timevar = "group", direction = "wide")
-plotdE_w <- ggplot(df_out_w, aes(x=temp_ae,y=deltaE.max)) +
+plotdeltaE_w <- ggplot(df_out_w, aes(x=temp_ae,y=deltaE.max)) +
   geom_line(aes(y=deltaE.min), color = "grey", size = 0.7, alpha=0.5) +
   geom_line(aes(y=deltaE.max), color = "grey", size = 0.7, alpha=0.5) +
   geom_line(aes(y=deltaE.mean), color = "blue", size = 0.7) +
@@ -812,7 +787,7 @@ plotdE_w <- ggplot(df_out_w, aes(x=temp_ae,y=deltaE.max)) +
   guides( color =FALSE, alpha = FALSE) +
   ylab("Egg mortality rate") + xlab("Temperature (Cº)") +
   theme_bw() 
-plotdE_w 
+plotdeltaE_w 
 
 # Aedes Aegypti deltaE ------------------------------------------------
 Egg_mortality_aeg <- data.frame(
@@ -993,7 +968,7 @@ df_out_aeg <- rbind(df_out_aeg_max,
 
 df_out_w <- reshape(df_out_aeg, idvar ="temp_ae" ,
                     timevar = "group", direction = "wide")
-plotdE_w <- ggplot(df_out_w, aes(x=temp_ae,y=deltaE.max)) +
+plotdeltaE_w_aeg <- ggplot(df_out_w, aes(x=temp_ae,y=deltaE.max)) +
   geom_line(aes(y=deltaE.min), color = "grey", size = 0.7, alpha=0.5) +
   geom_line(aes(y=deltaE.max), color = "grey", size = 0.7, alpha=0.5) +
   geom_line(aes(y=deltaE.mean), color = "blue", size = 0.7) +
@@ -1006,5 +981,40 @@ plotdE_w <- ggplot(df_out_w, aes(x=temp_ae,y=deltaE.max)) +
   guides( color =FALSE, alpha = FALSE) +
   ylab("Egg mortality rate") + xlab("Temperature (Cº)") +
   theme_bw() 
-plotdE_w 
+plotdeltaE_w_aeg 
 
+# Join thermal responses all species --------------------
+library(latex2exp)
+sizelet = 12
+ggarrange( plotalb_w  +
+             theme(text = element_text(size = sizelet)) +
+             ylab(TeX("Prob. from Larva to Adult, $p_{LA}$")) +
+             ylim(c(0,1.3)) +
+             ggtitle(TeX("A \\textit{Ae. albopictus}")) +
+             ylab(TeX("Prob. from Larva to Adult, $p_{LA}$"))+ 
+             theme(text = element_text(size = sizelet)),
+           plotaeg_w  + 
+             theme(text = element_text(size = sizelet)) +
+             ylab(TeX("Prob. from Larva to Adult, $p_{LA}$")) +
+              ylim(c(0,1.3))  +
+             ggtitle(TeX("A \\textit{Ae. aegypti}")) +
+             theme(text = element_text(size = sizelet)),
+           plotdeltaE_w + 
+             ylab(TeX("Egg mortality rate, $\\delta_{E}$")) +
+             ggtitle("C") +
+             theme(text = element_text(size = sizelet)),
+           plotdeltaE_w_aeg  + 
+             theme(text = element_text(size = sizelet)) +
+             ylab(TeX("Egg mortality rate, $\\delta_{E}$")) +
+             ggtitle("D") +
+             theme(text = element_text(size = sizelet)),
+           plotdE_w + 
+             ylab(TeX("Egg development rate, $d_E$")) +
+             ggtitle("E") +
+             theme(text = element_text(size = sizelet)),
+           plotdE_aeg_w + ylim(c(0,0.55)) + ylab("") +
+             ggtitle("F") +
+             ylab(TeX("Egg development rate, $d_E$")) +
+             theme(text = element_text(size = sizelet)),
+           
+           ncol = 2, nrow = 3)
