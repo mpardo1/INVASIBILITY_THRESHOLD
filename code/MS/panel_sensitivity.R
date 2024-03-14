@@ -574,18 +574,20 @@ legend_only <- get_legend(df_alb +
 
 ggarrange(df_alb +  xlab("") +
             ylim(c(-1.5,1.2)) +
-            ggtitle(expression(paste("A                ",italic("Ae. Albopitus"))))+
+            ggtitle(expression(paste("a) ",italic("Ae. Albopictus"))))+
             theme(text = element_text(size = sizelet)),
           df_aeg +  xlab("") +
             ylim(c(-1.5,1.2)) +
-            ggtitle(expression(paste("B                    ",
+            ggtitle(expression(paste("b) ",
                                      italic("Ae. Aegypti")))) +
             theme(legend.position = "none",
                   text = element_text(size = sizelet)),
-          plot_temp_alb, plot_temp_aeg,
-          ncol=2,nrow = 2,  heights = c(1,0.7),
+          plot_temp_alb + ggtitle("c)") +
+            theme(text = element_text(size = sizelet)),
+          plot_temp_aeg + ggtitle("d)") +
+            theme(text = element_text(size = sizelet)),
+          ncol=2,nrow = 2,  heights = c(1,0.8),
           common.legend = TRUE)
-
 
 # Check difference when fecundity is EFD, not a*cte ---------------------
 # R0 function by temperature:

@@ -990,31 +990,30 @@ ggarrange( plotalb_w  +
              theme(text = element_text(size = sizelet)) +
              ylab(TeX("Prob. from Larva to Adult, $p_{LA}$")) +
              ylim(c(0,1.3)) +
-             ggtitle(TeX("A \\textit{Ae. albopictus}")) +
+             ggtitle(TeX("a) \\textit{Ae. albopictus}")) +
              ylab(TeX("Prob. from Larva to Adult, $p_{LA}$"))+ 
              theme(text = element_text(size = sizelet)),
            plotaeg_w  + 
              theme(text = element_text(size = sizelet)) +
              ylab(TeX("Prob. from Larva to Adult, $p_{LA}$")) +
               ylim(c(0,1.3))  +
-             ggtitle(TeX("A \\textit{Ae. aegypti}")) +
+             ggtitle(TeX("b) \\textit{Ae. aegypti}")) +
              theme(text = element_text(size = sizelet)),
            plotdeltaE_w + 
              ylab(TeX("Egg mortality rate, $\\delta_{E}$")) +
-             ggtitle("C") +
+             ggtitle("c)") +
              theme(text = element_text(size = sizelet)),
            plotdeltaE_w_aeg  + 
              theme(text = element_text(size = sizelet)) +
              ylab(TeX("Egg mortality rate, $\\delta_{E}$")) +
-             ggtitle("D") +
+             ggtitle("d)") +
              theme(text = element_text(size = sizelet)),
            plotdE_w + 
              ylab(TeX("Egg development rate, $d_E$")) +
-             ggtitle("E") +
+             ggtitle("e)") +
              theme(text = element_text(size = sizelet)),
            plotdE_aeg_w + ylim(c(0,0.55)) + ylab("") +
-             ggtitle("F") +
+             ggtitle("f)") +
              ylab(TeX("Egg development rate, $d_E$")) +
              theme(text = element_text(size = sizelet)),
-           
            ncol = 2, nrow = 3)

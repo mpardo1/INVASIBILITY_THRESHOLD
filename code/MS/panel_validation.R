@@ -83,61 +83,74 @@ plot_corr <- ggplot(trap_data_filt[trap_data_filt$city %in% list_cit_1,],
   ylab("Count female mosquito trap (logarithmic scale)")
 plot_corr
 
-# # Fit exp city with nls -------------------------------------------------------
-# df_out_fem <- data.frame()
-# for(i in c(1:length(list_cit))){
-#   print(list_cit[[i]])
-#   df_aux1 <- trap_data_filt[which(trap_data_filt$city == list_cit[[i]]),]
-#   Fitting_fem <- nls(female ~ exp(cont1*R0_alb)*cont,
-#                      data = df_aux1,
-#                      start = list(cont = 0.2, cont1 = 0.12))
-#   
-#   print(summary(Fitting_fem))
-#   
-#   lin_model <- lm(log10(female)~ R0_alb, data = df_aux1)
-#   summary(lin_model)
-#   ggplot(df_aux1, aes(R0_alb, log10(female)))+
-#     geom_point() + geom_smooth(method = "lm")
-#   
-#   mod <- function(te){
-#     t0 <- as.numeric(Fitting_fem$m$getPars()[1])
-#     tm <- as.numeric(Fitting_fem$m$getPars()[2])
-#     t0*exp(tm*te)
-#   }
-# 
-#   vec <- seq(0,max(df_aux1$R0_alb)+1,0.01)
-#   df_aux <- data.frame(temp_ae <- vec,
-#                        fem <- sapply(vec, mod))
-#   df_aux$cit <- list_cit[[i]]
-#   colnames(df_aux) <- c("vec", "out", "cit")
-#   df_out_fem <- rbind(df_aux, df_out_fem)
-#   colnames(df_out_fem) <- c("vec", "out", "cit")
-# }
-# 
-# 
-# name_pal = "Set1"
-# display.brewer.pal(length(list_cit), name_pal)
-# pal <- rev(brewer.pal(length(list_cit), name_pal))
-# sizelet = 14
-# plot_counts <- ggplot(data = trap_data_filt) +
-#   geom_point(aes(x = R0_alb,
-#                  y = female, color = city), size = 0.8, alpha = 0.6) +
-#   geom_line(data = df_out_fem,
-#             aes(vec , out, color = cit),
-#             lwd = 0.8) +
-#   scale_color_manual(values = pal,
-#                      labels = c(TeX("Blanes"),
-#                                 TeX("Lloret de Mar"),
-#                                 TeX("Palafolls"),
-#                                 TeX("Tordera")), name = "") +
-#   xlab(TeX("$R_M$")) +
-#   ylab("Number of females") +
-#   xlim(c(0,max(trap_data_filt$R0_alb)+0.3)) +
-#   ylim(c(0,max(trap_data_filt$female))) +
-#   theme_bw() +
-#   theme(text = element_text(size = sizelet),
-#         legend.position = c(0.2,0.65))
-# plot_counts
+# linear mixed-models
+library(lme4)
+
+model <- lmer(log10(female)~ R0_alb + (1|city),
+              data = trap_data_filt[(trap_data_filt$city %in% list_cit),])
+r2(model)
+
+model <- lm(log10(female)~ R0_alb,
+              data = trap_data_filt[(trap_data_filt$city %in% list_cit),])
+r2(model)
+
+library(performance)
+# Fit exp city with nls -------------------------------------------------------
+df_out_fem <- data.frame()
+for(i in c(1:length(list_cit))){
+  print(list_cit[[i]])
+  df_aux1 <- trap_data_filt[which(trap_data_filt$city == list_cit[[i]]),]
+  # Fitting_fem <- nls(female ~ exp(cont1*R0_alb)*cont,
+  #                    data = df_aux1,
+  #                    start = list(cont = 0.2, cont1 = 0.12))
+  # 
+  # print(summary(Fitting_fem))
+
+  lin_model <- lm(log10(female)~ R0_alb, data = df_aux1)
+  summary(lin_model)
+  print(r2(lin_model))
+  ggplot(df_aux1, aes(R0_alb, log10(female)))+
+    geom_point() + geom_smooth(method = "lm")
+
+  mod <- function(te){
+    t0 <- as.numeric(Fitting_fem$m$getPars()[1])
+    tm <- as.numeric(Fitting_fem$m$getPars()[2])
+    t0*exp(tm*te)
+  }
+
+  vec <- seq(0,max(df_aux1$R0_alb)+1,0.01)
+  df_aux <- data.frame(temp_ae <- vec,
+                       fem <- sapply(vec, mod))
+  df_aux$cit <- list_cit[[i]]
+  colnames(df_aux) <- c("vec", "out", "cit")
+  df_out_fem <- rbind(df_aux, df_out_fem)
+  colnames(df_out_fem) <- c("vec", "out", "cit")
+}
+
+
+name_pal = "Set1"
+display.brewer.pal(length(list_cit), name_pal)
+pal <- rev(brewer.pal(length(list_cit), name_pal))
+sizelet = 14
+plot_counts <- ggplot(data = trap_data_filt) +
+  geom_point(aes(x = R0_alb,
+                 y = female, color = city), size = 0.8, alpha = 0.6) +
+  geom_line(data = df_out_fem,
+            aes(vec , out, color = cit),
+            lwd = 0.8) +
+  scale_color_manual(values = pal,
+                     labels = c(TeX("Blanes"),
+                                TeX("Lloret de Mar"),
+                                TeX("Palafolls"),
+                                TeX("Tordera")), name = "") +
+  xlab(TeX("$R_M$")) +
+  ylab("Number of females") +
+  xlim(c(0,max(trap_data_filt$R0_alb)+0.3)) +
+  ylim(c(0,max(trap_data_filt$female))) +
+  theme_bw() +
+  theme(text = element_text(size = sizelet),
+        legend.position = c(0.2,0.65))
+plot_counts
 
 # exponential function with lm---------------------------------------------------
 # df_out_fem <- data.frame()

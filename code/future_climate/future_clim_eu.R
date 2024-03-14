@@ -3,7 +3,7 @@
 # Load libraries ----------------------------------------------------------
 require(pacman)
 pacman::p_load(terra, eurostat,tidyverse, sf, RColorBrewer,
-               geodata, data.table)
+               geodata, data.table,giscoR)
 
 g <- gc(reset = T)
 rm(list = ls())
@@ -44,8 +44,8 @@ tmax_w <- crop(tmax_w, exact_extent)
 prec_w <- crop(prec_w, exact_extent)
 
 # read population density europe -----------------------------
-path <- "~/INVASIBILITY_THRESHOLD/data/pop_eu.tif"
-pop_eu <- rast(path)
+Path <- "/home/marta/INVASIBILITY_THRESHOLD/data/pop/GHS_POP_E2030_GLOBE_R2023A_reprojected_bilinear_025.tif"
+pop_eu <- rast(Path)
 # plot(pop_eu[[1]])
 pop_eu <- terra::project(pop_eu,tmin_w, method = "near")
 
@@ -80,6 +80,13 @@ colnames(prec_w) <- c("id", "month", "prec")
 prec_w$prec <- prec_w$prec/(as.numeric(days_in_month(as.Date(paste0("2020-",prec_w$month,"-01"),
                                                   format ="%Y-%m-%d"))))
 
+# Extract popilation density
+# Remove non European countries
+sf_eu <- gisco_get_countries(year = "2020", region = "Europe")
+sf_eu <- sf_eu[sf_eu$CNTR_ID != "BY" &
+                 sf_eu$CNTR_ID != "RU"  & sf_eu$CNTR_ID != "IS", ]
+plot(sf_eu[,"CNTR_ID"])
+pop_eu <- terra::crop(pop_eu, sf_eu) %>% terra::mask(., sf_eu)
 pop <- terra::extract(pop_eu,
                          grid_points, xy =TRUE)
 pop <- pop[,c(1:2)]
@@ -109,8 +116,8 @@ clim_df <- clim_df %>% left_join(grid_points)
  
 clim_df <- readRDS(paste0("~/INVASIBILITY_THRESHOLD/output/eu_alb_aeg_",time,"_.Rds"))
 library(latex2exp)
-month_n =11
-plot_11_alb <- ggplot(clim_df[which(clim_df$month == month_n),],
+month_n =5
+plot_5_alb <- ggplot(clim_df[which(clim_df$month == month_n),],
        aes(x = lon, y = lat, fill = R0_alb)) +
   geom_raster() +
   scale_fill_distiller(na.value = "white",
@@ -133,7 +140,7 @@ plot_11_alb <- ggplot(clim_df[which(clim_df$month == month_n),],
         axis.line = element_blank(),
         axis.ticks.length = unit(0, "null"),
         axis.ticks.margin = unit(0, "null")) 
-plot_8
+plot_11_alb
 
 library(ggpubr)
 ggarrange(plot_5_alb, plot_8_alb,plot_11_alb,

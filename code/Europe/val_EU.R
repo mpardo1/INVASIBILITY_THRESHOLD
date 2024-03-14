@@ -249,5 +249,6 @@ pa_jap_eu <- ggplot(pa_jap_eu) +
 pa_jap_eu
 
 # do a panel ------------------------------------------------------------
-ggarrange(pa_jap_eu + ggtitle("A"),
-          alb_eu_val + ggtitle("B"))
+ggarrange(pa_jap_eu + ggtitle("a)"),
+          alb_eu_val + ggtitle("b)"))
+

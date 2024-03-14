@@ -9,7 +9,7 @@ library(sf)
 library(ggpubr)
 source("~/INVASIBILITY_THRESHOLD/code/funcR0.R")
 
-# Load data frames
+# Load data frames from ~/INVASIBILITY_THRESHOLD/code/future_climate/future_clim_eu.R
 time = "2041-2060"
 clim_df_41 <- readRDS(paste0("~/INVASIBILITY_THRESHOLD/output/summon_eu_",time,".Rds"))
 colnames(clim_df_41) <- c("id","sum_alb_fut41","sum_aeg_fut41","sum_jap_fut41","lon","lat")
@@ -53,7 +53,7 @@ alb <- ggplot(clim_pop,
 
 leg_sum <- get_legend(ggplot(clim_pop,
                              aes(x = lon, y = lat,
-                                 fill = as.factor(sum_aeg_pres))) +
+                                 fill = as.factor(sum_alb_fut))) +
                         geom_raster() +
                         scale_fill_manual(values = pal,
                                           name = "Nº suitable \n months",
@@ -85,7 +85,6 @@ clim_df$diff_alb6141 <- clim_df$sum_alb_fut - clim_df$sum_alb_fut41
 clim_df$diff_aeg6141 <- clim_df$sum_aeg_fut - clim_df$sum_aeg_fut41
 
 # Create a palette
-
 name_pal = "RdYlBu"
 display.brewer.pal(11, name_pal)
 pal <- rev(brewer.pal(11, name_pal))
@@ -115,11 +114,11 @@ ggplot(clim_df,
 # ggplot albopictus
 diff_aeg <- ggplot(clim_df,
        aes(x = lon, y = lat,
-           fill = as.factor(diff_aeg))) +
+           fill = as.factor(diff_aeg6141))) +
   geom_raster() +
   scale_fill_manual(values = pal1,
                     name = "Difference in\n suitable months",
-                    na.value = "white",
+                    na.value = "#F7F7F7",
                     limits = factor(seq(-6,7,1))) +
   theme(legend.position = "none",
         panel.background = element_rect(fill = "transparent", colour = NA),
@@ -142,7 +141,7 @@ diff_aeg <- ggplot(clim_df,
 
 leg <- (get_legend(ggplot(clim_df,
                             aes(x = lon, y = lat,
-                                fill = as.factor(diff_aeg))) +
+                                fill = as.factor(sum_alb_fut41))) +
                        geom_raster() +
                        scale_fill_manual(values = pal1,
                                          name = "Difference in\n months",
@@ -160,11 +159,11 @@ leg <- (get_legend(ggplot(clim_df,
 # ggplot albopictus
 diff_alb <- ggplot(clim_df,
                    aes(x = lon, y = lat,
-                       fill = as.factor(diff_alb))) +
+                       fill = as.factor(diff_alb6141))) +
   geom_raster() +
   scale_fill_manual(values = pal1[c(3:4,7,10:13)],
                     name = "Difference in\n suitable months",
-                    na.value = "white",
+                    na.value = "#F7F7F7",
                     limits = factor(seq(-2,4,1))) +
   theme(legend.position = "none",
         panel.background = element_rect(fill = "transparent", colour = NA),
@@ -181,7 +180,7 @@ diff_alb <- ggplot(clim_df,
 
 leg <- (get_legend(ggplot(clim_df,
                           aes(x = lon, y = lat,
-                              fill = as.factor(diff_aeg6141))) +
+                              fill = as.factor(diff_aeg))) +
                      geom_raster() +
                      scale_fill_manual(values = pal1[c(3:4,7,10:13)],
                                        name = "Difference in\n months",
@@ -203,7 +202,7 @@ pal[12] = "#74011C"
 pal[13] = "#4B0011"
 aeg <- ggplot(clim_df,
                    aes(x = lon, y = lat,
-                       fill = as.factor(sum_aeg_fut))) +
+                       fill = as.factor(sum_aeg_fut41))) +
   geom_raster() +
   scale_fill_manual(values = pal,
                     name = "Nº suitable \n months",

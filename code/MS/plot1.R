@@ -21,7 +21,6 @@ aegypti <- sapply(vec,R0_func_aeg, hum = 500,rain = 8)
 albopictus <- sapply(vec,R0_func_alb, hum = 500,rain = 8) 
 japonicus <- sapply(vec,R0_func_jap, hum = 500,rain =8) 
 
-
 df_out <- data.frame(vec,
                      aegypti = aegypti,
                      albopictus = albopictus)
@@ -74,23 +73,41 @@ ggplot(df_out[which(df_out$variable == "albopictus"),]) +
 
 # rm as a function of rainfall ------------------------------------------
 vec <- seq(0,16,0.001)
-rain <- sapply(vec,R0_func_aeg, hum = 0, Te = 17.5)
-df_rain <- data.frame(vec, rain)
+aegypti <- sapply(vec,R0_func_aeg, hum = 0, Te = 15.65)
+albopictus <- sapply(vec,R0_func_alb, hum = 0, Te = 15.65)
+df_rain <- data.frame(vec, albopictus, aegypti)
+df_rain <- reshape2::melt(df_rain, id.vars = "vec")
 plot_rain <- ggplot(df_rain) + 
-  geom_line(aes(vec,rain)) +
-  geom_hline(yintercept = 1, linetype = "dashed", color = "red") +
+  geom_line(aes(vec,value, color = variable)) +
+  geom_hline(yintercept = 1, linetype = "dashed", color = "red") + 
+  scale_color_manual(name = "", values =pal,
+                     labels = c(expression(italic("Ae. aegypti")),
+                                expression(italic("Ae. albopictus")))) +
+  # ,
+  # expression(italic("Ae. japonicus")))) +
   xlab("Rainfall (mm)") + ylab(TeX("$R_M$")) + 
-  theme_bw() + theme(text = element_text(size = letsize))
+  theme_bw() + theme(text = element_text(size = letsize),
+                     legend.position = "none")
+plot_rain
 
 # rm as a function of human density ------------------------------------------
 vec <- seq(0,1000,0.1)
-hum <- sapply(vec,R0_func_aeg, rain = 0, Te = 17.5)
-df_hum <- data.frame(vec, hum)
+aegypti <- sapply(vec,R0_func_aeg, rain = 0, Te = 15.65)
+albopictus <- sapply(vec,R0_func_alb, rain = 0, Te = 15.65)
+df_hum <- data.frame(vec,albopictus, aegypti)
+df_hum <- reshape2::melt(df_hum, id.vars = "vec")
 plot_hum <- ggplot(df_hum) + 
-  geom_line(aes(vec,hum)) +
-  geom_hline(yintercept = 1, linetype = "dashed", color = "red") +
+  geom_line(aes(vec,value, color = variable)) +
+  geom_hline(yintercept = 1, linetype = "dashed", color = "red") + 
+  scale_color_manual(name = "", values =pal,
+                     labels = c(expression(italic("Ae. aegypti")),
+                                expression(italic("Ae. albopictus")))) +
+  # ,
+  # expression(italic("Ae. japonicus")))) +
   xlab("Human density") + ylab(TeX("$R_M$")) + 
-  theme_bw() + theme(text = element_text(size = letsize))
+  theme_bw() + theme(text = element_text(size = letsize),
+                     legend.position = "none")
+plot_hum
 
 # join all the plots ------------------------------------------------------
 ggarrange(plot_temp + ggtitle("a)"),

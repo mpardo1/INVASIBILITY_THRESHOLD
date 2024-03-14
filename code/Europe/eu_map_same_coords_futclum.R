@@ -145,7 +145,7 @@ ggplot(clim_pop,
 
 # save the df
 saveRDS(clim_pop,
-        paste0("~/INVASIBILITY_THRESHOLD/data/ERA5/Europe/aeg_fec_temp_eu_R0_fitfuture_clim_",2020,".Rds"))
+        paste0("~/INVASIBILITY_THRESHOLD/data/ERA5/Europe/eu_R0_fitfuture_clim_",2020,".Rds"))
 
 clim_pop <- readRDS("~/INVASIBILITY_THRESHOLD/data/ERA5/Europe/eu_R0_fitfuture_clim_2020.Rds")
 

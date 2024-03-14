@@ -362,6 +362,10 @@ plot_temp_aeg
 
 # Check difference when fecundity is EFD, not a*cte
 # R0 function by temperature:
+source("~/INVASIBILITY_THRESHOLD/code/funcR0.R")
+aegypti <- sapply(vec,R0_func_aeg, hum = 500,rain = 8) 
+
+# Change fecundity in RM
 R0_func_aeg <- function(Te, rain,hum){
   if(is.na(Te) | is.na(rain) | is.na(hum)){
     R0 <- NA
@@ -372,7 +376,7 @@ R0_func_aeg <- function(Te, rain,hum){
     dE <- dE_f_aeg(Te)
     probla <- pLA_f_aeg(Te)
     h <- h_f(hum,rain)
-    deltaE = cte#deltaE_f_aeg(Te)
+    deltaE = deltaE_f_aeg(Te)
     R0 <- ((f*a*deltaa)*probla*((h*dE)/(h*dE+deltaE)))^(1/3)
   }
   return(R0)
@@ -392,7 +396,42 @@ ggplot(df_cte1) +
   scale_color_manual(name= "", values = c("#edae49", "#66a182"),
                      labels = c(expression(italic("Cte fecundity")),
                                 expression(italic("Fecundity depending on temp")))) +
-  theme(legend.position = c(0.18,0.75),
-        text = element_text(size = letsize),
+  theme(legend.position = c(0.2,0.75),
+        text = element_text(size = 14),
         legend.text.align = 0)
 
+# Check difference when fecundity aegypti is from albopictus
+# R0 function by temperature:
+R0_func_aeg <- function(Te, rain,hum){
+  if(is.na(Te) | is.na(rain) | is.na(hum)){
+    R0 <- NA
+  }else{
+    a <- a_f_aeg(Te)
+    f <- TFD_f_alb(Te)
+    deltaa <- lf_f_aeg(Te)
+    dE <- dE_f_aeg(Te)
+    probla <- pLA_f_aeg(Te)
+    h <- h_f(hum,rain)
+    deltaE = deltaE_f_aeg(Te)
+    R0 <- ((f*a*deltaa)*probla*((h*dE)/(h*dE+deltaE)))^(1/3)
+  }
+  return(R0)
+}
+
+# Run model with fixed param
+vec <- seq(5,40,0.001)
+aegypti_EFD <- sapply(vec,R0_func_aeg, hum = 500,rain = 8) 
+
+# Create data frame with all vecs
+df_cte1 <- data.frame(vec, aegypti, aegypti_EFD)
+df_cte1 <- reshape2::melt( df_cte1, id.vars = "vec")
+ggplot(df_cte1) + 
+  geom_line(aes(vec,value, color=variable), size = 1) +
+  geom_hline(yintercept = 1, linetype = "dashed", color = "red") +
+  ylab(TeX("$R_M$")) + theme_bw() +  xlab("Temperature") + 
+  scale_color_manual(name= "", values = c("#edae49", "#66a182"),
+                     labels = c(expression(italic("Cte fecundity")),
+                                expression(italic("Fecundity from Ae. albopictus")))) +
+  theme(legend.position = c(0.2,0.75),
+        text = element_text(size = 14),
+        legend.text.align = 0)

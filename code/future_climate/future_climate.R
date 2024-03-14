@@ -28,9 +28,8 @@ vars <- c('prec', 'tmax', 'tmin')
 # path = 'tmpr_245'  path = 'tmpr_370'  path = 'tmpr_585'
 # (optimistic: SSP245; middle of the road: SSP370; and pessimistic: SSP585)
 
-time = '2061-2080'
- time = "2041-2060"
- # time = "2061-2080"
+ time = '2061-2080'
+ # time = "2041-2060"
  var = "prec"
  Path <- paste0("~/INVASIBILITY_THRESHOLD/data/future-climate/",
                 var,"_mean",time,".tif")
@@ -178,7 +177,12 @@ pop$dens <- pop$POB22/pop$area
 pop <- pop[, c("dens","NATCODE")]
 pop$geometry <- NULL
 
-# Set to province data minu with no data -------------------------------------
+# Load population density
+Path <- "/home/marta/INVASIBILITY_THRESHOLD/data/pop/dens_fut.Rds"
+pop <- readRDS(Path)
+colnames(pop) <- c("NATCODE", "dens")
+
+# Set to province data muni with no data -------------------------------------
 prov_muni <- setDT(esp_can[,c("NATCODE", "cpro")])
 prov_muni$geometry <- NULL
 
