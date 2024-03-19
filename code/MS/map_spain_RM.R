@@ -26,7 +26,7 @@ ggplot(df_h) + geom_line(aes(vec,out)) +
 # year = 2004
 # Path <- paste0("/home/marta/INVASIBILITY_THRESHOLD/output/mcera5/process_hourly_daily_ERA5_daily_mcera_",
 #                year,".Rds")
-year = 2004
+year = 2020
 Path <- paste0("~/INVASIBILITY_THRESHOLD/output/ERA5/temp/2020/clim_",year,".Rds")
 # saveRDS(dt_weather,Path)
 df_group <- setDT(readRDS(Path))
@@ -53,10 +53,10 @@ ggplot(df_group_y) +  geom_sf(aes(fill = prec), color = NA) +
   scale_fill_viridis_c()
 
 # Add population density ---------------------------------------------
-# Path <- "/home/marta/INVASIBILITY_THRESHOLD/data/pop/pobmun20.csv"
-# pop22 <- read.csv(Path, sep = ";")
-Path <- "/home/marta/INVASIBILITY_THRESHOLD/data/pop/pobmun04.csv"
+Path <- "/home/marta/INVASIBILITY_THRESHOLD/data/pop/pobmun20.csv"
 pop22 <- read.csv(Path, sep = ";")
+# Path <- "/home/marta/INVASIBILITY_THRESHOLD/data/pop/pobmun04.csv"
+# pop22 <- read.csv(Path, sep = ";")
 pop22$cmun <- ifelse(pop22$CMUN<10, paste0("00",pop22$CMUN),
                      ifelse(pop22$CMUN<100, paste0("0",pop22$CMUN),
                             as.character(pop22$CMUN)))
@@ -206,7 +206,7 @@ esp_can$NATCODE <- as.numeric(paste0("34",esp_can$codauto,
 ## Para hacer un cuadrado con seis plots cambio el numero de 
 # month y el nombre del plot y lo hago para cada especie.
 df_group_mon <- esp_can %>% left_join(df_group_mon, by = "NATCODE")
-df_group_mon$R0 <- df_group_mon$R0_mon_alb
+df_group_mon$R0 <- df_group_mon$R0_mon_aeg
 month = 3
 plot_3 <- plot_months(df_group_mon,month)
 plot_3

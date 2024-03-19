@@ -15,6 +15,26 @@ deltaE_alb <- sapply(vec,deltaE_f_alb)
 df_deltaE <- data.frame(vec,deltaE_aeg,deltaE_alb)
 ggplot(df_deltaE) + geom_line(aes(vec,deltaE_aeg)) + geom_line(aes(vec,deltaE_alb))
 
+# Test Fecundity albopictus and aegypti
+fa <- function(x){
+  TFD_f_alb(x)*a_f_alb(x)
+}
+vec <- seq(5,40,0.001)
+fa_aeg <- sapply(vec,EFD_f_aeg)
+fa_alb <- sapply(vec,fa)
+
+df_fa <- data.frame(vec,fa_aeg,fa_alb)
+df_fa <- reshape2::melt(df_fa, id.vars = c("vec"))
+ggplot(df_fa) +
+  geom_line(aes(vec,value,color=variable), size = 1) +
+  scale_color_viridis_d(name = "", option = "D",
+                        labels= c(TeX("\\textit{Ae. aegypti } EFD"),
+                                  TeX("\\textit{Ae. albopictus } fa"))) +
+  xlab("Temperature") +
+  theme_bw() + theme(legend.position = c(0.2,0.8),
+                     text = element_text(size = 14),
+                     legend.text.align = 0)
+
 # R_M ---------------------------------------------------------------------
 vec <- seq(5,40,0.001)
 aegypti <- sapply(vec,R0_func_aeg, hum = 500,rain = 8)
@@ -73,13 +93,14 @@ ggplot(df_out[which(df_out$variable == "albopictus"),]) +
 
 # rm as a function of rainfall ------------------------------------------
 vec <- seq(0,16,0.001)
-aegypti <- sapply(vec,R0_func_aeg, hum = 0, Te = 15.65)
-albopictus <- sapply(vec,R0_func_alb, hum = 0, Te = 15.65)
+temp_opt <- 17.5
+aegypti <- sapply(vec,R0_func_aeg, hum = 0, Te = temp_opt)
+albopictus <- sapply(vec,R0_func_alb, hum = 0, Te = temp_opt)
 df_rain <- data.frame(vec, albopictus, aegypti)
 df_rain <- reshape2::melt(df_rain, id.vars = "vec")
 plot_rain <- ggplot(df_rain) + 
-  geom_line(aes(vec,value, color = variable)) +
-  geom_hline(yintercept = 1, linetype = "dashed", color = "red") + 
+  geom_line(aes(vec,value, color = variable), size = 1) +
+  # geom_hline(yintercept = 1, linetype = "dashed", color = "red") + 
   scale_color_manual(name = "", values =pal,
                      labels = c(expression(italic("Ae. aegypti")),
                                 expression(italic("Ae. albopictus")))) +
@@ -92,13 +113,13 @@ plot_rain
 
 # rm as a function of human density ------------------------------------------
 vec <- seq(0,1000,0.1)
-aegypti <- sapply(vec,R0_func_aeg, rain = 0, Te = 15.65)
-albopictus <- sapply(vec,R0_func_alb, rain = 0, Te = 15.65)
+aegypti <- sapply(vec,R0_func_aeg, rain = 0, Te = temp_opt)
+albopictus <- sapply(vec,R0_func_alb, rain = 0, Te = temp_opt)
 df_hum <- data.frame(vec,albopictus, aegypti)
 df_hum <- reshape2::melt(df_hum, id.vars = "vec")
 plot_hum <- ggplot(df_hum) + 
-  geom_line(aes(vec,value, color = variable)) +
-  geom_hline(yintercept = 1, linetype = "dashed", color = "red") + 
+  geom_line(aes(vec,value, color = variable), size = 1) +
+  # geom_hline(yintercept = 1, linetype = "dashed", color = "red") + 
   scale_color_manual(name = "", values =pal,
                      labels = c(expression(italic("Ae. aegypti")),
                                 expression(italic("Ae. albopictus")))) +
@@ -206,7 +227,10 @@ df_clim[, R0_aeg := mapply(R0_func_aeg, temp, rain, hum)]
 
 df_clim[which(df_clim$R0_alb == max(df_clim$R0_alb)), "temp"]
 df_clim[which(df_clim$R0_aeg == max(df_clim$R0_aeg)), "temp"]
-# 
+
+min(df_clim[which(df_clim$R0_aeg < 1 &  df_clim$temp > 25), "temp"])
+max(df_clim[which(df_clim$R0_alb < 1 &  df_clim$temp < 25), "temp"])
+
 # # test the influence of the constant e0, the one that weight the ingluence of 
 # # rainfall and human density
 # # R0 function by temperature:

@@ -117,8 +117,8 @@ clim_df <- clim_df %>% left_join(grid_points)
 clim_df <- readRDS(paste0("~/INVASIBILITY_THRESHOLD/output/eu_alb_aeg_",time,"_.Rds"))
 library(latex2exp)
 month_n =5
-plot_5_alb <- ggplot(clim_df[which(clim_df$month == month_n),],
-       aes(x = lon, y = lat, fill = R0_alb)) +
+plot_5_aeg <- ggplot(clim_df[which(clim_df$month == month_n),],
+       aes(x = lon, y = lat, fill = R0_aeg)) +
   geom_raster() +
   scale_fill_distiller(na.value = "white",
                        palette = "Spectral",

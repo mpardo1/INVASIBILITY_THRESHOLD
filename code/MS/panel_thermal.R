@@ -716,6 +716,9 @@ ggplot(df_out_alb) +
   geom_line(aes(temp_ae, deltaE)) +
   geom_point(data = Egg_mort_alb, aes(temp, prop_mort), color = "red") + theme_bw()
 
+# Check minimum
+df_out_alb[(df_out_alb$deltaE == min(df_out_alb$deltaE)), "temp_ae"]
+
 # +/- SD---------------------
 ## Mean - SD
 mod_min <- function(te){
@@ -924,6 +927,9 @@ vec <- seq(0,45,0.01)
 df_out_aeg <- data.frame(temp_ae = vec, life_span_ae <- sapply(vec, mod))
 colnames(df_out_aeg) <- c("temp_ae", "deltaE")
 df_out_aeg$group <- "mean"
+
+# Check minimum
+df_out_aeg[(df_out_aeg$deltaE == min(df_out_aeg$deltaE)), "temp_ae"]
 
 ###---------------+/- SD---------------------######
 ## Mean - SD

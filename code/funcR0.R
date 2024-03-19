@@ -134,8 +134,8 @@ R0_func_aeg <- function(Te, rain,hum){
   if(is.na(Te) | is.na(rain) | is.na(hum)){
     R0 <- NA
   }else{
-    a <- a_f_aeg(Te)
-    f <- 40#EFD_f_aeg(Te) #40
+    a <- 1#a_f_aeg(Te)
+    f <- EFD_f_aeg(Te) #40
     deltaa <- lf_f_aeg(Te)
     dE <- dE_f_aeg(Te)
     probla <- pLA_f_aeg(Te)

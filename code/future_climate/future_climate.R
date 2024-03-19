@@ -28,8 +28,8 @@ vars <- c('prec', 'tmax', 'tmin')
 # path = 'tmpr_245'  path = 'tmpr_370'  path = 'tmpr_585'
 # (optimistic: SSP245; middle of the road: SSP370; and pessimistic: SSP585)
 
- time = '2061-2080'
- # time = "2041-2060"
+ # time = '2061-2080'
+ time = "2041-2060"
  var = "prec"
  Path <- paste0("~/INVASIBILITY_THRESHOLD/data/future-climate/",
                 var,"_mean",time,".tif")
@@ -373,7 +373,7 @@ ggplot(df_g) +
   theme_bw()
 
 # Save file
-Path <- paste0("~/INVASIBILITY_THRESHOLD/output/ERA5/temp/2020/clim_2080.Rds")
+Path <- paste0("~/INVASIBILITY_THRESHOLD/output/ERA5/temp/2020/clim_2060.Rds")
 saveRDS(df_g, Path)
 
 df_g <- readRDS(Path)
