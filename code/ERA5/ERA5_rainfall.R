@@ -1,244 +1,116 @@
+# Code to extract climatic data from Copernicus:
 rm(list=ls())
-library(ncdf4)
-library(tidyverse)
-library(sf) 
-library(raster)
+library(mapSpain)
 library(terra)
-library("mapSpain")
-library(reticulate)
-library(ncdf4)
+library(sf)
+library(raster)
+library(tidyverse)
+library(data.table)
+library(parallel)
+# library(geodata)
 
-# Link ERA5 data:
-# https://cds.climate.copernicus.eu/cdsapp#!/dataset/reanalysis-cerra-single-levels?tab=overview
-# You need to create a file with the url and API key in (you need to log in first):https://cds.climate.copernicus.eu/api-how-to
-#-----------------------CLUSTER--------------------------#
-# # Run this the first time in cluster after comment it to dont run it
-# conda_create("reticulate")
-# conda_install("r-reticulate","cdsapi", pip=TRUE)#import python CDS-API
-# # indicate that we want to use a specific condaenv
-# use_condaenv("reticulate")
-# cdsapi <- import("cdsapi")
-#-----------------------------------------------------#
-#-------------------LOCAL----------------------------#
-# install the CDS API
-conda_install("r-reticulate","cdsapi", pip=TRUE)#import python CDS-API
+# Download data from web ---------------------------------------------------
+# https://cds.climate.copernicus.eu/cdsapp#!/dataset/reanalysis-era5-single-levels?tab=form
+# "45/-30/25/5" # North, West, South, East
 
-cdsapi <- import("cdsapi")
-#-----------------------------------------------------#
-#for this step there must exist the file .cdsapirc
-server = cdsapi$Client() #start the connection
-
-era5_rain <- function(day_n,month_n,year_n, time_n){
-    query <- r_to_py(list(
-      variable= "total_precipitation",
-      product_type= "reanalysis",
-      year= year_n,
-      month= month_n, #formato: "01","01", etc.
-      day= day_n,   
-      time= time_n,
-      format= "netcdf",
-      area =  "45/-30/25/5" # North, West, South, East
-    ))
-    Path = paste0("era5_temp_",year_n,month_n, day_n,".grib")
-    server$retrieve("reanalysis-era5-single-levels",
-                    query,
-                    Path)
-    
-    ## Read the file from Copernicus data.
-    nc_raster <- rast(Path) 
-    return(nc_raster)
-}
-
-daily_prec <- function(mon, ye){
-    d = "01"
-    m = mon
-    y = ye
-    date <- as.Date(paste0(y,"-",m,"-",d), "%Y-%m-%d")
-    num_days <- lubridate::days_in_month(date)
-    vec_times = str_c(0:23,"00",sep=":")%>%str_pad(5,"left","0")
-    t = vec_times[1]
-    nc_raster <- era5_rain(d,m,y,t)
-    # nc_raster
-    coord_ref <- st_crs(nc_raster)
-    # plot(nc_raster,1)
-    esp_can <- esp_get_munic_siane(moveCAN = FALSE)
-    esp <- st_transform(esp_can,coord_ref)
-    #--- extract values from the raster for each county ---#
-    temp_muni <- terra::extract(nc_raster, esp)
-    colnames(temp_muni) <- c("ID",paste0(as.character(time(nc_raster)),"/",t))
-    temp_muni_daily <- data.frame(ID = seq(1,14876), pctest = 1)
-    for(i in c(2:num_days)){
-      d = ifelse(i<10, paste0("0", as.character(i)),as.character(i))
-        # esp_prec <- esp_can %>% left_join(temp_muni)
-        for(i in c(2:length(vec_times))){
-            t = vec_times[i]
-            nc_raster <- era5_rain(d,m,y,t)
-            # nc_raster
-            coord_ref <- st_crs(nc_raster)
-            # plot(nc_raster,1)
-            esp_can <- esp_get_munic_siane(moveCAN = FALSE)
-            esp <- st_transform(esp_can,coord_ref)
-            
-            # plot(rast_spain,2)
-            #--- extract values from the raster for each county ---#
-            temp <- terra::extract(nc_raster, esp)
-            colnames(temp) <-  c("ID",paste0(as.character(time(nc_raster)),"/",t))
-            temp_muni <- cbind(temp,temp_muni)
-        }
-        
-        temp_muni <- temp_muni[,c(1,seq(2,ncol(temp_muni),2))]
-        # unique(c(temp_muni_filt))
-        temp_muni$precmean <- rowSums(temp_muni[,2:ncol(temp_muni)])
-        temp_muni_t <- temp_muni[,c(1,ncol(temp_muni))]
-        colnames(temp_muni_t) <- c("ID",paste0(y,"-",m,"-",d))
-        temp_muni_daily <- cbind(temp_muni_daily, temp_muni_t)
-    }
-  return(temp_muni_daily)
-}
-
-nc_raster <- era5_rain("01","01","2001","00:00")
-
-y = "2013"
-for (i in c(1:12)) {
-  m <- ifelse(i<10, paste0("0", as.character(i)),as.character(i))
-  df_Jan_2020 <- daily_prec(m,y)
-  df_Jan_2020_t <- df_Jan_2020[,c(1,4:ncol(df_Jan_2020))]
-  df_Jan_2020_t <- df_Jan_2020_t[,c(1,seq(2,ncol(df_Jan_2020_t),2))]
+rast_temp <- function(month_s){
+  
+  # Load data ----------------------------------------------------------------
+  Path <- paste0("~/INVASIBILITY_THRESHOLD/data/ERA5/2022/",month_s,"_rain_2022.grib")
+  nc_raster <- rast(Path) 
+  nc_raster
   coord_ref <- st_crs(nc_raster)
+  # plot(nc_raster[[1]])
   
-  # plot(nc_raster,1)
+  # Load Spain map municipalities --------------------------------------------
   esp_can <- esp_get_munic_siane(moveCAN = FALSE)
-  esp_sf <- st_as_sf(esp_can) %>%
-    mutate(ID := seq_len(nrow(.))) %>%
-    left_join(., df_Jan_2020_t, by = "ID")
+  esp_can$NATCODE <- as.numeric(paste0("34",esp_can$codauto,
+                                       esp_can$cpro,
+                                       esp_can$LAU_CODE))
+  crs(nc_raster) <- crs(esp_can)
   
-  esp_sf$NATCODE <- as.numeric(paste0("34",esp_sf$codauto,esp_sf$cpro,esp_sf$LAU_CODE))
-  esp_sf <- esp_sf[,c(9:ncol(esp_sf))]
-  esp_sf$geometry <- NULL
-  saveRDS(esp_sf, paste0("~/INVASIBILITY_THRESHOLD/output/ERA5/rainfall/rainfall_",y,"_",m,".Rds"))
-  rm(esp_sf,df_Jan_2020_t, df_Jan_2020)
+  # Shape Spain --------------------------------------------------------------
+  # esp0 <- geodata::gadm(country = 'ESP', level = 0,
+  #                       path = 'tmpr')
+  Path <- paste0("~/INVASIBILITY_THRESHOLD/output/esp.rds")
+  esp0 <- readRDS(Path)
+  # plot(esp0)
+  
+  # Crop the raster for Spain ------------------------------------------------
+  nc_raster <- terra::crop(nc_raster, esp0) %>%
+    terra::mask(., esp0)
+  
+  return(nc_raster)
 }
 
-y = "2012"
-for (i in c(1:12)) {
-  m <- ifelse(i<10, paste0("0", as.character(i)),as.character(i))
-  df_Jan_2020 <- daily_prec(m,y)
-  df_Jan_2020_t <- df_Jan_2020[,c(1,4:ncol(df_Jan_2020))]
-  df_Jan_2020_t <- df_Jan_2020_t[,c(1,seq(2,ncol(df_Jan_2020_t),2))]
-  esp_can <- esp_get_munic_siane(moveCAN = FALSE)
-  esp_sf <- st_as_sf(esp_can) %>%
-    mutate(ID := seq_len(nrow(.))) %>%
-    left_join(., df_Jan_2020_t, by = "ID")
+# Extract different layer --------------------------------------------------
+# There is first layer temp day 1 second layer rainfall day and repeat
+extract_hourly <- function(ind){ 
+  start_time <- Sys.time()
+  # plot(nc_raster[[1]])
+  temp_1 <- subset(nc_raster,ind)
+  # time(temp_1)
   
-  esp_sf$NATCODE <- as.numeric(paste0("34",esp_sf$codauto,esp_sf$cpro,esp_sf$LAU_CODE))
-  esp_sf <- esp_sf[,c(9:ncol(esp_sf))]
-  esp_sf$geometry <- NULL
-  saveRDS(esp_sf, paste0("~/INVASIBILITY_THRESHOLD/output/ERA5/rainfall/rainfall_",y,"_",m,".Rds"))
-  rm(esp_sf,df_Jan_2020_t, df_Jan_2020)
+  # Load Spain map municipalities --------------------------------------------
+  esp_can <- esp_get_munic_siane(moveCAN = FALSE)
+  esp_can$NATCODE <- as.numeric(paste0("34",esp_can$codauto,
+                                       esp_can$cpro,
+                                       esp_can$LAU_CODE))
+  
+  # Extract weather for municipalities ---------------------------------------
+  temp_muni <- terra::extract(temp_1, esp_can)
+  colnames(temp_muni) <- c("ID", "prec")
+  
+  # Transfor to Celsius and grop by municipality ----------------------------
+  temp_muni <- temp_muni %>% group_by(ID) %>%
+    summarize(prec = sum(prec))
+  
+  # Join temp df with shapefile esp -----------------------------------------
+  esp_can$ID <- seq(1, nrow(esp_can),1)
+  temp_esp <- esp_can %>% left_join(temp_muni)
+  # ggplot(temp_esp) +
+  #   geom_sf(aes(fill=prec), colour = NA) +
+  #   scale_fill_viridis_c(option = "magma") +
+  #   theme_bw()
+  temp_esp$geometry <- NULL
+  end_time <- Sys.time()
+  print(end_time - start_time)
+  
+  return(temp_esp)
 }
 
-y = "2011"
-for (i in c(1:12)) {
-  m <- ifelse(i<10, paste0("0", as.character(i)),as.character(i))
-  df_Jan_2020 <- daily_prec(m,y)
-  df_Jan_2020_t <- df_Jan_2020[,c(1,4:ncol(df_Jan_2020))]
-  df_Jan_2020_t <- df_Jan_2020_t[,c(1,seq(2,ncol(df_Jan_2020_t),2))]
-  esp_can <- esp_get_munic_siane(moveCAN = FALSE)
-  esp_sf <- st_as_sf(esp_can) %>%
-    mutate(ID := seq_len(nrow(.))) %>%
-    left_join(., df_Jan_2020_t, by = "ID")
+# Aggregate hourly to daily -------------------------------------
+agg_daily <- function(i){
+  temp1 <- extract_hourly(i)
+  temp2 <- extract_hourly(i+1)
+  temp3 <- extract_hourly(i+2)
+  temp4 <- extract_hourly(i+3)
   
-  esp_sf$NATCODE <- as.numeric(paste0("34",esp_sf$codauto,esp_sf$cpro,esp_sf$LAU_CODE))
-  esp_sf <- esp_sf[,c(9:ncol(esp_sf))]
-  esp_sf$geometry <- NULL
-  saveRDS(esp_sf, paste0("~/INVASIBILITY_THRESHOLD/output/ERA5/rainfall/rainfall_",y,"_",m,".Rds"))
-  rm(esp_sf,df_Jan_2020_t, df_Jan_2020)
+  temp <- rbind(temp1, temp2, temp3, temp4)
+  temp$NATCODE <- as.numeric(paste0("34",temp$codauto,
+                                    temp$cpro,
+                                    temp$LAU_CODE))
+  temp <- temp %>% group_by(NATCODE) %>%
+    summarise(prec = sum(prec))
+  temp$date <- as.Date(time_info[i])
+  
+  return(temp)
 }
 
-y = "2010"
-for (i in c(1:12)) {
-  m <- ifelse(i<10, paste0("0", as.character(i)),as.character(i))
-  df_Jan_2020 <- daily_prec(m,y)
-  df_Jan_2020_t <- df_Jan_2020[,c(1,4:ncol(df_Jan_2020))]
-  df_Jan_2020_t <- df_Jan_2020_t[,c(1,seq(2,ncol(df_Jan_2020_t),2))]
-  esp_can <- esp_get_munic_siane(moveCAN = FALSE)
-  esp_sf <- st_as_sf(esp_can) %>%
-    mutate(ID := seq_len(nrow(.))) %>%
-    left_join(., df_Jan_2020_t, by = "ID")
-  
-  esp_sf$NATCODE <- as.numeric(paste0("34",esp_sf$codauto,esp_sf$cpro,esp_sf$LAU_CODE))
-  esp_sf <- esp_sf[,c(9:ncol(esp_sf))]
-  esp_sf$geometry <- NULL
-  saveRDS(esp_sf, paste0("~/INVASIBILITY_THRESHOLD/output/ERA5/rainfall/rainfall_",y,"_",m,".Rds"))
-  rm(esp_sf,df_Jan_2020_t, df_Jan_2020)
-}
+# Select month for extraction climate --------------------------------------
+month_s <- "January"
+nc_raster <- rast_temp(substr(month_s,1,3))
+plot(nc_raster[[6]])
 
-y = "2009"
-for (i in c(1:12)) {
-  m <- ifelse(i<10, paste0("0", as.character(i)),as.character(i))
-  df_Jan_2020 <- daily_prec(m,y)
-  df_Jan_2020_t <- df_Jan_2020[,c(1,4:ncol(df_Jan_2020))]
-  df_Jan_2020_t <- df_Jan_2020_t[,c(1,seq(2,ncol(df_Jan_2020_t),2))]
-  esp_can <- esp_get_munic_siane(moveCAN = FALSE)
-  esp_sf <- st_as_sf(esp_can) %>%
-    mutate(ID := seq_len(nrow(.))) %>%
-    left_join(., df_Jan_2020_t, by = "ID")
-  
-  esp_sf$NATCODE <- as.numeric(paste0("34",esp_sf$codauto,esp_sf$cpro,esp_sf$LAU_CODE))
-  esp_sf <- esp_sf[,c(9:ncol(esp_sf))]
-  esp_sf$geometry <- NULL
-  saveRDS(esp_sf, paste0("~/INVASIBILITY_THRESHOLD/output/ERA5/rainfall/rainfall_",y,"_",m,".Rds"))
-  rm(esp_sf,df_Jan_2020_t, df_Jan_2020)
-}
+time_info <- time(nc_raster)
 
-y = "2010"
-for (i in c(1:12)) {
-  m <- ifelse(i<10, paste0("0", as.character(i)),as.character(i))
-  df_Jan_2020 <- daily_prec(m,y)
-  df_Jan_2020_t <- df_Jan_2020[,c(1,4:ncol(df_Jan_2020))]
-  df_Jan_2020_t <- df_Jan_2020_t[,c(1,seq(2,ncol(df_Jan_2020_t),2))]
-  esp_can <- esp_get_munic_siane(moveCAN = FALSE)
-  esp_sf <- st_as_sf(esp_can) %>%
-    mutate(ID := seq_len(nrow(.))) %>%
-    left_join(., df_Jan_2020_t, by = "ID")
-  
-  esp_sf$NATCODE <- as.numeric(paste0("34",esp_sf$codauto,esp_sf$cpro,esp_sf$LAU_CODE))
-  esp_sf <- esp_sf[,c(9:ncol(esp_sf))]
-  esp_sf$geometry <- NULL
-  saveRDS(esp_sf, paste0("~/INVASIBILITY_THRESHOLD/output/ERA5/rainfall/rainfall_",y,"_",m,".Rds"))
-  rm(esp_sf,df_Jan_2020_t, df_Jan_2020)
-}
+# Paralelize code --------------------------------------------------
+num_cores = 1
+climat_each_muni <- mclapply(seq(1,4*31,4), 
+                             agg_daily, 
+                             mc.cores = num_cores)
+climat_each_muni <- setDT(do.call(rbind, climat_each_muni))
 
-y = "2011"
-for (i in c(1:12)) {
-  m <- ifelse(i<10, paste0("0", as.character(i)),as.character(i))
-  df_Jan_2020 <- daily_prec(m,y)
-  df_Jan_2020_t <- df_Jan_2020[,c(1,4:ncol(df_Jan_2020))]
-  df_Jan_2020_t <- df_Jan_2020_t[,c(1,seq(2,ncol(df_Jan_2020_t),2))]
-  esp_can <- esp_get_munic_siane(moveCAN = FALSE)
-  esp_sf <- st_as_sf(esp_can) %>%
-    mutate(ID := seq_len(nrow(.))) %>%
-    left_join(., df_Jan_2020_t, by = "ID")
-  
-  esp_sf$NATCODE <- as.numeric(paste0("34",esp_sf$codauto,esp_sf$cpro,esp_sf$LAU_CODE))
-  esp_sf <- esp_sf[,c(9:ncol(esp_sf))]
-  esp_sf$geometry <- NULL
-  saveRDS(esp_sf, paste0("~/INVASIBILITY_THRESHOLD/output/ERA5/rainfall/rainfall_",y,"_",m,".Rds"))
-  rm(esp_sf,df_Jan_2020_t, df_Jan_2020)
-}
-
-# 
-# #--- get mean tmax ---#
-# temp_muni <- temp_muni %>%
-#   group_by(ID) %>%
-#   summarize(prec = mean(`2018-07-02` ))
-# 
-# esp_sf <- st_as_sf(esp) %>%
-#   mutate(ID := seq_len(nrow(.))) %>%
-#   left_join(., temp_muni, by = "ID")
-# 
-# esp_sf$prec1 <- esp_sf$prec + 280
-# ggplot(esp_sf) +
-#   geom_sf(aes(fill = prec), size = 0.1) +
-#   scale_fill_distiller(palette="Spectral")
-
+# Save the resultant file ------------------------------------------
+Path <- paste0("~/INVASIBILITY_THRESHOLD/output/ERA5/2022/rain_", month_s, "_2022.Rds")
+saveRDS(climat_each_muni,Path)
