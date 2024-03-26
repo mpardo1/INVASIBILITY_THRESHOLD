@@ -30,7 +30,7 @@ pal <- rev(brewer.pal(11, name_pal))
 pal[11]
 pal[12] = "#74011C"
 pal[13] = "#4B0011"
-aeg <- ggplot(clim_pop,
+aeg_pres <- ggplot(clim_pop,
               aes(x = lon, y = lat,
                   fill = as.factor(sum_aeg_pres))) +
   geom_raster() +
@@ -50,6 +50,21 @@ aeg <- ggplot(clim_pop,
         axis.line = element_blank(),
         axis.ticks.length = unit(0, "null"),
         axis.ticks.margin = unit(0, "null"))
+
+# Plot for presentation VEO
+# ggarrange(alb_pres +
+#             ggtitle(expression(paste("a) ",
+#                                      italic("Aedes albopictus")))) + 
+#             theme(legend.position = "none"),
+#           aeg_pres +
+#             ggtitle(expression(paste("b) ",
+#                                      italic("Aedes aegypti"))))+ 
+#             theme(legend.position = "none"),
+#           alb + ggtitle(expression(paste("c) ",italic("Aedes albopictus"))))+ 
+#             theme(legend.position = "none"),
+#           aeg+ ggtitle(expression(paste("d) ",italic("Aedes albopictus"))))+ 
+#             theme(legend.position = "none"),
+#           ncol = 4)
 
 leg_sum <- get_legend(ggplot(clim_pop,
                              aes(x = lon, y = lat,
@@ -183,9 +198,9 @@ pal <- rev(brewer.pal(11, name_pal))
 pal[11]
 pal[12] = "#74011C"
 pal[13] = "#4B0011"
-aeg <- ggplot(clim_df,
+alb <- ggplot(clim_df,
                    aes(x = lon, y = lat,
-                       fill = as.factor(sum_aeg_fut))) +
+                       fill = as.factor(sum_alb_fut))) +
   geom_raster() +
   scale_fill_manual(values = pal,
                     name = "Nº suitable \n months",

@@ -83,7 +83,6 @@ lon <- seq(from = xmin(temp_eu), to = xmax(temp_eu),
 lat <- seq(from = ymin(temp_eu), to = ymax(temp_eu),
            by = res(temp_eu)[2])
 grid_points <- expand.grid(lon = lon, lat = lat)
-
 # extract values as df --------------------------------------
 temp <- terra::extract(temp_eu,
                        grid_points, xy =TRUE)
@@ -136,6 +135,8 @@ clim_pop <- clim_pop[,.(sum_alb = sum(bool_alb),
 
 # add the lon lat -------------------------------------
 grid_points$id <- c(1:nrow(grid_points))
+saveRDS(grid_points, "~/INVASIBILITY_THRESHOLD/data/ERA5/Europe/grid_points.Rds")
+
 clim_pop <- clim_pop %>% left_join(grid_points)
 
 ggplot(clim_pop,

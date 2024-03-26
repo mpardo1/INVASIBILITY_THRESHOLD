@@ -40,6 +40,7 @@ QuadN_func <- function(cte, c1, c2, temp){
   }
   return(outp)
 }
+
 ### Incorporating rain and human density:
 h_f <- function(hum, rain){
   # Constants: 
