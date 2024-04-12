@@ -112,10 +112,10 @@ clim_pop <- clim_pop %>% left_join(grid_points)
 # compute R0 --------------------------------------------------
 clim_pop[, R0_alb := mapply(R0_func_alb, tmean, prec, pop)]
 clim_pop[, R0_aeg := mapply(R0_func_aeg, tmean, prec, pop)]
-clim_pop[, R0_jap := mapply(R0_func_jap, tmean, prec, pop)]
+# clim_pop[, R0_jap := mapply(R0_func_jap, tmean, prec, pop)]
 saveRDS(clim_pop,
         paste0("~/INVASIBILITY_THRESHOLD/data/ERA5/Europe/eu_clim_same_coords_",2020,".Rds"))
-# clim_pop <- readRDS(paste0("~/INVASIBILITY_THRESHOLD/data/ERA5/Europe/eu_clim_",2020,".Rds"))
+ # clim_pop <- readRDS(paste0("~/INVASIBILITY_THRESHOLD/data/ERA5/Europe/eu_clim_",2020,".Rds"))
 
 clim_pop$bool_alb <- ifelse(clim_pop$R0_alb>1,1,0)
 clim_pop$bool_aeg <- ifelse(clim_pop$R0_aeg>1,1,0)

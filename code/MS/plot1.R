@@ -73,7 +73,7 @@ plot_temp <- ggplot(df_out) +
                                 # expression(italic("Ae. japonicus")))) +
   xlab("Temperature (Cº)") +
   scale_x_continuous(breaks = seq(5,41,4)) +
-  theme_bw() + theme(legend.position = c(0.18,0.75),
+  theme_bw() + theme(legend.position = c(0.2,0.75),
                      text = element_text(size = letsize),
                      legend.text.align = 0)
 
@@ -84,7 +84,7 @@ ggplot(df_out[which(df_out$variable == "albopictus"),]) +
   geom_line(aes(vec,value), size = 1) +
   geom_hline(yintercept = 1, linetype = "dashed", color = "red") +
   ylab(TeX("$R_M$")) + theme_bw() +
-  theme(legend.position = c(0.18,0.75),
+  theme(legend.position = c(0.2,0.75),
         text = element_text(size = letsize),
         legend.text.align = 0) +
   xlab("Temperature (Cº)") + 
@@ -137,7 +137,50 @@ ggarrange(plot_temp + ggtitle("a)"),
           ncol = 3,
           widths = c(1,0.7,0.7))
 
+ggarrange(plot_temp,
+          plot_rain + rremove("ylab"),
+          plot_hum + rremove("ylab"),
+          ncol = 3,
+          widths = c(1,0.7,0.7))
 
+# Graphical abstract
+plot_temp 
+plot <- plot_temp + 
+  theme(
+    legend.position = "none",
+    panel.background = element_rect(fill='transparent'), #transparent panel bg
+    plot.background = element_rect(fill='transparent', color=NA), #transparent plot bg
+    panel.grid.major = element_blank(), #remove major gridlines
+    panel.grid.minor = element_blank(), #remove minor gridlines
+    legend.background = element_rect(fill='transparent')
+  )
+
+ggsave('/home/marta/Documentos/PHD/2024/R_M/Journals/GCB/Im1_GA.png',
+       plot, bg='transparent')
+
+plot <- plot_rain + 
+  theme(
+    panel.background = element_rect(fill='transparent'), #transparent panel bg
+    plot.background = element_rect(fill='transparent', color=NA), #transparent plot bg
+    panel.grid.major = element_blank(), #remove major gridlines
+    panel.grid.minor = element_blank(), #remove minor gridlines
+    legend.background = element_rect(fill='transparent')
+  )
+
+ggsave('/home/marta/Documentos/PHD/2024/R_M/Journals/GCB/Im2_GA.png',
+       plot, bg='transparent')
+
+plot <- plot_hum + 
+  theme(
+    panel.background = element_rect(fill='transparent'), #transparent panel bg
+    plot.background = element_rect(fill='transparent', color=NA), #transparent plot bg
+    panel.grid.major = element_blank(), #remove major gridlines
+    panel.grid.minor = element_blank(), #remove minor gridlines
+    legend.background = element_rect(fill='transparent')
+  )
+
+ggsave('/home/marta/Documentos/PHD/2024/R_M/Journals/GCB/Im3_GA.png',
+       plot, bg='transparent')
 # check one parameter dependecy ------------------------------------------
 # vec <- seq(0,40,0.1)
 # hum <- sapply(vec,a_f_alb)

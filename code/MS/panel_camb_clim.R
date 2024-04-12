@@ -103,7 +103,7 @@ clim_df$diff_aeg6141 <- clim_df$sum_aeg_fut - clim_df$sum_aeg_fut41
 name_pal = "RdYlBu"
 display.brewer.pal(11, name_pal)
 pal <- rev(brewer.pal(11, name_pal))
-pal1 <- rep("0",length(pal) +1 )
+pal1 <- pal
 pal1[3:6] <- pal[1:4]
 pal1[1] <- "#000455"
 pal1[2] <- "#0C1290"
@@ -198,12 +198,13 @@ pal <- rev(brewer.pal(11, name_pal))
 pal[11]
 pal[12] = "#74011C"
 pal[13] = "#4B0011"
-alb <- ggplot(clim_df,
+aeg <- ggplot(clim_df,
                    aes(x = lon, y = lat,
-                       fill = as.factor(sum_alb_fut))) +
+                       fill = as.factor(sum_aeg_fut41))) +
   geom_raster() +
   scale_fill_manual(values = pal,
-                    name = "Nº suitable \n months",
+                    name = "",
+                    # name = "Nº suitable \n months",
                     limits = factor(seq(0,12,1)),
                     na.value = "white") +
   theme(legend.position = "none",
@@ -219,15 +220,25 @@ alb <- ggplot(clim_df,
         axis.ticks.length = unit(0, "null"),
         axis.ticks.margin = unit(0, "null"))
 
+ggsave('/home/marta/Documentos/PHD/2024/R_M/Journals/GCB/Im4_GA.png',
+       gg, bg='transparent')
+
+library("latex2exp")
 leg1 <- get_legend( ggplot(clim_df,
                             aes(x = lon, y = lat,
                                 fill = as.factor(sum_alb_fut))) +
                        geom_raster() +
                        scale_fill_manual(values = pal,
-                                         name = "Nº suitable \n months",
+                                         # name = TeX("Nº suitable \n months ($R_M>1$)"),
+                                         name = TeX(""),
                                          limits = factor(seq(0,12,1)),
                                          na.value = "white"))
 # Create panel for main
+gg <- ggarrange(alb,
+          aeg ,
+          leg1,
+          nrow = 1,
+          widths = c(1,1,0.3))
 gg1 <- ggarrange(alb + ggtitle(expression(paste("a) ",italic("Aedes albopictus")))),
                  aeg + ggtitle(expression(paste("b) ",italic("Aedes aegypti")))),
                  leg1,

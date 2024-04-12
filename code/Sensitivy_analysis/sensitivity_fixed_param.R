@@ -370,8 +370,8 @@ R0_func_aeg <- function(Te, rain,hum){
   if(is.na(Te) | is.na(rain) | is.na(hum)){
     R0 <- NA
   }else{
-    a <- 1#a_f_aeg(Te)
-    f <- EFD_f_aeg(Te) #40
+    a <- a_f_aeg(Te)
+    f <- 40#EFD_f_aeg(Te) #40
     deltaa <- lf_f_aeg(Te)
     dE <- dE_f_aeg(Te)
     probla <- pLA_f_aeg(Te)
@@ -394,11 +394,18 @@ ggplot(df_cte1) +
   geom_hline(yintercept = 1, linetype = "dashed", color = "red") +
   ylab(TeX("$R_M$")) + theme_bw() +  xlab("Temperature") + 
   scale_color_manual(name= "", values = c("#edae49", "#66a182"),
-                     labels = c(expression(italic("Cte fecundity")),
-                                expression(italic("Fecundity depending on temp")))) +
+                     labels = c(expression(italic("Fecundity depending on temp")),
+                                expression(italic("Cte fecundity"))
+                     )) +
   theme(legend.position = c(0.2,0.75),
         text = element_text(size = 14),
         legend.text.align = 0)
+
+# Check changes
+var <- "aegypti_EFD"#"aegypti"
+min(df_cte1[(df_cte1$variable == var & df_cte1$value>1),"vec"])
+max(df_cte1[(df_cte1$variable == var & df_cte1$value>1),"vec"])
+max(df_cte1[(df_cte1$variable == var ),"value"])
 
 # Check difference when fecundity aegypti is from albopictus
 # R0 function by temperature:
@@ -435,3 +442,4 @@ ggplot(df_cte1) +
   theme(legend.position = c(0.2,0.75),
         text = element_text(size = 14),
         legend.text.align = 0)
+

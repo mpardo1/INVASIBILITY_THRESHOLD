@@ -208,8 +208,10 @@ plot_counts
 year = 2020
 Path <- paste0("~/INVASIBILITY_THRESHOLD/output/ERA5/temp/2020/R0_clim_",
                year,".Rds")
+Path <- "~/INVASIBILITY_THRESHOLD/output/ERA5/temp/2020/R0_avg_2003-2020.Rds"
 df_2020 <- setDT(readRDS(Path))
 df_2020 <- df_2020[,c("NATCODE", "R0_sum_alb")]
+df_2020 <- df_2020[,c("NATCODE", "sum_alb")]
 colnames(df_2020) <-c ("NATCODE", "Alb_2020")
 
 library(ggpubr)
@@ -456,6 +458,7 @@ list_ccaa = c("Cataluña" ,
               "País Vasco","Andalucía","Aragón")
 
 NATCODE_CAT <- esp_can[which(esp_can$ine.ccaa.name %in% list_ccaa ),c("NATCODE", "ine.ccaa.name")]
+
 # Add PA data --------------------------------------------------------
 NATCODE_CAT$geometry <- NULL
 df_pa_CAT <- df_pa[which(as.numeric(df_pa$NATCODE) %in% 
@@ -490,7 +493,7 @@ plot_ccaa <- ggplot(df_sum_CAT) +
                                   ">100")) +
   scale_x_continuous(breaks = seq(1,12,1)) +
   theme_bw() +
-  theme(legend.position = c(0.15,0.6),
+  theme(legend.position = c(0.12,0.72),
         text = element_text(size = 14)) 
 plot_ccaa
 
@@ -565,16 +568,38 @@ ggarr1 <- ggarrange(plot_ccaa+ ggtitle("c)"),
                    ncol = 2, nrow = 1)
 ggarrange(ggarr, ggarr1, ncol = 1)
 
-# Other way to plot -----------------------------------------
-ggarrange(ggarr ,
-          plot_ccaa+ ggtitle("C"),
-          plot_counts + ggtitle("D"),
-          ncol = 1, nrow = 3, heights = c(1,1,1))
+# Plot supp
+esp_can <- esp_get_munic_siane(moveCAN = TRUE)
+can_box <- esp_get_can_box()
+esp_can$NATCODE <- as.numeric(paste0("34",esp_can$codauto,
+                                     esp_can$cpro,
+                                     esp_can$LAU_CODE))
+df_pa <- esp_can %>% left_join(df_pa)
+df_pa_cent <- df_pa
+df_pa_cent <- st_centroid(df_pa)
+df_pa_cent <- df_pa_cent[df_pa_cent$PA == 1, ]
+union_df <- st_union(df_pa[df_pa$PA == 1, ])
+plot(union_df)
 
-ggarrange(ggarr,
-          plot_ccaa + ylab("Proportion presence")
-          + ggtitle("C"),
-          plot_min_max + ylab("Proportion presence")
-          + ggtitle("D"),
-          ncol = 1, nrow = 3)
-
+# Plounion_df# Plot PA with RM
+library(RColorBrewer)
+name_pal = "RdYlBu"
+display.brewer.pal(11, name_pal)
+pal <- rev(brewer.pal(11, name_pal))
+pal[11]
+pal[12] = "#74011C"
+pal[13] = "#4B0011"
+ggplot(df_pa) +
+  geom_sf(aes(fill = as.factor(R0_sum_alb)),
+          colour = NA) +
+  geom_sf(data=union_df, color = "black", fill = NA,
+          size = 0.1, alpha = 0.5, na.rm = TRUE) +
+  scale_color_manual(guide = "none", values = c("black")) +
+  geom_sf(data = can_box) +
+  coord_sf(datum = NA) +
+  scale_fill_manual(values = pal,
+                    name = "Nº suitable \n months",
+                    limits = factor(seq(0,12,1))) +
+  theme_minimal(base_size = 14)  +
+  theme(legend.position = c(0.1,0.68),
+        legend.text = element_text(18)) 
