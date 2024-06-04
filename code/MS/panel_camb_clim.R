@@ -21,6 +21,9 @@ colnames(clim_df) <- c("id","sum_alb_fut","sum_aeg_fut","sum_jap_fut","lon","lat
 clim_pop <- readRDS(paste0("~/INVASIBILITY_THRESHOLD/data/ERA5/Europe/eu_R0_fitfuture_clim_",2020,".Rds"))
 colnames(clim_pop) <- c("id","sum_alb_pres","sum_aeg_pres","sum_jap_pres","lon","lat")
 
+clim_pop_2020 <- clim_pop[,c("id","sum_alb_pres","sum_aeg_pres","lon","lat")]
+write.csv(clim_pop_2020, "~/Documentos/2020_RM_alboaeg.csv")
+
 # Plot 2020 aeg and alb
 # ggplot albopictus
 library(RColorBrewer)

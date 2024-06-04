@@ -11,12 +11,33 @@ source("~/INVASIBILITY_THRESHOLD/code/funcR0.R")
 # Read presence absence data ------------------------------------------
 path <- "~/INVASIBILITY_THRESHOLD/data/japonicus/pa/status_2303.shp"
 pa_jap <- read_sf(path)
+head(pa_jap)
+
+# Filter only EU
 pa_jap <- pa_jap[which(pa_jap$leave == 1),]
 list_eu <- unique(pa_jap$cntryName)[c(1:2,4,6,7:8,10:14,16,19:23,25:26,28:30,32:35,39:42,
                                       45:52,54:56,58:59,61,62,67,68,70,71)]
 pa_jap <- pa_jap[which(pa_jap$cntryName %in% list_eu),]
 # ggplot(pa_jap) +
 #   geom_sf(aes(fill = japonicus)) 
+
+# Albopictus map
+ggplot(pa_jap) +
+  geom_sf(aes(fill = albopictus), color = NA) +
+  scale_fill_viridis_d() +
+  theme_bw() +
+  theme(legend.position = c(0.1,0.4),
+        panel.background = element_rect(fill = "transparent", colour = NA),
+        plot.background = element_rect(fill = "transparent", colour = NA),
+        panel.grid = element_blank(),
+        plot.margin = unit(c(0, 0, 0, 0), "null"),
+        panel.margin = unit(c(0, 0, 0, 0), "null"),
+        axis.ticks = element_blank(),
+        axis.text = element_blank(),
+        axis.title = element_blank(),
+        axis.line = element_blank(),
+        axis.ticks.length = unit(0, "null"),
+        axis.ticks.margin = unit(0, "null"))
 
 # Load data for RM Japonicus Europe 2020
 clim_pop <- readRDS(paste0("~/INVASIBILITY_THRESHOLD/data/ERA5/Europe/eu_clim_2020.Rds"))

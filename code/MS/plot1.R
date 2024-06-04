@@ -322,3 +322,102 @@ max(df_clim[which(df_clim$R0_alb < 1 &  df_clim$temp < 25), "temp"])
 # ggplot(dt_erat) + 
 #   geom_point(aes(erat,R0_alb , color = as.factor(rain))) +
 #   theme_bw()
+
+# Plot conference
+vec <- seq(5,40,0.001)
+aegypti <- sapply(vec,R0_func_aeg, hum = 500,rain = 8)
+albopictus <- sapply(vec,R0_func_alb, hum = 500,rain = 8) 
+japonicus <- sapply(vec,R0_func_jap, hum = 500,rain =8) 
+df_out <- data.frame(vec,albopictus = albopictus)
+df_out <- reshape2::melt( df_out, id.vars = "vec")
+
+library(RColorBrewer)
+name_pal = "Set1"
+display.brewer.pal(3, name_pal)
+pal <- brewer.pal(3, name_pal)[2:3]
+letsize = 16
+library("latex2exp")
+plot_temp <- ggplot(df_out) + 
+  geom_line(aes(vec,value), size = 1) +
+  geom_hline(yintercept = 1, linetype = "dashed", color = "red") +
+  ylab(TeX("$R_M$")) + 
+  # ,
+  # expression(italic("Ae. japonicus")))) +
+  xlab("Temperature (Cº)") +
+  scale_x_continuous(breaks = seq(5,41,4)) +
+  theme_bw() + theme(legend.position = c(0.2,0.75),
+                     text = element_text(size = letsize),
+                     legend.text.align = 0,
+                     panel.background = element_rect(fill = "transparent"), # bg of the panel
+                     plot.background = element_rect(fill = "transparent", color = NA), # bg of the plot
+                     panel.grid.major = element_blank(), # get rid of major grid
+                     panel.grid.minor = element_blank(), # get rid of minor grid
+                     legend.background = element_rect(fill = "transparent"), # get rid of legend bg
+                     legend.box.background = element_rect(fill = "transparent"), # get rid of legend panel bg
+                     legend.key = element_rect(fill = "transparent", colour = NA), # get rid of key legend fill, and of the surrounding
+                     axis.line = element_line(colour = "black"))
+
+plot_temp
+
+# rm as a function of rainfall ------------------------------------------
+vec <- seq(0,16,0.001)
+temp_opt <- 15
+aegypti <- sapply(vec,R0_func_aeg, hum = 0, Te = temp_opt)
+albopictus <- sapply(vec,R0_func_alb, hum = 0, Te = temp_opt)
+df_rain <- data.frame(vec, albopictus)
+df_rain <- reshape2::melt(df_rain, id.vars = "vec")
+plot_rain <- ggplot(df_rain) + 
+  geom_line(aes(vec,value), size = 1) +
+  geom_hline(yintercept = 1, linetype = "dashed", color = "red") +
+  # ,
+  # expression(italic("Ae. japonicus")))) +
+  xlab("Rainfall (mm)") + ylab(TeX("$R_M$")) + 
+  theme_bw() + theme(text = element_text(size = letsize),
+                     legend.position = "none",
+                     panel.background = element_rect(fill = "transparent"), # bg of the panel
+                     plot.background = element_rect(fill = "transparent", color = NA), # bg of the plot
+                     panel.grid.major = element_blank(), # get rid of major grid
+                     panel.grid.minor = element_blank(), # get rid of minor grid
+                     legend.background = element_rect(fill = "transparent"), # get rid of legend bg
+                     legend.box.background = element_rect(fill = "transparent"), # get rid of legend panel bg
+                     legend.key = element_rect(fill = "transparent", colour = NA), # get rid of key legend fill, and of the surrounding
+                     axis.line = element_line(colour = "black"))
+plot_rain
+
+# rm as a function of human density ------------------------------------------
+vec <- seq(0,1000,0.1)
+aegypti <- sapply(vec,R0_func_aeg, rain = 0, Te = temp_opt)
+albopictus <- sapply(vec,R0_func_alb, rain = 0, Te = temp_opt)
+df_hum <- data.frame(vec,albopictus)
+df_hum <- reshape2::melt(df_hum, id.vars = "vec")
+plot_hum <- ggplot(df_hum) + 
+  geom_line(aes(vec,value), size = 1) +
+  geom_hline(yintercept = 1, linetype = "dashed", color = "red") + 
+  scale_color_manual(name = "", values =pal,
+                     labels = c(expression(italic("Ae. aegypti")),
+                                expression(italic("Ae. albopictus")))) +
+  # ,
+  # expression(italic("Ae. japonicus")))) +
+  xlab("Human density") + ylab(TeX("$R_M$")) + 
+  theme_bw() + theme(text = element_text(size = letsize),
+                     legend.position = "none",
+                     panel.background = element_rect(fill = "transparent"), # bg of the panel
+                     plot.background = element_rect(fill = "transparent", color = NA), # bg of the plot
+                     panel.grid.major = element_blank(), # get rid of major grid
+                     panel.grid.minor = element_blank(), # get rid of minor grid
+                     legend.background = element_rect(fill = "transparent"), # get rid of legend bg
+                     legend.box.background = element_rect(fill = "transparent"), # get rid of legend panel bg
+                     legend.key = element_rect(fill = "transparent", colour = NA), # get rid of key legend fill, and of the surrounding
+                     axis.line = element_line(colour = "black"))
+plot_hum
+
+ggsave( plot = plot_temp, filename = "plot_temp.png",  bg = "transparent" )
+ggsave( plot = plot_rain, filename = "plot_rain.png",  bg = "transparent" )
+ggsave( plot = plot_hum, filename = "plot_hum.png",  bg = "transparent" )
+# join all the plots ------------------------------------------------------
+ggarrange(plot_temp + ggtitle("a)"),
+          plot_rain + rremove("ylab")+ ggtitle("b)"),
+          plot_hum + rremove("ylab")+ ggtitle("c)"),
+          ncol = 3,
+          widths = c(1,0.7,0.7))
+

@@ -3,7 +3,7 @@
 rm(list= ls())
 library(ggplot2)
 library(tidyverse)
-library(nls2)
+# library(nls2)
 
 # Albopictus and Aegypti --------------------------------
 # Data frame data taken from Tun-Lin et al 2001 
@@ -534,36 +534,36 @@ plotdE_aeg_w
 
 # Development Egg albopictus -----------------------------------------------
 ## Delatte
-  df_dL_alb <- data.frame(temp=c(15,20,25,30,35),
-                          days_mean = c(35,14.4,10.4,8.8,12.3),
-                          days_sd = c(0.9,0.4,0.7,0.6,0.7))
-  ggplot(df_dL_alb) +
-    geom_point(aes(temp,days_mean))
-  
-  n = 5
-  r1 <- rnorm(n, df_dL_alb$days_mean[1],
-              df_dL_alb$days_sd[1] )
-  r2 <- rnorm(n, df_dL_alb$days_mean[2],
-              df_dL_alb$days_sd[2] )
-  r3 <- rnorm(n, df_dL_alb$days_mean[3],
-              df_dL_alb$days_sd[3] )
-  r4 <- rnorm(n, df_dL_alb$days_mean[4],
-              df_dL_alb$days_sd[4] )
-  r5 <- rnorm(n, df_dL_alb$days_mean[5],
-              df_dL_alb$days_sd[5] )
- 
-  df_dL_alb <- data.frame(temp = sort(rep(df_dL_alb[,1],n)),
-                          days_devep = c(r1,r2,r3,r4,r5))
- 
-  ggplot(df_dL_alb) +
-    geom_point(aes(temp,develop_rate))
-  
-  df_dL_alb$develop_rate <- 1/(df_dL_alb$days_devep)
-  df_dL_alb <- rbind(df_dL_alb, c(5,0,0,0))
-  df_dL_alb <- rbind(df_dL_alb, c(10,0,0,0))
-  ggplot(df_dL_alb) +
-    geom_point(aes(temp,develop_rate))
-  saveRDS(df_dL_alb, "~/INVASIBILITY_THRESHOLD/data/df_dL_alb.Rds")
+  # df_dL_alb <- data.frame(temp=c(15,20,25,30,35),
+  #                         days_mean = c(35,14.4,10.4,8.8,12.3),
+  #                         days_sd = c(0.9,0.4,0.7,0.6,0.7))
+  # ggplot(df_dL_alb) +
+  #   geom_point(aes(temp,days_mean))
+  # 
+  # n = 5
+  # r1 <- rnorm(n, df_dL_alb$days_mean[1],
+  #             df_dL_alb$days_sd[1] )
+  # r2 <- rnorm(n, df_dL_alb$days_mean[2],
+  #             df_dL_alb$days_sd[2] )
+  # r3 <- rnorm(n, df_dL_alb$days_mean[3],
+  #             df_dL_alb$days_sd[3] )
+  # r4 <- rnorm(n, df_dL_alb$days_mean[4],
+  #             df_dL_alb$days_sd[4] )
+  # r5 <- rnorm(n, df_dL_alb$days_mean[5],
+  #             df_dL_alb$days_sd[5] )
+  # 
+  # df_dL_alb <- data.frame(temp = sort(rep(df_dL_alb[,1],n)),
+  #                         days_devep = c(r1,r2,r3,r4,r5))
+  # 
+  # ggplot(df_dL_alb) +
+  #   geom_point(aes(temp,develop_rate))
+  # 
+  # df_dL_alb$develop_rate <- 1/(df_dL_alb$days_devep)
+  # df_dL_alb <- rbind(df_dL_alb, c(5,0,0,0))
+  # df_dL_alb <- rbind(df_dL_alb, c(10,0,0,0))
+  # ggplot(df_dL_alb) +
+  #   geom_point(aes(temp,develop_rate))
+  # saveRDS(df_dL_alb, "~/INVASIBILITY_THRESHOLD/data/df_dL_alb.Rds")
 
 ## I use the random sample fixed, other wise the param would change.
   df_dL_alb <- readRDS("~/INVASIBILITY_THRESHOLD/data/df_dL_alb.Rds")
@@ -986,7 +986,7 @@ plotdeltaE_w_aeg <- ggplot(df_out_w, aes(x=temp_ae,y=deltaE.max)) +
   xlim(c(5,37)) + ylim(c(-1.7,3.1)) + 
   guides( color =FALSE, alpha = FALSE) +
   ylab("Egg mortality rate") + xlab("Temperature (Cº)") +
-  theme_bw() 
+  theme_bw()
 plotdeltaE_w_aeg 
 
 # Join thermal responses all species --------------------
@@ -1023,3 +1023,19 @@ ggarrange( plotalb_w  +
              ylab(TeX("Egg development rate, $d_E$")) +
              theme(text = element_text(size = sizelet)),
            ncol = 2, nrow = 3)
+
+# Plots with transparent background for presentation
+p <- plotalb_w + 
+  ylab(TeX("Prob. from Larva to Adult, $p_{LA}$")) +
+  theme(
+    panel.background = element_rect(fill = "transparent"), # bg of the panel
+    plot.background = element_rect(fill = "transparent", color = NA), # bg of the plot
+    panel.grid.major = element_blank(), # get rid of major grid
+    panel.grid.minor = element_blank(), # get rid of minor grid
+    legend.background = element_rect(fill = "transparent"), # get rid of legend bg
+    legend.box.background = element_rect(fill = "transparent"), # get rid of legend panel bg
+    legend.key = element_rect(fill = "transparent", colour = NA), # get rid of key legend fill, and of the surrounding
+    axis.line = element_line(colour = "black") # adding a black line for x and y axis
+  )
+
+ggsave( plot = p, filename = "plot1_CRM.png",  bg = "transparent" )
