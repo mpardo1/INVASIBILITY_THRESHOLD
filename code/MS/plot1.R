@@ -30,7 +30,7 @@ ggplot(df_clim,aes(hum, rain, fill = h)) +
     axis.text = element_text(size = size_let),    # Increase axis text font size
     plot.title = element_text(size = size_let),   # Increase plot title font size
     legend.title = element_text(size = size_let), # Increase legend title font size
-    legend.text = element_text(size = 12)   # Increase legend text font size
+    legend.text = element_text(size = 11)   # Increase legend text font size
   ) 
 
 # Test Egg mortality ------------------------------------------------
