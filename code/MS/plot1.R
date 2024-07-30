@@ -261,7 +261,7 @@ ggarrange(alb,aeg,alb2, aeg2, nrow = 2, ncol = 2,
 
 # check if the maximun does not move
 temp <- seq(0,40,length.out = 100)
-hum <- seq(0,800,length.out = 100)
+hum <- seq(0,10000,length.out = 100)
 rain <- seq(0,16,length.out = 100)
 df_clim <- setDT(expand.grid(temp =temp, rain = rain, hum = hum))
 

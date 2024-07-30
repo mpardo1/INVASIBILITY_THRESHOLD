@@ -603,3 +603,34 @@ ggplot(df_pa) +
   theme_minimal(base_size = 14)  +
   theme(legend.position = c(0.1,0.68),
         legend.text = element_text(18)) 
+
+
+# Check difference between data from Roger and data in MA map
+
+# Load dataset from Roger
+Path <- "~/INVASIBILITY_THRESHOLD/data/PA/ALBO_PA_102023.csv"
+PA_Roger <- read.csv(Path)
+
+# Load dataset from MA web and filter by municipalities
+Path <- "~/INVASIBILITY_THRESHOLD/data/PA/table.csv"
+PA_MA_web <- read.csv(Path)
+PA_MA_web <- PA_MA_web[PA_MA_web$codeLevel == 5,]
+PA_MA_web$NATCODE <- as.numeric(substr(PA_MA_web$locCode,7,17))
+PA_MA_web$alb <- ifelse(PA_MA_web$albopictus == "absent" |
+                          PA_MA_web$albopictus == "noData", 0,1)
+# Join both data sets
+PA_comb <- PA_Roger[,c("NATCODE", "PA")] %>%
+  left_join(PA_MA_web[,c("NATCODE", "alb")])
+PA_comb$diff <- PA_comb$PA- PA_comb$alb
+
+# Join with esp can data 
+esp_can <- esp_get_munic_siane(moveCAN = TRUE)
+can_box <- esp_get_can_box()
+esp_can$NATCODE <- as.numeric(paste0("34",esp_can$codauto,
+                                     esp_can$cpro,
+                                     esp_can$LAU_CODE))
+PA_Roger <- PA_Roger %>%
+  left_join(esp_can[,c("NATCODE", "ine.ccaa.name", "ine.prov.name", "name")])
+
+# Save to upload git
+write.csv(PA_Roger, "~/INVASIBILITY_THRESHOLD/data/PA/PA_Oct_2023_albopictus.csv")
