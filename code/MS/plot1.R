@@ -1,5 +1,4 @@
-## Code that Compare the PA data for albopictus in comparison with
-# the number o months in which R0>1 and the avg R0
+## Code to plot the R_M curves for Aedes albopictus and Aedes aegypti
 rm(list=ls())
 library(mapSpain)
 library(ggplot2)
@@ -7,7 +6,34 @@ library("ggpubr")
 library(data.table)
 source("~/INVASIBILITY_THRESHOLD/code/funcR0.R")
 
-# Test Egg mortality
+# Plot heat map hatching rate ---------------------------------------
+library(data.table)
+hum <- seq(0,1100,length.out = 1000)
+rain <- seq(0,16,length.out = 1000)
+df_clim <- setDT(expand.grid(hum =hum, rain = rain))
+df_clim[, h := mapply(h_f, hum, rain)]
+
+library(latex2exp)
+size_let = 14
+ggplot(df_clim,aes(hum, rain, fill = h)) +
+  geom_raster() + 
+  geom_contour(aes(z = h),breaks = 1,
+               color = "black", linetype = "dashed") +
+  scale_fill_distiller(palette = "Spectral",
+                       name ="Hatching rate", 
+                       limits = c(0,1)) +
+  xlab("Human density") + ylab("Rainfall") +
+  # xlim(c(10,38)) +
+  theme_bw() + 
+  theme(
+    axis.title = element_text(size = size_let),   # Increase axis title font size
+    axis.text = element_text(size = size_let),    # Increase axis text font size
+    plot.title = element_text(size = size_let),   # Increase plot title font size
+    legend.title = element_text(size = size_let), # Increase legend title font size
+    legend.text = element_text(size = 12)   # Increase legend text font size
+  ) 
+
+# Test Egg mortality ------------------------------------------------
 vec <- seq(5,40,0.001)
 deltaE_aeg <- sapply(vec,deltaE_f_aeg)
 deltaE_alb <- sapply(vec,deltaE_f_alb)

@@ -83,74 +83,111 @@ plot_corr <- ggplot(trap_data_filt[trap_data_filt$city %in% list_cit_1,],
   ylab("Count female mosquito trap (logarithmic scale)")
 plot_corr
 
+# Generalized linear models with Poisson distribution ---------------
+cit = list_cit[4] # 1: Tordera, 2: Lloret, 4: Blanes 3: Palafolls
+trap_data_glm <- trap_data_filt[trap_data_filt$city == cit,]
+model.pois = glm(female ~ R0_alb, data = trap_data_glm, family = poisson) 
+summary(model.pois)
+
+# Plot with conf intervals
+trap_data_glm <- trap_data_filt[trap_data_filt$city %in% list_cit[c(1,2,3,4)],]
+
+## generate prediction frame
+pframe <- with(trap_data_glm,
+               expand.grid(math=seq(min(R0_alb),max(R0_alb),length=51),
+                           city=levels(city)))
+## add predicted values (on response scale) to prediction frame
+pframe$PA <- predict(model.pois,newdata=pframe,type="response")
+
+# Plot data
+ggplot(trap_data_glm, aes(R0_alb, female, col = city)) +
+  geom_point() +
+  geom_smooth(method = "glm", 
+              method.args = list(family = "poisson"),
+              alpha = 0.2) +
+  scale_color_manual(values = pal) +
+  ylim(c(0,500))  + ylab("Number of females found in traps") + xlab(TeX("$R_M$")) +
+  theme_bw() + 
+  theme(
+    axis.title = element_text(size = size_let),   # Increase axis title font size
+    axis.text = element_text(size = size_let),    # Increase axis text font size
+    plot.title = element_text(size = size_let),   # Increase plot title font size
+    legend.title = element_text(size = size_let), # Increase legend title font size
+    legend.text = element_text(size = size_let),   # Increase legend text font size
+    legend.position = c(0.2,0.8)
+  ) 
+
+# Test correlation
+cor.test(trap_data_filt$R0_alb, trap_data_filt$female)
+
 # linear mixed-models
-library(lme4)
-
-model <- lmer(log10(female)~ R0_alb + (1|city),
-              data = trap_data_filt[(trap_data_filt$city %in% list_cit),])
-r2(model)
-
-model <- lm(log10(female)~ R0_alb,
-              data = trap_data_filt[(trap_data_filt$city %in% list_cit),])
-r2(model)
-
-library(performance)
-# Fit exp city with nls -------------------------------------------------------
-df_out_fem <- data.frame()
-for(i in c(1:length(list_cit))){
-  print(list_cit[[i]])
-  df_aux1 <- trap_data_filt[which(trap_data_filt$city == list_cit[[i]]),]
-  # Fitting_fem <- nls(female ~ exp(cont1*R0_alb)*cont,
-  #                    data = df_aux1,
-  #                    start = list(cont = 0.2, cont1 = 0.12))
-  # 
-  # print(summary(Fitting_fem))
-
-  lin_model <- lm(log10(female)~ R0_alb, data = df_aux1)
-  summary(lin_model)
-  print(r2(lin_model))
-  ggplot(df_aux1, aes(R0_alb, log10(female)))+
-    geom_point() + geom_smooth(method = "lm")
-
-  mod <- function(te){
-    t0 <- as.numeric(Fitting_fem$m$getPars()[1])
-    tm <- as.numeric(Fitting_fem$m$getPars()[2])
-    t0*exp(tm*te)
-  }
-
-  vec <- seq(0,max(df_aux1$R0_alb)+1,0.01)
-  df_aux <- data.frame(temp_ae <- vec,
-                       fem <- sapply(vec, mod))
-  df_aux$cit <- list_cit[[i]]
-  colnames(df_aux) <- c("vec", "out", "cit")
-  df_out_fem <- rbind(df_aux, df_out_fem)
-  colnames(df_out_fem) <- c("vec", "out", "cit")
-}
-
-
-name_pal = "Set1"
-display.brewer.pal(length(list_cit), name_pal)
-pal <- rev(brewer.pal(length(list_cit), name_pal))
-sizelet = 14
-plot_counts <- ggplot(data = trap_data_filt) +
-  geom_point(aes(x = R0_alb,
-                 y = female, color = city), size = 0.8, alpha = 0.6) +
-  geom_line(data = df_out_fem,
-            aes(vec , out, color = cit),
-            lwd = 0.8) +
-  scale_color_manual(values = pal,
-                     labels = c(TeX("Blanes"),
-                                TeX("Lloret de Mar"),
-                                TeX("Palafolls"),
-                                TeX("Tordera")), name = "") +
-  xlab(TeX("$R_M$")) +
-  ylab("Number of females") +
-  xlim(c(0,max(trap_data_filt$R0_alb)+0.3)) +
-  ylim(c(0,max(trap_data_filt$female))) +
-  theme_bw() +
-  theme(text = element_text(size = sizelet),
-        legend.position = c(0.2,0.65))
-plot_counts
+# library(lme4)
+# 
+# model <- lmer(log10(female)~ R0_alb + (1|city),
+#               data = trap_data_filt[(trap_data_filt$city %in% list_cit),])
+# r2(model)
+# 
+# model <- lm(log10(female)~ R0_alb,
+#               data = trap_data_filt[(trap_data_filt$city %in% list_cit),])
+# r2(model)
+# 
+# library(performance)
+# # Fit exp city with nls -------------------------------------------------------
+# df_out_fem <- data.frame()
+# for(i in c(1:length(list_cit))){
+#   print(list_cit[[i]])
+#   df_aux1 <- trap_data_filt[which(trap_data_filt$city == list_cit[[i]]),]
+#   # Fitting_fem <- nls(female ~ exp(cont1*R0_alb)*cont,
+#   #                    data = df_aux1,
+#   #                    start = list(cont = 0.2, cont1 = 0.12))
+#   # 
+#   # print(summary(Fitting_fem))
+# 
+#   lin_model <- lm(log10(female)~ R0_alb, data = df_aux1)
+#   summary(lin_model)
+#   print(r2(lin_model))
+#   ggplot(df_aux1, aes(R0_alb, log10(female)))+
+#     geom_point() + geom_smooth(method = "lm")
+# 
+#   mod <- function(te){
+#     t0 <- as.numeric(Fitting_fem$m$getPars()[1])
+#     tm <- as.numeric(Fitting_fem$m$getPars()[2])
+#     t0*exp(tm*te)
+#   }
+# 
+#   vec <- seq(0,max(df_aux1$R0_alb)+1,0.01)
+#   df_aux <- data.frame(temp_ae <- vec,
+#                        fem <- sapply(vec, mod))
+#   df_aux$cit <- list_cit[[i]]
+#   colnames(df_aux) <- c("vec", "out", "cit")
+#   df_out_fem <- rbind(df_aux, df_out_fem)
+#   colnames(df_out_fem) <- c("vec", "out", "cit")
+# }
+# 
+# 
+# name_pal = "Set1"
+# display.brewer.pal(length(list_cit), name_pal)
+# pal <- rev(brewer.pal(length(list_cit), name_pal))
+# sizelet = 14
+# plot_counts <- ggplot(data = trap_data_filt) +
+#   geom_point(aes(x = R0_alb,
+#                  y = female, color = city), size = 0.8, alpha = 0.6) +
+#   geom_line(data = df_out_fem,
+#             aes(vec , out, color = cit),
+#             lwd = 0.8) +
+#   scale_color_manual(values = pal,
+#                      labels = c(TeX("Blanes"),
+#                                 TeX("Lloret de Mar"),
+#                                 TeX("Palafolls"),
+#                                 TeX("Tordera")), name = "") +
+#   xlab(TeX("$R_M$")) +
+#   ylab("Number of females") +
+#   xlim(c(0,max(trap_data_filt$R0_alb)+0.3)) +
+#   ylim(c(0,max(trap_data_filt$female))) +
+#   theme_bw() +
+#   theme(text = element_text(size = sizelet),
+#         legend.position = c(0.2,0.65))
+# plot_counts
 
 # exponential function with lm---------------------------------------------------
 # df_out_fem <- data.frame()
@@ -209,6 +246,7 @@ year = 2020
 Path <- paste0("~/INVASIBILITY_THRESHOLD/output/ERA5/temp/2020/R0_clim_",
                year,".Rds")
 Path <- "~/INVASIBILITY_THRESHOLD/output/ERA5/temp/2020/R0_avg_2003-2020.Rds"
+Path <- "/Users/celsaaraujobarja/Documents/PHD/2024/R_M/data/R0_avg_2003-2020.Rds"
 df_2020 <- setDT(readRDS(Path))
 df_2020 <- df_2020[,c("NATCODE", "R0_sum_alb")]
 df_2020 <- df_2020[,c("NATCODE", "sum_alb")]
@@ -261,6 +299,7 @@ df_2020$R0 <- NULL
 
 # Presence absence data Albopictus Spain:
 Path = "/home/marta/Documentos/PHD/2024/R_M/data/MUNS_ANYS.csv"
+Path <- "/Users/celsaaraujobarja/Documents/PHD/2024/R_M/data/MUNS_ANYS.csv"
 df_pa <- read.csv(Path)
 df_pa$PA <- ifelse(df_pa$QUIEN.FUE.ANTES != 9999,1,0)
 # # add cadiz
@@ -338,7 +377,86 @@ df_group_m <- df_2020[,c("NATCODE",
 colnames(df_group_m) <- c("NATCODE", "R0_sum_alb")
 df_pa <- df_pa %>% left_join(df_group_m)
 
-# Plot to see PA with R0_alb
+# Histrogram with Presence municipalities and Absence for all Spain -----------
+ggplot(df_pa, aes(x=R0_sum_alb, fill = as.factor(PA))) + 
+  geom_histogram( binwidth=1)
+
+# Boxplot
+ggplot(df_pa, aes(y=R0_sum_alb, x = as.factor(PA),
+                  fill = as.factor(PA))) +
+  geom_boxplot(alpha = 0.7) + scale_fill_viridis_d(name =  "") +
+  ylab("Number of suitable months") +
+  xlab("Presence/absence") +
+    theme_bw() + 
+    theme(
+      axis.title = element_text(size = size_let),   # Increase axis title font size
+      axis.text = element_text(size = size_let),    # Increase axis text font size
+      plot.title = element_text(size = size_let),   # Increase plot title font size
+      legend.title = element_text(size = size_let), # Increase legend title font size
+      legend.text = element_text(size = size_let)   # Increase legend text font size
+    ) 
+
+# Density plot
+size_let = 14
+ggplot(data=df_pa, aes(x=R0_sum_alb, fill = as.factor(PA))) +
+  geom_density(adjust=2.5, alpha = 0.6) +
+  scale_fill_viridis_d(name = "") +
+  ylab("Density") + xlab("Number of suitable months") +
+  theme_bw() + 
+  theme(
+    axis.title = element_text(size = size_let),   # Increase axis title font size
+    axis.text = element_text(size = size_let),    # Increase axis text font size
+    plot.title = element_text(size = size_let),   # Increase plot title font size
+    legend.title = element_text(size = size_let), # Increase legend title font size
+    legend.text = element_text(size = size_let)   # Increase legend text font size
+  ) 
+
+# Filter just for some ccaa ----------------------------------------
+esp_can <- esp_get_munic_siane(moveCAN = TRUE)
+esp_can$NATCODE <- as.numeric(paste0("34",
+                                     esp_can$codauto,
+                                     esp_can$cpro,
+                                     esp_can$LAU_CODE))
+esp_can$geometry <- NULL
+
+df_pa_hist <- df_pa %>% left_join(esp_can[,c("NATCODE", "ine.ccaa.name")])
+df_pa_hist <- df_pa_hist[df_pa_hist$ine.ccaa.name %in% c(
+                        "Cataluña",
+                        "Comunitat Valenciana",
+                        "Andalucía",
+                        "País Vasco", "Aragón"), ]
+
+# Density plot
+size_let = 14
+ggplot(data=df_pa_hist, aes(x=R0_sum_alb, fill = as.factor(PA))) +
+  geom_density(adjust=2.5, alpha = 0.6) +
+  scale_fill_viridis_d(name = "") +
+  ylab("Density") + xlab("Number of suitable months") +
+  theme_bw() + 
+  theme(
+    axis.title = element_text(size = size_let),   # Increase axis title font size
+    axis.text = element_text(size = size_let),    # Increase axis text font size
+    plot.title = element_text(size = size_let),   # Increase plot title font size
+    legend.title = element_text(size = size_let), # Increase legend title font size
+    legend.text = element_text(size = size_let)   # Increase legend text font size
+  )
+
+# Boxplot
+ggplot(df_pa_hist, aes(y=R0_sum_alb, x = as.factor(PA),
+                  fill = as.factor(PA))) +
+  geom_boxplot(alpha = 0.7) + scale_fill_viridis_d(name =  "") +
+  ylab("Number of suitable months") +
+  xlab("Presence/absence") +
+  theme_bw() + 
+  theme(
+    axis.title = element_text(size = size_let),   # Increase axis title font size
+    axis.text = element_text(size = size_let),    # Increase axis text font size
+    plot.title = element_text(size = size_let),   # Increase plot title font size
+    legend.title = element_text(size = size_let), # Increase legend title font size
+    legend.text = element_text(size = size_let)   # Increase legend text font size
+  ) 
+
+# Plot to see PA with R0_alb ----------------------------------------
 ggplot(df_pa) +
   geom_sf(aes(fill = as.factor(R0_sum_alb)), color = NA) +
   scale_color_manual()
