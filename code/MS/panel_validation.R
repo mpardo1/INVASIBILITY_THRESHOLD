@@ -100,6 +100,7 @@ pframe <- with(trap_data_glm,
 pframe$PA <- predict(model.pois,newdata=pframe,type="response")
 
 # Plot data
+size_let = 14
 ggplot(trap_data_glm, aes(R0_alb, female, col = city)) +
   geom_point() +
   geom_smooth(method = "glm", 
@@ -410,6 +411,10 @@ ggplot(data=df_pa, aes(x=R0_sum_alb, fill = as.factor(PA))) +
     legend.title = element_text(size = size_let), # Increase legend title font size
     legend.text = element_text(size = size_let)   # Increase legend text font size
   ) 
+
+# Tests if two samples come from the same distribution
+ks.test(df_pa[df_pa$PA==1,"R0_sum_alb"],df_pa[df_pa$PA==0,"R0_sum_alb"])
+wilcox.test(df_pa[df_pa$PA==1,"R0_sum_alb"],df_pa[df_pa$PA==0,"R0_sum_alb"])
 
 # Filter just for some ccaa ----------------------------------------
 esp_can <- esp_get_munic_siane(moveCAN = TRUE)

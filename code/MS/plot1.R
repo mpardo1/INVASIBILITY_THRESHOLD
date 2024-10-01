@@ -13,6 +13,12 @@ rain <- seq(0,16,length.out = 1000)
 df_clim <- setDT(expand.grid(hum =hum, rain = rain))
 df_clim[, h := mapply(h_f, hum, rain)]
 
+# Compute maximum and ranges
+max(df_clim$h)
+range(df_clim[df_clim$h>0.99,"hum"])
+range(df_clim[df_clim$h>0.99,"rain"])
+
+# Plot
 library(latex2exp)
 size_let = 14
 ggplot(df_clim,aes(hum, rain, fill = h)) +
@@ -65,7 +71,6 @@ ggplot(df_fa) +
 vec <- seq(5,40,0.001)
 aegypti <- sapply(vec,R0_func_aeg, hum = 500,rain = 8)
 albopictus <- sapply(vec,R0_func_alb, hum = 500,rain = 8) 
-japonicus <- sapply(vec,R0_func_jap, hum = 500,rain =8) 
 
 df_out <- data.frame(vec,
                      aegypti = aegypti,

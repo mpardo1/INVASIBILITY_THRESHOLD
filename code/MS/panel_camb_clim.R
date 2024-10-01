@@ -33,7 +33,7 @@ pal <- rev(brewer.pal(11, name_pal))
 pal[11]
 pal[12] = "#74011C"
 pal[13] = "#4B0011"
-aeg_pres <- ggplot(clim_pop,
+aeg <- ggplot(clim_pop,
               aes(x = lon, y = lat,
                   fill = as.factor(sum_aeg_pres))) +
   geom_raster() +
@@ -45,8 +45,25 @@ aeg_pres <- ggplot(clim_pop,
         panel.background = element_rect(fill = "transparent", colour = NA),
         plot.background = element_rect(fill = "transparent", colour = NA),
         panel.grid = element_blank(),
-        plot.margin = unit(c(0, 0, 0, 0), "null"),
-        panel.margin = unit(c(0, 0, 0, 0), "null"),
+        axis.ticks = element_blank(),
+        axis.text = element_blank(),
+        axis.title = element_blank(),
+        axis.line = element_blank(),
+        axis.ticks.length = unit(0, "null"),
+        axis.ticks.margin = unit(0, "null"))
+
+alb <- ggplot(clim_pop,
+                   aes(x = lon, y = lat,
+                       fill = as.factor(sum_alb_pres))) +
+  geom_raster() +
+  scale_fill_manual(values = pal,
+                    name = "Nº suitable \n months",
+                    limits = factor(seq(0,12,1)),
+                    na.value = "white") +
+  theme(legend.position = "none",
+        panel.background = element_rect(fill = "transparent", colour = NA),
+        plot.background = element_rect(fill = "transparent", colour = NA),
+        panel.grid = element_blank(),
         axis.ticks = element_blank(),
         axis.text = element_blank(),
         axis.title = element_blank(),
@@ -69,6 +86,7 @@ aeg_pres <- ggplot(clim_pop,
 #             theme(legend.position = "none"),
 #           ncol = 4)
 
+# Extract legend
 leg_sum <- get_legend(ggplot(clim_pop,
                              aes(x = lon, y = lat,
                                  fill = as.factor(sum_alb_pres))) +
@@ -83,11 +101,17 @@ leg_sum <- get_legend(ggplot(clim_pop,
                           label.position = "bottom"  # Position labels at the bottom
                         )))
 
+# Create panel
 gg1 <- ggarrange(alb + ggtitle(expression(paste("a) ",italic("Ae. albopictus")))),
           aeg + ggtitle(expression(paste("b) ",italic("Ae. aegypti")))),
           nrow = 1)
 
-ggarrange(gg1,leg_sum, ncol = 1, heights = c(1,0.2))
+ggarr_comp <- ggarrange(gg1,leg_sum, ncol = 1, heights = c(1,0.2))
+ggarr_comp
+ggsave("~/Documentos/PHD/2024/R_M/Plots/procB/panel1.png", 
+       ggarr_comp, 
+       height = 5, width = 8.4,
+       bg = "white", dpi = 300)
 
 # Climat change panels ----------------------------------------------
 # Join two data frames
@@ -119,17 +143,17 @@ pal2[15] = "black"
 pal2[16] = "black"
 pal2[17] = "black"
 # Check raster points with negative numbers
-clim_df$diff_alb_mod <- clim_df$diff_aeg
-clim_df$diff_alb_mod <- ifelse(clim_df$diff_alb_mod>=3,10,clim_df$diff_alb_mod)
-ggplot(clim_df,
-       aes(x = lon, y = lat,
-           fill = as.factor(diff_alb_mod))) +
-  geom_raster() +
-  scale_fill_manual(values = pal2,
-                    name = "Difference in\n suitable months",
-                    limits = factor(seq(-6,10,1)))
+# clim_df$diff_alb_mod <- clim_df$diff_aeg
+# clim_df$diff_alb_mod <- ifelse(clim_df$diff_alb_mod>=3,10,clim_df$diff_alb_mod)
+# ggplot(clim_df,
+#        aes(x = lon, y = lat,
+#            fill = as.factor(diff_alb_mod))) +
+#   geom_raster() +
+#   scale_fill_manual(values = pal2,
+#                     name = "Difference in\n suitable months",
+#                     limits = factor(seq(-6,10,1)))
 
-# ggplot albopictus
+# Plots for future diff 2061-2080 - 2020 ---------------------------------
 diff_aeg <- ggplot(clim_df,
        aes(x = lon, y = lat,
            fill = as.factor(diff_aeg))) +
@@ -142,28 +166,15 @@ diff_aeg <- ggplot(clim_df,
         panel.background = element_rect(fill = "transparent", colour = NA),
         plot.background = element_rect(fill = "transparent", colour = NA),
         panel.grid = element_blank(),
-        plot.margin = unit(c(0, 0, 0, 0), "null"),
-        panel.margin = unit(c(0, 0, 0, 0), "null"),
         axis.ticks = element_blank(),
         axis.text = element_blank(),
         axis.title = element_blank(),
         axis.line = element_blank(),
         axis.ticks.length = unit(0, "null"),
         axis.ticks.margin = unit(0, "null")) 
-
-
-leg <- (get_legend(ggplot(clim_df,
-                            aes(x = lon, y = lat,
-                                fill = as.factor(sum_alb_fut))) +
-                       geom_raster() +
-                       scale_fill_manual(values = pal1,
-                                         name = "Difference in\n months",
-                                         na.value = "#FAFAFA",
-                                         limits = factor(seq(-6,7,1))))) 
         
 
-# Plots para el sup
-# ggplot albopictus
+# Plots para albopictus
 diff_alb <- ggplot(clim_df,
                    aes(x = lon, y = lat,
                        fill = as.factor(diff_alb))) +
@@ -176,8 +187,6 @@ diff_alb <- ggplot(clim_df,
         panel.background = element_rect(fill = "transparent", colour = NA),
         plot.background = element_rect(fill = "transparent", colour = NA),
         panel.grid = element_blank(),
-        plot.margin = unit(c(0, 0, 0, 0), "null"),
-        panel.margin = unit(c(0, 0, 0, 0), "null"),
         axis.ticks = element_blank(),
         axis.text = element_blank(),
         axis.title = element_blank(),
@@ -187,14 +196,14 @@ diff_alb <- ggplot(clim_df,
 
 leg <- get_legend(ggplot(clim_df,
                           aes(x = lon, y = lat,
-                              fill = as.factor(diff_alb))) +
+                              fill = as.factor(diff_aeg))) +
                      geom_raster() +
                      scale_fill_manual(name = "Difference in\n suitable months",
                                        values = pal1,
-                                       limits = factor(seq(-6,7,1))))
+                                       limits = factor(seq(-6,6,1))))
 
 
-# ggplot albopictus
+# Plots for future 2061-2080 --------------------------------------------
 name_pal = "RdYlBu"
 display.brewer.pal(11, name_pal)
 pal <- rev(brewer.pal(11, name_pal))
@@ -203,7 +212,7 @@ pal[12] = "#74011C"
 pal[13] = "#4B0011"
 aeg <- ggplot(clim_df,
                    aes(x = lon, y = lat,
-                       fill = as.factor(sum_aeg_fut41))) +
+                       fill = as.factor(sum_aeg_fut))) +
   geom_raster() +
   scale_fill_manual(values = pal,
                     name = "",
@@ -214,8 +223,6 @@ aeg <- ggplot(clim_df,
         panel.background = element_rect(fill = "transparent", colour = NA),
         plot.background = element_rect(fill = "transparent", colour = NA),
         panel.grid = element_blank(),
-        plot.margin = unit(c(0, 0, 0, 0), "null"),
-        panel.margin = unit(c(0, 0, 0, 0), "null"),
         axis.ticks = element_blank(),
         axis.text = element_blank(),
         axis.title = element_blank(),
@@ -223,8 +230,25 @@ aeg <- ggplot(clim_df,
         axis.ticks.length = unit(0, "null"),
         axis.ticks.margin = unit(0, "null"))
 
-ggsave('/home/marta/Documentos/PHD/2024/R_M/Journals/GCB/Im4_GA.png',
-       gg, bg='transparent')
+alb <- ggplot(clim_df,
+              aes(x = lon, y = lat,
+                  fill = as.factor(sum_alb_fut))) +
+  geom_raster() +
+  scale_fill_manual(values = pal,
+                    name = "",
+                    # name = "Nº suitable \n months",
+                    limits = factor(seq(0,12,1)),
+                    na.value = "white") +
+  theme(legend.position = "none",
+        panel.background = element_rect(fill = "transparent", colour = NA),
+        plot.background = element_rect(fill = "transparent", colour = NA),
+        panel.grid = element_blank(),
+        axis.ticks = element_blank(),
+        axis.text = element_blank(),
+        axis.title = element_blank(),
+        axis.line = element_blank(),
+        axis.ticks.length = unit(0, "null"),
+        axis.ticks.margin = unit(0, "null"))
 
 library("latex2exp")
 leg1 <- get_legend( ggplot(clim_df,
@@ -232,16 +256,11 @@ leg1 <- get_legend( ggplot(clim_df,
                                 fill = as.factor(sum_alb_fut))) +
                        geom_raster() +
                        scale_fill_manual(values = pal,
-                                         # name = TeX("Nº suitable \n months ($R_M>1$)"),
-                                         name = TeX(""),
+                                         name = TeX("Nº suitable \n months"),
+                                         # name = TeX(""),
                                          limits = factor(seq(0,12,1)),
                                          na.value = "white"))
 # Create panel for main
-gg <- ggarrange(alb,
-          aeg ,
-          leg1,
-          nrow = 1,
-          widths = c(1,1,0.3))
 gg1 <- ggarrange(alb + ggtitle(expression(paste("a) ",italic("Aedes albopictus")))),
                  aeg + ggtitle(expression(paste("b) ",italic("Aedes aegypti")))),
                  leg1,
@@ -252,111 +271,116 @@ gg2 <- ggarrange(diff_alb + ggtitle(expression(paste("c) ",italic("Aedes albopic
                  leg,
                  nrow = 1,
                  widths = c(1,1,0.3))
-ggarrange(gg1,gg2, nrow=2)
+ggarr_comp <- ggarrange(gg1,gg2, nrow=2)
+
+ggsave("~/Documentos/PHD/2024/R_M/Plots/procB/panel_camb_clim.png", 
+       ggarr_comp, 
+       height = 10, width = 11,
+       bg = "white", dpi = 300)
 
 # check where the negative values are
-ggplot(clim_df,
-       aes(x = lon, y = lat,
-           fill = as.factor(diff_aeg))) +
-  geom_raster() +
-  scale_fill_manual(values = pal1,
-                    name = "Difference in\n suitable months",
-                    limits = factor(seq(-6,-1,1)))
-# whole plot
-ggplot(clim_df,
-       aes(x = lon, y = lat,
-           fill = as.factor(diff_aeg))) +
-  geom_raster() +
-  scale_fill_manual(values = pal1,
-                    name = "Difference in\n suitable months",
-                    na.value = "white",
-                    limits = factor(seq(-6,7,1))) +
-  theme(legend.position = "right",
-        panel.background = element_rect(fill = "transparent", colour = NA),
-        plot.background = element_rect(fill = "transparent", colour = NA),
-        panel.grid = element_blank(),
-        plot.margin = unit(c(0, 0, 0, 0), "null"),
-        panel.margin = unit(c(0, 0, 0, 0), "null"),
-        axis.ticks = element_blank(),
-        axis.text = element_blank(),
-        axis.title = element_blank(),
-        axis.line = element_blank(),
-        axis.ticks.length = unit(0, "null"),
-        axis.ticks.margin = unit(0, "null"))  
-
-# Diff from 61-41
-ggplot(clim_df,
-       aes(x = lon, y = lat,
-           fill = as.factor(diff_aeg6141))) +
-  geom_raster() +
-  scale_fill_manual(values = pal1[c(2,3,7,11,12,13,14)],
-                    name = "Difference in\n suitable months",
-                    na.value = "#F6F6F6",
-                    limits = factor(seq(-2,4,1))) +
-  theme(legend.position = "right",
-        panel.background = element_rect(fill = "transparent", colour = NA),
-        plot.background = element_rect(fill = "transparent", colour = NA),
-        panel.grid = element_blank(),
-        plot.margin = unit(c(0, 0, 0, 0), "null"),
-        panel.margin = unit(c(0, 0, 0, 0), "null"),
-        axis.ticks = element_blank(),
-        axis.text = element_blank(),
-        axis.title = element_blank(),
-        axis.line = element_blank(),
-        axis.ticks.length = unit(0, "null"),
-        axis.ticks.margin = unit(0, "null"))  
-
-# Create a range for easy visualization
-pal2 <- pal1[c(2,4,7,11,13)]
-clim_df$diff_alb_rang <- factor(ifelse(clim_df$diff_alb <= -3, "[-6,-3]",
-                           ifelse(clim_df$diff_alb < 0, "(-3,0)",
-                                  ifelse(clim_df$diff_alb == 0, "0",
-                                    ifelse(clim_df$diff_alb <= 3, "(0,3]","(3,7]")))),
-                           levels = c("[-6,-3]","(-3,0)",
-                                      "0","(0,3]","(3,7]"))
-ggplot(clim_df,
-       aes(x = lon, y = lat,
-           fill = diff_alb_rang)) +
-  geom_raster() +
-  scale_fill_manual(values = pal2,
-                    name = "Difference in\n suitable months",
-                    na.value = "#F6F6F6") +
-  theme(legend.position = "right",
-        panel.background = element_rect(fill = "transparent", colour = NA),
-        plot.background = element_rect(fill = "transparent", colour = NA),
-        panel.grid = element_blank(),
-        plot.margin = unit(c(0, 0, 0, 0), "null"),
-        panel.margin = unit(c(0, 0, 0, 0), "null"),
-        axis.ticks = element_blank(),
-        axis.text = element_blank(),
-        axis.title = element_blank(),
-        axis.line = element_blank(),
-        axis.ticks.length = unit(0, "null"),
-        axis.ticks.margin = unit(0, "null"))  
+# ggplot(clim_df,
+#        aes(x = lon, y = lat,
+#            fill = as.factor(diff_aeg))) +
+#   geom_raster() +
+#   scale_fill_manual(values = pal1,
+#                     name = "Difference in\n suitable months",
+#                     limits = factor(seq(-6,-1,1)))
+# # whole plot
+# ggplot(clim_df,
+#        aes(x = lon, y = lat,
+#            fill = as.factor(diff_aeg))) +
+#   geom_raster() +
+#   scale_fill_manual(values = pal1,
+#                     name = "Difference in\n suitable months",
+#                     na.value = "white",
+#                     limits = factor(seq(-6,7,1))) +
+#   theme(legend.position = "right",
+#         panel.background = element_rect(fill = "transparent", colour = NA),
+#         plot.background = element_rect(fill = "transparent", colour = NA),
+#         panel.grid = element_blank(),
+#         plot.margin = unit(c(0, 0, 0, 0), "null"),
+#         panel.margin = unit(c(0, 0, 0, 0), "null"),
+#         axis.ticks = element_blank(),
+#         axis.text = element_blank(),
+#         axis.title = element_blank(),
+#         axis.line = element_blank(),
+#         axis.ticks.length = unit(0, "null"),
+#         axis.ticks.margin = unit(0, "null"))  
+# 
+# # Diff from 61-41
+# ggplot(clim_df,
+#        aes(x = lon, y = lat,
+#            fill = as.factor(diff_aeg6141))) +
+#   geom_raster() +
+#   scale_fill_manual(values = pal1[c(2,3,7,11,12,13,14)],
+#                     name = "Difference in\n suitable months",
+#                     na.value = "#F6F6F6",
+#                     limits = factor(seq(-2,4,1))) +
+#   theme(legend.position = "right",
+#         panel.background = element_rect(fill = "transparent", colour = NA),
+#         plot.background = element_rect(fill = "transparent", colour = NA),
+#         panel.grid = element_blank(),
+#         plot.margin = unit(c(0, 0, 0, 0), "null"),
+#         panel.margin = unit(c(0, 0, 0, 0), "null"),
+#         axis.ticks = element_blank(),
+#         axis.text = element_blank(),
+#         axis.title = element_blank(),
+#         axis.line = element_blank(),
+#         axis.ticks.length = unit(0, "null"),
+#         axis.ticks.margin = unit(0, "null"))  
+# 
+# # Create a range for easy visualization
+# pal2 <- pal1[c(2,4,7,11,13)]
+# clim_df$diff_alb_rang <- factor(ifelse(clim_df$diff_alb <= -3, "[-6,-3]",
+#                            ifelse(clim_df$diff_alb < 0, "(-3,0)",
+#                                   ifelse(clim_df$diff_alb == 0, "0",
+#                                     ifelse(clim_df$diff_alb <= 3, "(0,3]","(3,7]")))),
+#                            levels = c("[-6,-3]","(-3,0)",
+#                                       "0","(0,3]","(3,7]"))
+# ggplot(clim_df,
+#        aes(x = lon, y = lat,
+#            fill = diff_alb_rang)) +
+#   geom_raster() +
+#   scale_fill_manual(values = pal2,
+#                     name = "Difference in\n suitable months",
+#                     na.value = "#F6F6F6") +
+#   theme(legend.position = "right",
+#         panel.background = element_rect(fill = "transparent", colour = NA),
+#         plot.background = element_rect(fill = "transparent", colour = NA),
+#         panel.grid = element_blank(),
+#         plot.margin = unit(c(0, 0, 0, 0), "null"),
+#         panel.margin = unit(c(0, 0, 0, 0), "null"),
+#         axis.ticks = element_blank(),
+#         axis.text = element_blank(),
+#         axis.title = element_blank(),
+#         axis.line = element_blank(),
+#         axis.ticks.length = unit(0, "null"),
+#         axis.ticks.margin = unit(0, "null"))  
 
 # Check months weather
-time = "2061-2080"
-clim_fut <- readRDS(paste0("~/INVASIBILITY_THRESHOLD/output/eu_alb_aeg_",time,"_.Rds"))
-clim_pre <- readRDS("~/INVASIBILITY_THRESHOLD/data/ERA5/Europe/eu_clim_same_coords_2020.Rds")
-clim_pre[is.na(clim_pre$pop),"tmean"] <- NA
-clim_fut[is.na(clim_fut$pop),"tmean"] <- NA
-
-library(ggpubr)
-month_n <- 5
-ggarrange(ggplot(clim_fut[clim_fut$month == month_n,],
-       aes(x = lon, y = lat,
-           fill = tmean)) +
-  geom_raster() + scale_fill_viridis_c(option = "magma",
-                                       limits = c(-2,45),
-                                       na.value = "#F6F6F6") +
-    ggtitle("Future projections: 2061-2080"),
-  ggplot(clim_pre[clim_pre$month == month_n,],
-                        aes(x = lon, y = lat,
-                            fill = tmean)) +
-    geom_raster()+ scale_fill_viridis_c(option = "magma",
-                                        limits =  c(-2,45),
-                                        na.value = "#F6F6F6") +
-    ggtitle("2020"))
+# time = "2061-2080"
+# clim_fut <- readRDS(paste0("~/INVASIBILITY_THRESHOLD/output/eu_alb_aeg_",time,"_.Rds"))
+# clim_pre <- readRDS("~/INVASIBILITY_THRESHOLD/data/ERA5/Europe/eu_clim_same_coords_2020.Rds")
+# clim_pre[is.na(clim_pre$pop),"tmean"] <- NA
+# clim_fut[is.na(clim_fut$pop),"tmean"] <- NA
+# 
+# library(ggpubr)
+# month_n <- 5
+# ggarrange(ggplot(clim_fut[clim_fut$month == month_n,],
+#        aes(x = lon, y = lat,
+#            fill = tmean)) +
+#   geom_raster() + scale_fill_viridis_c(option = "magma",
+#                                        limits = c(-2,45),
+#                                        na.value = "#F6F6F6") +
+#     ggtitle("Future projections: 2061-2080"),
+#   ggplot(clim_pre[clim_pre$month == month_n,],
+#                         aes(x = lon, y = lat,
+#                             fill = tmean)) +
+#     geom_raster()+ scale_fill_viridis_c(option = "magma",
+#                                         limits =  c(-2,45),
+#                                         na.value = "#F6F6F6") +
+#     ggtitle("2020"))
 # clim_pre <- clim_pre %>% left_join(clim_fut, by = join_by(lon,lat))
 
 # Spain ----------------------------------------------------------------
@@ -396,11 +420,11 @@ df_join <- df_2004 %>%
   left_join(df_2060)
 
 df_join$diff_0420 <- df_join$Alb_2020 - df_join$Alb_2004
-df_join$diff_2040 <- df_join$Alb_2040 - df_join$Alb_2020
-df_join$diff_0440 <- df_join$Alb_2040 - df_join$Alb_2004
-df_join$diff_4060 <- df_join$Alb_2060 - df_join$Alb_2040
-df_join$diff_2060 <- df_join$Alb_2060 - df_join$Alb_2020
-df_join$diff_0460 <- df_join$Alb_2060 - df_join$Alb_2004
+df_join$diff_2060 <- df_join$Alb_2040 - df_join$Alb_2020
+df_join$diff_0460 <- df_join$Alb_2040 - df_join$Alb_2004
+df_join$diff_6080 <- df_join$Alb_2060 - df_join$Alb_2040
+df_join$diff_2080 <- df_join$Alb_2060 - df_join$Alb_2020
+df_join$diff_0680 <- df_join$Alb_2060 - df_join$Alb_2004
 
 # Map Spain municipalities ----------------------------------------------------
 library(mapSpain)
@@ -429,21 +453,62 @@ pal1[8:13] <- pal[6:11]
 pal1[14] = "#74011C"
 
 # Diff maps
-# diff_1 <- ggplot(df_join) +
-# diff_2 <- ggplot(df_join) +
-# diff_3 <- ggplot(df_join) +
-diff_4 <- ggplot(df_join) +
-  # geom_sf(aes(fill = as.factor(diff_0420)), colour = NA) +
-  # geom_sf(aes(fill = as.factor(diff_2040)), colour = NA) +
-  # geom_sf(aes(fill = as.factor(diff_4060)), colour = NA) +
-  geom_sf(aes(fill = as.factor(diff_2080)), colour = NA) +
+diff_1 <- ggplot(df_join) +
+  geom_sf(aes(fill = as.factor(diff_0420)), colour = NA) +
   geom_sf(data = perim_esp, fill = NA, alpha = 0.5, color = "grey") +
   geom_sf(data = can_box, lwd = 0.2) + coord_sf(datum = NA) +
   scale_fill_manual(na.value = "#F6F6F6",values = pal1,
                     name = "Difference \n in months",
-                    limits = c(min(df_join$diff_0420,
-                                   df_join$diff_2040):max(df_join$diff_0420,
-                                                          df_join$diff_2040))) +
+                    limits = c(-6:5)) +
+  theme_minimal() +
+  theme(legend.position = "none") +
+  guides(fill = guide_legend(
+    ncol = 13,  # Set the number of columns
+    title.position = "left",  # Position title at the top
+    label.position = "bottom"  # Position labels at the bottom
+  ))
+
+
+diff_2 <- ggplot(df_join) +
+  geom_sf(aes(fill = as.factor(diff_2060)), colour = NA) +
+  geom_sf(data = perim_esp, fill = NA, alpha = 0.5, color = "grey") +
+  geom_sf(data = can_box, lwd = 0.2) + coord_sf(datum = NA) +
+  scale_fill_manual(na.value = "#F6F6F6",values = pal1,
+                    name = "Difference \n in months",
+                    limits = c(-6:5)) +
+  theme_minimal() +
+  theme(legend.position = "none") +
+  guides(fill = guide_legend(
+    ncol = 13,  # Set the number of columns
+    title.position = "left",  # Position title at the top
+    label.position = "bottom"  # Position labels at the bottom
+  ))
+
+
+diff_3 <- ggplot(df_join) +
+  geom_sf(aes(fill = as.factor(diff_6080)), colour = NA) +
+  geom_sf(data = perim_esp, fill = NA, alpha = 0.5, color = "grey") +
+  geom_sf(data = can_box, lwd = 0.2) + coord_sf(datum = NA) +
+  scale_fill_manual(na.value = "#F6F6F6",values = pal1,
+                    name = "Difference \n in months",
+                    limits = c(-6:5)) +
+  theme_minimal() +
+  theme(legend.position = "none") +
+  guides(fill = guide_legend(
+    ncol = 13,  # Set the number of columns
+    title.position = "left",  # Position title at the top
+    label.position = "bottom"  # Position labels at the bottom
+  ))
+
+
+diff_4 <- ggplot(df_join) +
+  geom_sf(aes(fill = as.factor(diff_2080)), colour = NA) +
+  geom_sf(data = perim_esp, fill = NA, alpha = 0.5, color = "grey") +
+  geom_sf(data = can_box, lwd = 0.2) + coord_sf(datum = NA) +
+  scale_fill_manual(na.value = "#F6F6F6",
+                    values = pal1,
+                    name = "Difference \n in months",
+                    limits = c(-6:5)) +
   theme_minimal() +
   theme(legend.position = "none") +
   guides(fill = guide_legend(
@@ -453,19 +518,20 @@ diff_4 <- ggplot(df_join) +
   ))
 
 library(ggpubr)
+df_join[1,"diff_2080"] <- 5
+df_join[2,"diff_2080"] <- -5
+df_join[3,"diff_2080"] <- -4
+df_join <- drop_na(df_join)
 leg1 <- get_legend(ggplot(df_join) +
-             geom_sf(aes(fill = as.factor(diff_0420)), colour = NA) +
+             # geom_sf(aes(fill = as.factor(diff_0420)), colour = NA) +
              # geom_sf(aes(fill = as.factor(diff_2040)), colour = NA) +
              # geom_sf(aes(fill = as.factor(diff_4060)), colour = NA) +
-             # geom_sf(aes(fill = as.factor(diff_2080)), colour = NA) +
+             geom_sf(aes(fill = as.factor(diff_2080)), colour = NA) +
              geom_sf(data = perim_esp, fill = NA, alpha = 0.5,
                      color = "grey") +
              geom_sf(data = can_box, lwd = 0.2) + coord_sf(datum = NA) +
              scale_fill_manual(na.value = "#F6F6F6",values = pal1,
-                               name = "Difference \n in months",
-                               limits = c(min(df_join$diff_0420,
-                                              df_join$diff_2040):max(df_join$diff_0420,
-                                                                     df_join$diff_2040))) +
+                               name = "Difference \n in months") +
              theme_minimal() +
                theme(legend.position = "bottom") +
                guides(fill = guide_legend(
@@ -524,7 +590,13 @@ gg2 <- ggarrange(diff_1 + ggtitle("e)"),
                  diff_2 + ggtitle("f)"),
                  diff_3 + ggtitle("g)"),
                  nrow = 1, widths = c(1,1,1))
-ggarrange(gg1,gg2, leg1,nrow = 3, heights = c(0.9,1,0.3))
+ggarr_comp <- ggarrange(gg1,gg2, leg1,nrow = 3, heights = c(0.9,1,0.3))
+
+ggsave("~/Documentos/PHD/2024/R_M/Plots/procB/panel_camb_clim_ESP.png", 
+       ggarr_comp, 
+       height = 10, width = 11,
+       bg = "white", dpi = 300)
+
 
 # Check monthly maps Spain to see difference in 2004 and 2020
 year = 2020
