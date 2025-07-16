@@ -24,6 +24,8 @@ colnames(clim_pop) <- c("id","sum_alb_pres","sum_aeg_pres","sum_jap_pres","lon",
 clim_pop_2020 <- clim_pop[,c("id","sum_alb_pres","sum_aeg_pres","lon","lat")]
 write.csv(clim_pop_2020, "~/Documentos/2020_RM_alboaeg.csv")
 
+# Eu
+EU <- get_eurostat_geospatial(nuts_level=0, year=2016)
 # Plot 2020 aeg and alb
 # ggplot albopictus
 library(RColorBrewer)
@@ -33,10 +35,11 @@ pal <- rev(brewer.pal(11, name_pal))
 pal[11]
 pal[12] = "#74011C"
 pal[13] = "#4B0011"
-aeg <- ggplot(clim_pop,
+aeg <- ggplot() +
+  geom_raster(data =clim_pop,
               aes(x = lon, y = lat,
                   fill = as.factor(sum_aeg_pres))) +
-  geom_raster() +
+  # geom_sf(data = EU, fill = NA, color = "black", size = 1.5)+
   scale_fill_manual(values = pal,
                     name = "Nº suitable \n months",
                     limits = factor(seq(0,12,1)),
@@ -52,10 +55,11 @@ aeg <- ggplot(clim_pop,
         axis.ticks.length = unit(0, "null"),
         axis.ticks.margin = unit(0, "null"))
 
-alb <- ggplot(clim_pop,
-                   aes(x = lon, y = lat,
-                       fill = as.factor(sum_alb_pres))) +
-  geom_raster() +
+alb <- ggplot() +
+  geom_raster(data =clim_pop,
+              aes(x = lon, y = lat,
+                  fill = as.factor(sum_alb_pres))) +
+  # geom_sf(data = EU, fill = NA, color = "black", size = 1.5)+
   scale_fill_manual(values = pal,
                     name = "Nº suitable \n months",
                     limits = factor(seq(0,12,1)),
@@ -87,31 +91,50 @@ alb <- ggplot(clim_pop,
 #           ncol = 4)
 
 # Extract legend
-leg_sum <- get_legend(ggplot(clim_pop,
-                             aes(x = lon, y = lat,
-                                 fill = as.factor(sum_alb_pres))) +
-                        geom_raster() +
-                        scale_fill_manual(values = pal,
-                                          name = "Nº suitable \n months",
-                                          limits = factor(seq(0,12,1)),
-                                          na.value = "white")+
-                        guides(fill = guide_legend(
-                          ncol = 14,  # Set the number of columns
-                          title.position = "left",  # Position title at the top
-                          label.position = "bottom"  # Position labels at the bottom
-                        )))
+leg_sum <- get_legend(
+  ggplot(clim_pop, aes(x = lon, y = lat, fill = as.factor(sum_alb_pres))) +
+    geom_raster() +
+    scale_fill_manual(
+      values = pal,
+      name = "Nº suitable   \n months  ",
+      limits = factor(seq(0, 12, 1)),
+      na.value = "white"
+    ) +
+    guides(fill = guide_legend(
+      ncol = 14,
+      title.position = "left",
+      label.position = "bottom"
+    )) +
+    theme(
+      legend.title = element_text(size = 14),  # Adjust title size
+      legend.text = element_text(size = 12)    # Adjust tick label size
+    )
+)
+
 
 # Create panel
-gg1 <- ggarrange(alb + ggtitle(expression(paste("a) ",italic("Ae. albopictus")))),
-          aeg + ggtitle(expression(paste("b) ",italic("Ae. aegypti")))),
+gg1 <- ggarrange(alb + ggtitle(expression(paste("a) ",italic("Ae. albopictus"))))+
+                   theme(
+                     plot.title = element_text(size = 16, face = "bold")  # Adjust size as needed
+                   ),
+          aeg + ggtitle(expression(paste("b) ",italic("Ae. aegypti"))))+
+            theme(
+              plot.title = element_text(size = 16, face = "bold")  # Adjust size as needed
+            ),
           nrow = 1)
 
 ggarr_comp <- ggarrange(gg1,leg_sum, ncol = 1, heights = c(1,0.2))
 ggarr_comp
 ggsave("~/Documentos/PHD/2024/R_M/Plots/procB/panel1.png", 
        ggarr_comp, 
-       height = 5, width = 8.4,
+       height = 6.3, width = 8.7,
        bg = "white", dpi = 300)
+
+# Save for thesis
+ggsave("~/Documentos/PHD/2025/Tesis/Plots/panel1.png", 
+       ggarr_comp, 
+       height = 6.3, width = 9.3,
+       bg = "white", dpi = 350)
 
 # Climat change panels ----------------------------------------------
 # Join two data frames
@@ -198,9 +221,13 @@ leg <- get_legend(ggplot(clim_df,
                           aes(x = lon, y = lat,
                               fill = as.factor(diff_aeg))) +
                      geom_raster() +
-                     scale_fill_manual(name = "Difference in\n suitable months",
+                     scale_fill_manual(name = "Difference in\n suitable months     ",
                                        values = pal1,
-                                       limits = factor(seq(-6,6,1))))
+                                       limits = factor(seq(-6,6,1)))+
+                    theme(
+                      legend.title = element_text(size = 14),  # Adjust title size
+                      legend.text = element_text(size = 12)    # Adjust tick label size
+                    ))
 
 
 # Plots for future 2061-2080 --------------------------------------------
@@ -259,24 +286,46 @@ leg1 <- get_legend( ggplot(clim_df,
                                          name = TeX("Nº suitable \n months"),
                                          # name = TeX(""),
                                          limits = factor(seq(0,12,1)),
-                                         na.value = "white"))
+                                         na.value = "white")+
+                      theme(
+                        legend.title = element_text(size = 14),  # Adjust title size
+                        legend.text = element_text(size = 12)    # Adjust tick label size
+                      ))
 # Create panel for main
-gg1 <- ggarrange(alb + ggtitle(expression(paste("a) ",italic("Aedes albopictus")))),
-                 aeg + ggtitle(expression(paste("b) ",italic("Aedes aegypti")))),
+gg1 <- ggarrange(alb + ggtitle(expression(paste("a) ",italic("Aedes albopictus"))))+
+                 theme(
+                   plot.title = element_text(size = 16, face = "bold")  # Adjust size as needed
+                 ),
+                 aeg + ggtitle(expression(paste("b) ",italic("Aedes aegypti"))))+
+                 theme(
+                   plot.title = element_text(size = 16, face = "bold")  # Adjust size as needed
+                 ),
                  leg1,
                  nrow = 1,
                  widths = c(1,1,0.3))
-gg2 <- ggarrange(diff_alb + ggtitle(expression(paste("c) ",italic("Aedes albopictus")))),
-                 diff_aeg + ggtitle(expression(paste("d) ",italic("Aedes aegypti")))),
+gg2 <- ggarrange(diff_alb + ggtitle(expression(paste("c) ",italic("Aedes albopictus"))))+
+                 theme(
+                   plot.title = element_text(size = 16, face = "bold")  # Adjust size as needed
+                 ),
+                 diff_aeg + ggtitle(expression(paste("d) ",italic("Aedes aegypti"))))+
+                 theme(
+                   plot.title = element_text(size = 16, face = "bold")  # Adjust size as needed
+                 ),
                  leg,
                  nrow = 1,
                  widths = c(1,1,0.3))
 ggarr_comp <- ggarrange(gg1,gg2, nrow=2)
-
+ggarr_comp
 ggsave("~/Documentos/PHD/2024/R_M/Plots/procB/panel_camb_clim.png", 
        ggarr_comp, 
        height = 10, width = 11,
        bg = "white", dpi = 300)
+
+# Save for thesis
+ggsave("~/Documentos/PHD/2025/Tesis/Plots/panel_camb_clim.png", 
+       ggarr_comp, 
+       height = 10, width = 12,
+       bg = "white", dpi = 350)
 
 # check where the negative values are
 # ggplot(clim_df,
@@ -531,9 +580,13 @@ leg1 <- get_legend(ggplot(df_join) +
                      color = "grey") +
              geom_sf(data = can_box, lwd = 0.2) + coord_sf(datum = NA) +
              scale_fill_manual(na.value = "#F6F6F6",values = pal1,
-                               name = "Difference \n in months") +
+                               name = "Difference   \n in months  ") +
              theme_minimal() +
-               theme(legend.position = "bottom") +
+               theme(
+                 legend.position = "bottom",
+                 legend.title = element_text(size = 14),  # Adjust title size
+                 legend.text = element_text(size = 12)    # Adjust tick label size
+               )+
                guides(fill = guide_legend(
                  ncol = 13,  # Set the number of columns
                  title.position = "left",  # Position title at the top
@@ -550,20 +603,22 @@ pal[11]
 pal[12] = "#74011C"
 pal[13] = "#4B0011"
 
-# alb_04 <- ggplot(df_join) +
+alb_04 <- ggplot(df_join) +
 # alb_20 <- ggplot(df_join) +
 # alb_60 <- ggplot(df_join) +
-alb_80 <- ggplot(df_join) +
-   # geom_sf(aes(fill = as.factor(Alb_2004)), colour = NA) +
+# alb_80 <- ggplot(df_join) +
+   geom_sf(aes(fill = as.factor(Alb_2004)), colour = NA) +
   # geom_sf(aes(fill = as.factor(Alb_2020)), colour = NA) +
   # geom_sf(aes(fill = as.factor(Alb_2040)), colour = NA) +
-  geom_sf(aes(fill = as.factor(Alb_2060)), colour = NA) +
+  # geom_sf(aes(fill = as.factor(Alb_2060)), colour = NA) +
   geom_sf(data = can_box, lwd = 0.2) + coord_sf(datum = NA) +
   scale_fill_manual(na.value = "#F6F6F6",values = pal,
-                    name = "Nº suitable \n months",
+                    name = "Nº suitable   \n months  ",
                     limits = as.factor(seq(0,12,1))) +
   theme_minimal() +
-  theme(legend.position = "top") +
+  theme(legend.position = "top",
+        legend.title = element_text(size = 14),  # Adjust title size
+        legend.text = element_text(size = 12) ) +
   guides(fill = guide_legend(
     ncol = 13,  # Set the number of columns
     title.position = "left",  # Position title at the top
@@ -577,26 +632,59 @@ leg <- get_legend(ggplot(df_join) +
   # geom_sf(aes(fill = as.factor(Alb_2060)), colour = NA) +
   geom_sf(data = can_box, lwd = 0.2) + coord_sf(datum = NA) +
   scale_fill_manual(na.value = "#F6F6F6",values = pal,
-                    name = "Nº suitable \n months",
+                    name = "Nº suitable   \n months   ",
                     limits = as.factor(seq(0,12,1))) +
-  theme_minimal() )
+    theme(
+      legend.position = "bottom",
+      legend.title = element_text(size = 14),  # Adjust title size
+      legend.text = element_text(size = 12)    # Adjust tick label size
+    ) )
 
-gg1 <- ggarrange(alb_04 + ggtitle("a)                      2004"),
-                 alb_20 + ggtitle("b)                      2020"),
-                 alb_60 + ggtitle("c)                 2041-2060"),
-                 alb_80 + ggtitle("d)                 2061-2080"),
+gg1 <- ggarrange(alb_04 + ggtitle("a) 2004")+
+                   theme(
+                     plot.title = element_text(size = 16, face = "bold")  # Adjust size as needed
+                   ),
+                 alb_20 + ggtitle("b) 2020")+
+                   theme(
+                     plot.title = element_text(size = 16, face = "bold")  # Adjust size as needed
+                   ),
+                 alb_60 + ggtitle("c) 2041-2060")+
+                   theme(
+                     plot.title = element_text(size = 16, face = "bold")  # Adjust size as needed
+                   ),
+                 alb_80 + ggtitle("d) 2061-2080")+
+                   theme(
+                     plot.title = element_text(size = 16, face = "bold")  # Adjust size as needed
+                   ),
           nrow = 1, widths = c(1,1,1,1), common.legend = TRUE)
-gg2 <- ggarrange(diff_1 + ggtitle("e)"),
-                 diff_2 + ggtitle("f)"),
-                 diff_3 + ggtitle("g)"),
+gg2 <- ggarrange(diff_1 + ggtitle("e)")+
+                   theme(
+                     plot.title = element_text(size = 16, face = "bold")  # Adjust size as needed
+                   ),
+                 diff_2 + ggtitle("f)")+
+                   theme(
+                     plot.title = element_text(size = 16, face = "bold")  # Adjust size as needed
+                   ),
+                 diff_3 + ggtitle("g)")+
+                   theme(
+                     plot.title = element_text(size = 16, face = "bold")  # Adjust size as needed
+                   ),
                  nrow = 1, widths = c(1,1,1))
 ggarr_comp <- ggarrange(gg1,gg2, leg1,nrow = 3, heights = c(0.9,1,0.3))
+ggarr_comp
 
+# Save for paper
 ggsave("~/Documentos/PHD/2024/R_M/Plots/procB/panel_camb_clim_ESP.png", 
        ggarr_comp, 
        height = 10, width = 11,
-       bg = "white", dpi = 300)
+       bg = "white", dpi = 350)
 
+
+# Save for thesis
+ggsave("~/Documentos/PHD/2025/Tesis/Plots/panel_camb_clim_ESP.png", 
+       ggarr_comp, 
+       height = 8, width = 14.3,
+       bg = "white", dpi = 350)
 
 # Check monthly maps Spain to see difference in 2004 and 2020
 year = 2020

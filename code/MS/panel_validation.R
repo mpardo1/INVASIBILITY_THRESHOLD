@@ -247,7 +247,7 @@ year = 2020
 Path <- paste0("~/INVASIBILITY_THRESHOLD/output/ERA5/temp/2020/R0_clim_",
                year,".Rds")
 Path <- "~/INVASIBILITY_THRESHOLD/output/ERA5/temp/2020/R0_avg_2003-2020.Rds"
-Path <- "/Users/celsaaraujobarja/Documents/PHD/2024/R_M/data/R0_avg_2003-2020.Rds"
+# Path <- "/Users/celsaaraujobarja/Documents/PHD/2024/R_M/data/R0_avg_2003-2020.Rds"
 df_2020 <- setDT(readRDS(Path))
 df_2020 <- df_2020[,c("NATCODE", "R0_sum_alb")]
 df_2020 <- df_2020[,c("NATCODE", "sum_alb")]
@@ -278,29 +278,39 @@ plot_summonths <- function(df){
               "#FFF7EC","#FEE8C8","#FDD49E","#FDBB84",
               "#FC8D59","#EF6548","#D7301F", "#B30000",
               "#7F0000") 
+  
   ggplot(df) +
-    geom_sf(aes(fill = as.factor(R0)),
-            colour = NA) +
+    geom_sf(aes(fill = as.factor(R0)), colour = NA) +
     geom_sf(data = can_box) +
     coord_sf(datum = NA) +
-    scale_fill_manual(values = pal,
-                      name = "Nº suitable \n months",
-                      limits = factor(seq(0,12,1))) +
-    theme_minimal()  +
-    theme(legend.position = "right",
-          legend.text = element_text(14)) 
+    scale_fill_manual(
+      values = pal,
+      name = "Nº suitable \n months",
+      limits = factor(0:12),     # Ensures all levels are considered
+      breaks = 0:12,             # Show all in the legend
+      drop = FALSE               # Keep unused levels
+    ) +
+    theme_minimal() +
+    theme(
+      legend.position = "right",
+      legend.text = element_text(size = 14) ,
+      legend.title = element_text(size = 14)
+    )
 }
 
 # Albopictus ---------------------------------------------------------
 # 2004
 df_2020$R0 <- df_2020$Alb_2020
+df_aux <- rbind(c(34010404001, 0,0),c(34010404001, 1,1))
+colnames(df_aux) <- colnames(df_2020)
+df_2020 <- rbind(df_2020,df_aux)
 plot_2020 <- plot_summonths(df_2020)
 plot_2020
 df_2020$R0 <- NULL
 
 # Presence absence data Albopictus Spain:
 Path = "/home/marta/Documentos/PHD/2024/R_M/data/MUNS_ANYS.csv"
-Path <- "/Users/celsaaraujobarja/Documents/PHD/2024/R_M/data/MUNS_ANYS.csv"
+# Path <- "/Users/celsaaraujobarja/Documents/PHD/2024/R_M/data/MUNS_ANYS.csv"
 df_pa <- read.csv(Path)
 df_pa$PA <- ifelse(df_pa$QUIEN.FUE.ANTES != 9999,1,0)
 # # add cadiz
@@ -357,7 +367,7 @@ PA_alb <- ggplot() +
           color = NA, alpha = 0.7) +
   geom_sf(data = ccaa,
           aes(fill = codauto, color = codauto),
-          alpha = 0, lwd = 0.5) +
+          alpha = 0, lwd = 0.8) +
   geom_sf(data = can_box) + coord_sf(datum = NA) +
   scale_color_manual(values = pal, name = " ",guide = "none") +
   theme_minimal() +
@@ -367,7 +377,9 @@ PA_alb <- ggplot() +
              color = "red", shape = 8) +
   rremove("xlab") + rremove("ylab") +
   theme(plot.margin = margin(0.2, 0.2, 0.2, 0.2, "cm"),
-        legend.position = c(0.1,0.8)) 
+        legend.position = c(0.1,0.8),
+        legend.text = element_text(size = 14) ,
+        legend.title = element_text(size = 14)) 
 PA_alb
 
 ### Comparison between presence absence and number of months R0>1
@@ -600,24 +612,29 @@ name_pal = "Set1"
 display.brewer.pal(length(list_ccaa), name_pal)
 # pal <- rev(brewer.pal(length(list_ccaa), name_pal))
 plot_ccaa <- ggplot(df_sum_CAT) +
-  geom_line(aes(R0_sum_alb,prop_1, color =ccaa_n)) +
-  geom_point(aes(R0_sum_alb,prop_1, color =ccaa_n,
+  geom_line(aes(R0_sum_alb, prop_1, color = ccaa_n)) +
+  geom_point(aes(R0_sum_alb, prop_1, color = ccaa_n,
                  size = sum_muni), alpha = 0.6) +
   xlab("Nº months suitable") + 
   ylab("Proportion of municipalities with presence") +
-  ylim(c(0,1)) + 
+  ylim(c(0, 1)) + 
   scale_color_manual(name = "", values = pal,
-                     labels = c("Andalusia","Aragon","Catalonia" ,  
-                                "Valencian C.", 
-                                "Basque C.")) +
+                     labels = c("Andalusia", "Aragon", "Catalonia",  
+                                "Valencian C.", "Basque C.")) +
   scale_size_continuous(name = "Nº municipalities",
-                        breaks = c(5,100,200),
-                        labels =c("<5","[5,100]",
-                                  ">100")) +
-  scale_x_continuous(breaks = seq(1,12,1)) +
+                        breaks = c(5, 100, 200),
+                        labels = c("<5", "[5,100]", ">100")) +
+  scale_x_continuous(breaks = seq(1, 12, 1)) +
   theme_bw() +
-  theme(legend.position = c(0.12,0.72),
-        text = element_text(size = 14)) 
+  theme(
+    legend.position = c(0.12, 0.72),
+    text = element_text(size = 14),  # base size for everything
+    axis.title = element_text(size = 16),  # axis labels
+    axis.text = element_text(size = 14),                  # tick labels
+    legend.title = element_text(size = 14),
+    legend.text = element_text(size = 12)
+  )
+
 plot_ccaa
 
 # Plot all ccaa selected together ----------------------------------------
@@ -678,18 +695,24 @@ df_pa_CAT <- df_pa[which(df_pa$ine.ccaa.name == "Cataluña"),]
 library(ggpubr)
 leg <- get_legend(plot_2020)
 as_ggplot(leg)
-ggarr <- ggarrange( PA_alb+ ggtitle("a)"),
-                    plot_2020 + ggtitle("b)") +
+ggarr <- ggarrange( PA_alb,
+                    plot_2020  +
                       theme(legend.position = "none"),
                     leg,
                     ncol = 3,
-                   nrow = 1, widths = c(1,1,0.2))
+                   nrow = 1, widths = c(1,1,0.2), labels = c("a)", "b)"))
 
-ggarr1 <- ggarrange(plot_ccaa+ ggtitle("c)"),
-                   plot_corr + ggtitle("d)"),
-                   widths = c(1.2,1),
-                   ncol = 2, nrow = 1)
-ggarrange(ggarr, ggarr1, ncol = 1)
+ggarr1 <- ggarrange(plot_ccaa,
+                   plot_corr ,
+                   widths = c(1.3,1),
+                   ncol = 2, nrow = 1,labels= c("c)", "d)"))
+ggarr_comp<-ggarrange(ggarr, ggarr1, ncol = 1, heights = c(1,1.2))
+
+# Save for thesis
+ggsave("~/Documentos/PHD/2025/Tesis/Plots/panel_validation.png", 
+       ggarr_comp, 
+       height = 11, width = 14,
+       bg = "white", dpi = 350)
 
 # Plot supp
 esp_can <- esp_get_munic_siane(moveCAN = TRUE)

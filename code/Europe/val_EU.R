@@ -13,6 +13,8 @@ path <- "~/INVASIBILITY_THRESHOLD/data/japonicus/pa/status_2303.shp"
 pa_jap <- read_sf(path)
 head(pa_jap)
 
+st_write(pa_jap[,c("cntryName", "locCode", "albopictus")],"~/INVASIBILITY_THRESHOLD/data/albopictus_PA_EU.shp")
+
 # Filter only EU
 pa_jap <- pa_jap[which(pa_jap$leave == 1),]
 list_eu <- unique(pa_jap$cntryName)[c(1:2,4,6,7:8,10:14,16,19:23,25:26,28:30,32:35,39:42,

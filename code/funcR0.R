@@ -48,6 +48,54 @@ h_f <- function(hum, rain){
   return(hatch)
 }
 
+
+# Hatching rate, subtle influence human density:
+h_f_2 <- function(hum, rain){
+  # Constants: 
+  erat = 0.2
+  e0 = 1.5
+  evar = 0.05
+  # evar = 0.1
+  eopt = 8
+  efac = 0.01
+  edens = 0.01
+  
+  hatch <- (1-erat)*(((1+e0)*exp(-evar*(rain-eopt)^2))/(exp(-evar*(rain - eopt)^2) + e0)) +
+    erat*(edens/(edens + exp(-efac*hum)))
+  return(hatch)
+}
+
+
+# Hatching rate, no influence human density:
+h_f_3 <- function(rain){
+  # Constants: 
+  erat = 0.2
+  e0 = 1.5
+  evar = 0.05
+  # evar = 0.1
+  eopt = 8
+  efac = 0.01
+  edens = 0.01
+  
+  hatch <- (((1+e0)*exp(-evar*(rain-eopt)^2))/(exp(-evar*(rain - eopt)^2) + e0))
+  return(hatch)
+}
+
+# Hatching rate, no influence rainfall:
+h_f_4 <- function(hum){
+  # Constants: 
+  erat = 0.2
+  e0 = 1.5
+  evar = 0.05
+  # evar = 0.1
+  eopt = 8
+  efac = 0.01
+  edens = 0.01
+  
+  hatch <- (edens/(edens + exp(-efac*hum)))
+  return(hatch)
+}
+
 #### -------------------------- Albopictus ------------------------- ####
 ## Thermal responses Aedes Albopictus from Mordecai 2017:
 a_f_alb <- function(temp){Briere_func(0.000193,10.25,38.32,temp)} # Biting rate
@@ -68,7 +116,45 @@ R0_func_alb <- function(Te, rain, hum){
     deltaa <- lf_f_alb(Te)
     dE <- dE_f_alb(Te)
     probla <- pLA_f_alb(Te)
-    h <- h_f(hum,rain)
+    h <- h_f_2(hum,rain)
+    deltaE = deltaE_f_alb(Te)#0.1
+    
+    R0 <- ((f*a*deltaa)*probla*((h*dE)/(h*dE+deltaE)))^(1/3)
+  }
+  return(R0)
+}
+
+
+# R0 function by temperature, no influence human density:
+R0_func_alb_2 <- function(Te, rain, hum){
+  if(is.na(Te) | is.na(rain) | is.na(hum)){
+    R0 <- NA
+  }else{
+    a <- a_f_alb(Te)
+    f <- (1/2)*TFD_f_alb(Te)
+    deltaa <- lf_f_alb(Te)
+    dE <- dE_f_alb(Te)
+    probla <- pLA_f_alb(Te)
+    h <- h_f_2(hum,rain)
+    deltaE = deltaE_f_alb(Te)#0.1
+    
+    R0 <- ((f*a*deltaa)*probla*((h*dE)/(h*dE+deltaE)))^(1/3)
+  }
+  return(R0)
+}
+
+
+# R0 function by temperature, no influence rainfall:
+R0_func_alb_3 <- function(Te, rain, hum){
+  if(is.na(Te) | is.na(rain) | is.na(hum)){
+    R0 <- NA
+  }else{
+    a <- a_f_alb(Te)
+    f <- (1/2)*TFD_f_alb(Te)
+    deltaa <- lf_f_alb(Te)
+    dE <- dE_f_alb(Te)
+    probla <- pLA_f_alb(Te)
+    h <- h_f_4(hum)
     deltaE = deltaE_f_alb(Te)#0.1
     
     R0 <- ((f*a*deltaa)*probla*((h*dE)/(h*dE+deltaE)))^(1/3)

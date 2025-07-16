@@ -132,9 +132,7 @@ df_rain <- reshape2::melt(df_rain, id.vars = "vec")
 plot_rain <- ggplot(df_rain) + 
   geom_line(aes(vec,value, color = variable), size = 1) +
   # geom_hline(yintercept = 1, linetype = "dashed", color = "red") + 
-  scale_color_manual(name = "", values =pal,
-                     labels = c(expression(italic("Ae. aegypti")),
-                                expression(italic("Ae. albopictus")))) +
+  scale_color_manual(name = "", values =c(pal[2],pal[1])) +
   # ,
   # expression(italic("Ae. japonicus")))) +
   xlab("Rainfall (mm)") + ylab(TeX("$R_M$")) + 
@@ -151,7 +149,7 @@ df_hum <- reshape2::melt(df_hum, id.vars = "vec")
 plot_hum <- ggplot(df_hum) + 
   geom_line(aes(vec,value, color = variable), size = 1) +
   # geom_hline(yintercept = 1, linetype = "dashed", color = "red") + 
-  scale_color_manual(name = "", values =pal,
+  scale_color_manual(name = "", values =c(pal[2],pal[1]),
                      labels = c(expression(italic("Ae. aegypti")),
                                 expression(italic("Ae. albopictus")))) +
   # ,
@@ -167,6 +165,14 @@ ggarrange(plot_temp + ggtitle("a)"),
           plot_hum + rremove("ylab")+ ggtitle("c)"),
           ncol = 3,
           widths = c(1,0.7,0.7))
+
+# Save plots
+# Save plots
+ggsave("/home/marta/Documentos/PHD/2025/Tesis/Plots/Panel1.pdf",
+       width =13, height = 5)
+
+ggsave("/home/marta/Documentos/PHD/2025/Tesis/Plots/Panel1.png",
+       width = 13, height = 5, dpi = 300)
 
 ggarrange(plot_temp,
           plot_rain + rremove("ylab"),
