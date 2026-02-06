@@ -66,13 +66,13 @@ R0_dfunc_alb <- function(rain,hum,Te,var){
   dfplaT <- pEA_df_alb(Te)
   dfdET <- dE_df_alb(Te)
   dfdeltaET <- deltaE_df_alb(Te)
-  dffaR0 <- (1/3)*((R0)^(-2/3))*((deltaa*h*dE*probla)/(h*dE+deltE))*(dffT*a+f*dfaT) # derivative fa 
-  dffR0 <- (1/3)*((R0)^(-2/3))*((deltaa*a*h*dE*probla)/(h*dE+deltE))*dffT
-  dfaR0 <- (1/3)*((R0)^(-2/3))*((deltaa*f*h*dE*probla)/(h*dE+deltE))*dfaT
-  dfdeltAR0 <- (1/3)*((R0)^(-2/3))*((f*a*h*dE*probla)/(h*dE+deltE))*dfdeltaAT
-  dfpLAR0 <- (1/3)*((R0)^(-2/3))*((deltaa*a*h*dE*f)/(h*dE+deltE))*dfplaT
-  dfdeltaER0 <- (1/3)*((R0)^(-2/3))*(-(deltaa*a*h*dE*f*probla)/(h*dE+deltE)^2)*dfdeltaET
-  dfdER0 <- (1/3)*((R0)^(-2/3))*((deltaa*a*f*
+  dffaR0 <- ((deltaa*h*dE*probla)/(h*dE+deltE))*(dffT*a+f*dfaT) # derivative fa 
+  dffR0 <-((deltaa*a*h*dE*probla)/(h*dE+deltE))*dffT
+  dfaR0 <- ((deltaa*f*h*dE*probla)/(h*dE+deltE))*dfaT
+  dfdeltAR0 <- ((f*a*h*dE*probla)/(h*dE+deltE))*dfdeltaAT
+  dfpLAR0 <- ((deltaa*a*h*dE*f)/(h*dE+deltE))*dfplaT
+  dfdeltaER0 <- (-(deltaa*a*h*dE*f*probla)/(h*dE+deltE)^2)*dfdeltaET
+  dfdER0 <- ((deltaa*a*f*
                                     probla)*((h*(h*dE+deltE)- (h*dE*h))/(h*dE+deltE)^2))*dfdET
   dfR0 <- dffR0 + dfaR0 + dfdeltAR0 + dfpLAR0 + dfdER0
   dfR0 <- ifelse(var == "RM",dfR0,
@@ -130,7 +130,7 @@ col_R = "#000000"
 # Plot
 df_alb <- ggplot(df_dT) +
   geom_line(aes(vec,out, color =var), size = 1) +
-  ylim(c(-2,2)) + theme_bw() +
+  theme_bw() +
   xlab("Temperature") + ylab(TeX("Derivative, $dR_M/dT$")) +
   # scale_color_manual(name = "",
   #                    values = c(col_a,col_dE,col_deltaA,
@@ -185,12 +185,12 @@ R0_dfunc_aeg <- function(rain,hum,Te,var){
   dfplaT <- pLA_df_aeg(Te)
   dfdET <- dE_df_aeg(Te)
   dfdeltaET <- deltaE_df_aeg(Te)
-  dfaR0 <- (1/3)*((R0)^(-2/3))*((deltaa*f*h*dE*probla)/(h*dE+deltE))*dfaT
-  dffaR0 <- (1/3)*((R0)^(-2/3))*((deltaa*h*dE*probla)/(h*dE+deltE))*dffaT
-  dfdeltAR0 <- (1/3)*((R0)^(-2/3))*((f*a*h*dE*probla)/(h*dE+deltE))*dfdeltaAT
-  dfpLAR0 <- (1/3)*((R0)^(-2/3))*((deltaa*a*h*dE*f)/(h*dE+deltE))*dfplaT
-  dfdeltaER0 <- (1/3)*((R0)^(-2/3))*(-(deltaa*a*h*dE*f*probla)/(h*dE+deltE)^2)*dfdeltaET
-  dfdER0 <- (1/3)*((R0)^(-2/3))*((deltaa*a*f*
+  dfaR0 <- ((deltaa*f*h*dE*probla)/(h*dE+deltE))*dfaT
+  dffaR0 <- ((deltaa*h*dE*probla)/(h*dE+deltE))*dffaT
+  dfdeltAR0 <- ((f*a*h*dE*probla)/(h*dE+deltE))*dfdeltaAT
+  dfpLAR0 <- ((deltaa*a*h*dE*f)/(h*dE+deltE))*dfplaT
+  dfdeltaER0 <- (-(deltaa*a*h*dE*f*probla)/(h*dE+deltE)^2)*dfdeltaET
+  dfdER0 <- ((deltaa*a*f*
                                     probla)*((h*(h*dE+deltE)- (h*dE*h))/(h*dE+deltE)^2))*dfdET
   dfR0 <- dfaR0 + dfdeltAR0 + dfpLAR0 + dfdER0
   dfR0 <- ifelse(var == "RM",dfR0,
@@ -222,26 +222,26 @@ for(i in c(1:length(var_list))){
 }
 
 # Plot all curves together -----------------------------------------
-# ggplot(df_dT[df_dT$var == "dE",]) +
-#   geom_line(aes(vec,out, color =var), size =1)
 df_aeg <- ggplot(df_dT) +
   geom_line(aes(vec,out, color =var), size =0.8) +
-  ylim(c(-6,6)) + theme_bw() +
-  xlab("Temperature") + ylab(TeX("Derivative, $dR_M/dT$")) +
-  # scale_color_manual(name = "",
-  #                    values = c(col_a,col_dE,col_deltaA,col_deltaE,col_pLA,col_R),
-  #                    labels = c("a",TeX("$ d_E$"),TeX(" $ \\delta_A$"),TeX(" $ \\delta_E$"),
-  #                               TeX( " $ p_{LA}$"), TeX( " $ R_M$") )) +
+  ylim(c(-30,17)) + theme_bw() +
+  xlab("Temperature") +
+  ylab(TeX("Derivative, $dR_M/dT$")) +
   scale_color_manual(name = "",
-                     values = c(col_dE,col_deltaA,col_deltaE,col_fa,col_pLA,col_R),
-                     labels = c(TeX("$ d_E$"),TeX(" $ \\delta_A$"),TeX(" $ \\delta_E$"),
+                     values = c(col_dE,col_deltaA,
+                                col_deltaE,col_fa,
+                                col_pLA,col_R),
+                     labels = c(TeX("$ d_E$"),
+                                TeX(" $ \\delta_A$"),
+                                TeX(" $ \\delta_E$"),
                                 "fa",
-                                TeX( " $ p_{LA}$"), TeX( " $ R_M$") )) +
+                                TeX( " $ p_{LA}$"),
+                                TeX( " $ R_M$") )) +
   theme(legend.key.size = unit(1, 'cm'),
         legend.key.width = unit(1, 'cm')) 
 df_aeg
 
-# Sensitivy Fixed one param --------------------------------------------
+# Sensitivity Fixed one param --------------------------------------------
 source("~/INVASIBILITY_THRESHOLD/code/funcR0.R")
 
 # Albopictus -----------------------------------------------------
@@ -265,7 +265,7 @@ R0_func_alb <- function(Te, rain, hum){
     h <- h_f(hum,rain)
     deltaE = deltaE_f_alb(Te)#0.1
     
-    R0 <- ((f*a*deltaa)*probla*((h*dE)/(h*dE+deltaE)))^(1/3)
+    R0 <- ((f*a*deltaa)*probla*((h*dE)/(h*dE+deltaE))) 
   }
   return(R0)
 }
@@ -290,7 +290,7 @@ R0_func_alb <- function(Te, rain, hum){
     h <- h_f(hum,rain)
     deltaE = deltaE_f_alb(Te)#0.1
     
-    R0 <- ((cte*deltaa)*probla*((h*dE)/(h*dE+deltaE)))^(1/3)
+    R0 <- ((cte*deltaa)*probla*((h*dE)/(h*dE+deltaE))) 
   }
   return(R0)
 }
@@ -315,7 +315,7 @@ R0_func_alb <- function(Te, rain, hum){
     h <- h_f(hum,rain)
     deltaE = deltaE_f_alb(Te)#0.1
     
-    R0 <- ((f*a*deltaa)*probla*((h*dE)/(h*dE+deltaE)))^(1/3)
+    R0 <- ((f*a*deltaa)*probla*((h*dE)/(h*dE+deltaE))) 
   }
   return(R0)
 }
@@ -340,7 +340,7 @@ R0_func_alb <- function(Te, rain, hum){
     h <- h_f(hum,rain)
     deltaE = deltaE_f_alb(Te)#0.1
     
-    R0 <- ((f*a*deltaa)*probla*((h*dE)/(h*dE+deltaE)))^(1/3)
+    R0 <- ((f*a*deltaa)*probla*((h*dE)/(h*dE+deltaE))) 
   }
   return(R0)
 }
@@ -365,7 +365,7 @@ R0_func_alb <- function(Te, rain, hum){
     h <- h_f(hum,rain)
     deltaE = deltaE_f_alb(Te)#0.1
     
-    R0 <- ((f*a*deltaa)*probla*((h*dE)/(h*dE+deltaE)))^(1/3)
+    R0 <- ((f*a*deltaa)*probla*((h*dE)/(h*dE+deltaE))) 
   }
   return(R0)
 }
@@ -390,7 +390,7 @@ R0_func_alb <- function(Te, rain, hum){
     h <- h_f(hum,rain)
     deltaE = deltaE_f_alb(Te)#0.1
     
-    R0 <- ((f*a*deltaa)*probla*((h*dE)/(h*dE+deltaE)))^(1/3)
+    R0 <- ((f*a*deltaa)*probla*((h*dE)/(h*dE+deltaE))) 
   }
   return(R0)
 }
@@ -415,7 +415,7 @@ R0_func_alb <- function(Te, rain, hum){
     h <- h_f(hum,rain)
     deltaE = cte#deltaE_f_alb(Te)#0.1
     
-    R0 <- ((f*a*deltaa)*probla*((h*dE)/(h*dE+deltaE)))^(1/3)
+    R0 <- ((f*a*deltaa)*probla*((h*dE)/(h*dE+deltaE))) 
   }
   return(R0)
 }
@@ -486,7 +486,7 @@ R0_func_aeg <- function(Te, rain,hum){
     probla <- pLA_f_aeg(Te)
     h <- h_f(hum,rain)
     deltaE = deltaE_f_aeg(Te)
-    R0 <- ((f*a*deltaa)*probla*((h*dE)/(h*dE+deltaE)))^(1/3)
+    R0 <- ((f*a*deltaa)*probla*((h*dE)/(h*dE+deltaE))) 
   }
   return(R0)
 }
@@ -510,7 +510,7 @@ R0_func_aeg <- function(Te, rain,hum){
     probla <- pLA_f_aeg(Te)
     h <- h_f(hum,rain)
     deltaE = deltaE_f_aeg(Te)
-    R0 <- ((cte*deltaa)*probla*((h*dE)/(h*dE+deltaE)))^(1/3)
+    R0 <- ((cte*deltaa)*probla*((h*dE)/(h*dE+deltaE))) 
   }
   return(R0)
 }
@@ -534,7 +534,7 @@ R0_func_aeg <- function(Te, rain,hum){
     probla <- pLA_f_aeg(Te)
     h <- h_f(hum,rain)
     deltaE = deltaE_f_aeg(Te)
-    R0 <- ((f*a*deltaa)*probla*((h*dE)/(h*dE+deltaE)))^(1/3)
+    R0 <- ((f*a*deltaa)*probla*((h*dE)/(h*dE+deltaE))) 
   }
   return(R0)
 }
@@ -558,7 +558,7 @@ R0_func_aeg <- function(Te, rain,hum){
     probla <- pLA_f_aeg(Te)
     h <- h_f(hum,rain)
     deltaE = deltaE_f_aeg(Te)
-    R0 <- ((f*a*deltaa)*probla*((h*dE)/(h*dE+deltaE)))^(1/3)
+    R0 <- ((f*a*deltaa)*probla*((h*dE)/(h*dE+deltaE))) 
   }
   return(R0)
 }
@@ -582,7 +582,7 @@ R0_func_aeg <- function(Te, rain,hum){
     probla <- cte#pLA_f_aeg(Te)
     h <- h_f(hum,rain)
     deltaE = deltaE_f_aeg(Te)
-    R0 <- ((f*a*deltaa)*probla*((h*dE)/(h*dE+deltaE)))^(1/3)
+    R0 <- ((f*a*deltaa)*probla*((h*dE)/(h*dE+deltaE))) 
   }
   return(R0)
 }
@@ -606,7 +606,7 @@ R0_func_aeg <- function(Te, rain,hum){
     probla <- pLA_f_aeg(Te)
     h <- h_f(hum,rain)
     deltaE = cte#deltaE_f_aeg(Te)
-    R0 <- ((f*a*deltaa)*probla*((h*dE)/(h*dE+deltaE)))^(1/3)
+    R0 <- ((f*a*deltaa)*probla*((h*dE)/(h*dE+deltaE))) 
   }
   return(R0)
 }
@@ -694,7 +694,7 @@ R0_func_aeg <- function(Te, rain,hum){
     probla <- pLA_f_aeg(Te)
     h <- h_f(hum,rain)
     deltaE = cte#deltaE_f_aeg(Te)
-    R0 <- ((f*a*deltaa)*probla*((h*dE)/(h*dE+deltaE)))^(1/3)
+    R0 <- ((f*a*deltaa)*probla*((h*dE)/(h*dE+deltaE))) 
   }
   return(R0)
 }

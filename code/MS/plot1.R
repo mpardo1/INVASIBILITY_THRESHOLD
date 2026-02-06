@@ -166,7 +166,22 @@ ggarrange(plot_temp + ggtitle("a)"),
           ncol = 3,
           widths = c(1,0.7,0.7))
 
-# Save plots
+# Arrange panel with patchwork
+library(patchwork)
+library("ggbreak")
+
+
+pA <- plot_temp +
+    scale_y_break(c(2, 20), scales = 3
+                  ) +
+    theme(
+      axis.text.x.top = element_blank(),
+      axis.ticks.x.top = element_blank(),
+      axis.title.x.top = element_blank()
+    ) 
+pA
+
+# Do it in canva
 # Save plots
 ggsave("/home/marta/Documentos/PHD/2025/Tesis/Plots/Panel1.pdf",
        width =13, height = 5)
@@ -233,18 +248,22 @@ temp <- seq(0,40,length.out = 1000)
 rain <- seq(0,16,length.out = 1000)
 df_clim <- setDT(expand.grid(temp =temp, rain = rain, hum = 0))
 
+# Compute RM
 df_clim[, R0_alb := mapply(R0_func_alb, temp, rain, hum)]
 df_clim[, R0_aeg := mapply(R0_func_aeg, temp, rain, hum)]
 
+# Maximum RM to limit color plot
+lim_col <- max(df_clim$R0_alb, df_clim$R0_aeg)
+
+# Procude plots
 library(latex2exp)
-max(df_clim$R0_alb)
 alb <- ggplot(df_clim,aes(temp, rain, fill = R0_alb)) +
   geom_raster() + 
   geom_contour(aes(z = R0_alb),breaks = 1,
                color = "black", linetype = "dashed") +
   scale_fill_distiller(palette = "Spectral",
                        name = TeX("$R_M$"), 
-                       limits = c(0, max(df_clim$R0_alb))) +
+                       limits = c(0, lim_col)) +
   xlab("Temperature") + ylab("Rainfall") +
   xlim(c(10,38)) +
   theme_bw() + theme(text = element_text(size = letsize))
@@ -256,7 +275,7 @@ aeg <- ggplot(df_clim,aes(temp, rain, fill = R0_aeg)) +
                color = "black", linetype = "dashed") +
   scale_fill_distiller(palette = "Spectral",
                        name = TeX("$R_M$"), 
-                       limits = c(0, max(df_clim$R0_alb))) +
+                       limits = c(0, lim_col)) +
   xlab("Temperature") + ylab("Rainfall") +
   xlim(c(10,38)) +
   theme_bw() +  theme(text = element_text(size = letsize))
@@ -277,7 +296,7 @@ alb2 <- ggplot(df_clim,aes(temp, hum, fill = R0_alb)) +
                color = "black", linetype = "dashed") +
   scale_fill_distiller(palette = "Spectral",
                        name = TeX("$R_M$"), 
-                       limits = c(0, max(df_clim$R0_alb))) +
+                       limits = c(0, lim_col)) +
   xlab("Temperature") + ylab("Human density") +
   xlim(c(10,38)) +
   theme_bw() + theme(text = element_text(size = letsize))
@@ -289,12 +308,31 @@ aeg2 <- ggplot(df_clim,aes(temp, hum, fill = R0_aeg)) +
                color = "black", linetype = "dashed") +
   scale_fill_distiller(palette = "Spectral",
                        name = TeX("$R_M$"), 
-                       limits = c(0, max(df_clim$R0_alb))) +
+                       limits = c(0,  lim_col)) +
   xlab("Temperature") + ylab("Human density") +
   xlim(c(10,38)) +
   theme_bw() +  theme(text = element_text(size = letsize))
+
+# Create panel
 ggarrange(alb,aeg,alb2, aeg2, nrow = 2, ncol = 2,
           common.legend = TRUE)
+
+# Create panel with patchwork
+library("cowplot")
+leg <- get_legend(alb)
+plots <- (alb + theme(legend.position = "none") +
+            aeg + theme(legend.position = "none")) /
+  (alb2 + theme(legend.position = "none") +
+     aeg2 + theme(legend.position = "none"))
+
+(plots |  wrap_elements(leg)) +
+  plot_layout(widths = c(5, 1))
+
+ggsave("~/Documents/PHD/2026/Correction/Phase_space.pdf",
+       width =8.5, height = 7)
+
+ggsave("~/Documents/PHD/2026/Correction/Phase_space.png",
+       width = 8.5, height = 7, dpi = 300)
 
 # check if the maximun does not move
 temp <- seq(0,40,length.out = 100)
